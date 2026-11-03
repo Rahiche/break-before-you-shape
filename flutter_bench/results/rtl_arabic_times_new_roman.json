@@ -1,0 +1,64 @@
+{
+ "font": "Times New Roman (macOS system font)",
+ "characters": 1147,
+ "buildMs": 64282,
+ "canaryErrPx": 0.0,
+ "quantized": false,
+ "messages": {
+  "texts": 4000,
+  "covered": 1560,
+  "identical": 28077,
+  "different": 0,
+  "deferred": 43923,
+  "heightsEqual": 28077
+ },
+ "messages joined with hard breaks": {
+  "texts": 1333,
+  "covered": 246,
+  "identical": 4426,
+  "different": 0,
+  "deferred": 19568,
+  "heightsEqual": 4426
+ },
+ "letterSpacing 0.5, wordSpacing 1": {
+  "texts": 4000,
+  "covered": 0,
+  "identical": 0,
+  "different": 0,
+  "deferred": 72000,
+  "heightsEqual": 0
+ },
+ "mixed: RTL paragraphs": {
+  "texts": 4000,
+  "covered": 28,
+  "identical": 459,
+  "different": 0,
+  "deferred": 71541,
+  "heightsEqual": 459
+ },
+ "mixed: RTL paragraphs with hard breaks": {
+  "texts": 1333,
+  "covered": 7,
+  "identical": 105,
+  "different": 0,
+  "deferred": 23889,
+  "heightsEqual": 105
+ },
+ "mixed: RTL paragraphs, spaced": {
+  "texts": 4000,
+  "covered": 0,
+  "identical": 0,
+  "different": 0,
+  "deferred": 72000,
+  "heightsEqual": 0
+ },
+ "mixed: LTR paragraphs": {
+  "texts": 4000,
+  "covered": 28,
+  "identical": 459,
+  "different": 0,
+  "deferred": 71541,
+  "heightsEqual": 459
+ },
+ "examples": []
+}

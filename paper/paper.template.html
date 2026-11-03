@@ -53,14 +53,15 @@
   .pipe .lbl { font-weight: 600; }
   .pipe .arrow { stroke: var(--muted); stroke-width: 1.2; marker-end: url(#ah); fill: none; }
   @media (max-width: 640px) { .two { grid-template-columns: 1fr; } body { font-size: 10.5pt; } }
-  @media print { body { max-width: none; padding: 0; } h2 { break-after: avoid; } }
+  @media print { body { max-width: none; padding: 0; } h2, h3 { break-after: avoid; } }
 </style>
 </head>
 <body>
 
 <h1>Break Before You Shape</h1>
 <p class="subtitle">Exact line breaking from a precompiled, certified width model</p>
-<p class="meta">Draft · {{date}} · every number in this paper is read from result files produced on one Apple M3 machine</p>
+<p class="meta">Draft · {{date}} · every number in this paper is read from result files produced on one Apple M3 machine and
+on GitHub Actions</p>
 
 <div class="abstract"><p><b>Abstract.</b>
 Text engines shape a paragraph before they can break it into lines, because widths depend on kerning, ligatures and
@@ -68,12 +69,15 @@ contextual forms. We show that, for the fonts and scripts we test, a line's shap
 text, and that this locality can be <i>proven</i> from a font's layout tables. We compile a shaper's behaviour into a
 small per-font model by measuring it as a black box, and a static analysis of OpenType and AAT tables certifies the lines
 on which the model is exact. Lines are then broken before anything is shaped. Across {{census_faces}} local font faces,
-{{census_certified:,}} certified lines contain no error. Inside Flutter, a {{=build_gzipBytes/1024:.0f}}&nbsp;KB (gzipped)
-file built once on the developer's machine reproduces Flutter's own line breaks and paragraph heights in
-{{mac_identical:,}} of {{=mac_identical+mac_different:,}} paragraph layouts ({{w_corpora}} corpora in {{w_languages}}
-languages written in Latin, Greek and Cyrillic, {{w_sizes}} font sizes, {{w_widths}} widths), and in every layout checked on
-an iOS simulator ({{ios_identical:,}}) and an Android emulator ({{android_identical:,}}). It hands
-{{mac_deferredPct:.2f}}% of layouts back to the engine and computes paragraph heights
+{{census_certified:,}} certified lines ({{census_certified_share:.0f}}% of all) contain no error. Inside Flutter, a
+{{=build_gzipBytes/1024:.0f}}&nbsp;KB (gzipped) file built once on the developer's machine reproduces Flutter's own line
+breaks and paragraph heights in {{mac_identical:,}} of {{=mac_identical+mac_different:,}} paragraph layouts on macOS
+({{w_corpora}} corpora in {{w_languages}} languages, {{w_sizes}} font sizes, {{w_widths}} widths), and in all
+{{ci_identical:,}} it decides on Linux, macOS, an iOS simulator and an Android emulator in continuous integration. The
+same holds with letter and word spacing, height multipliers, <code>maxLines</code> and hard line breaks
+({{styles_identical:,}} layouts), and for Hebrew, mixed-direction, Arabic, Japanese, Chinese and Korean text in four more
+fonts ({{scripts_identical:,}} layouts): not one layout differs. The breaker hands {{mac_deferredPct:.2f}}% of Latin-script
+layouts back to the engine and computes paragraph heights
 {{=min(t_docs_speedup_tp,t_chat_speedup_tp):.0f}}–{{=max(t_docs_speedup_tp,t_chat_speedup_tp):.0f}}× faster than <code>TextPainter</code>.</p></div>
 
 <h2>1 · Introduction</h2>
@@ -117,11 +121,14 @@ line breaks and heights from a precompiled model, so text that is measured but n
   <li><b>Distillation.</b> A shaper is measured as a black box (every character, every pair, every ligature island in
   context) and compiled into exact tables. The model matches the target engine by construction.</li>
   <li><b>A certificate.</b> A static analysis of OpenType (GSUB, GPOS, GDEF) and AAT (<code>morx</code>,
-  <code>kern</code>, <code>kerx</code>) tables proves on which lines the model's width equals the shaped width.</li>
+  <code>kern</code>, <code>kerx</code>, state machines included) tables proves on which lines the model's width equals
+  the shaped width, including Arabic letters per joining form.</li>
   <li><b>Break-first layout.</b> Width-independent records give every candidate line's width in O(1), so a resize costs
-  one greedy pass. Where the host engine's behaviour is uncertain, the breaker defers instead of guessing.</li>
-  <li><b>Evidence.</b> A census of {{census_faces}} font faces, and a Flutter implementation checked against Flutter's
-  own layout on three platforms.</li>
+  one greedy pass. The breaker reproduces the host's measured conventions (spacing, line heights, hard breaks,
+  bidirectional runs, split kerning) and defers wherever the host's behaviour is uncertain.</li>
+  <li><b>Evidence.</b> A census of {{census_faces}} font faces, and a Flutter package checked against Flutter's own
+  layout on four platforms, for Latin, Greek, Cyrillic, Hebrew, Arabic, Chinese, Japanese and Korean text, with five
+  fonts.</li>
 </ol>
 
 <h2>2 · Width is local, and can be distilled</h2>
@@ -176,21 +183,30 @@ characters. Then the shaped width of the line equals the model's width.</div>
       <li><i>OpenType.</i> A single, multiple or alternate lookup fires only at its coverage glyphs, which are U. A
       contextual rule fires only if every position matches a glyph that can occur, so for each live rule the cheapest
       position's characters are made U. Ligatures start at P and consume only P/K glyphs.</li>
-      <li><i>AAT.</i> Action reachability is computed over the alphabet; subtables that cannot act are the identity. In
-      the rest, S classes return every reachable state to a start state with no substitution, the start states agree,
-      end of text has no effect after an island, and a bounded exhaustive check shows no action inside an island reaches
-      state stored before it.</li>
+      <li><i>AAT.</i> Every <code>morx</code> subtable (rearrangement, contextual, ligature, insertion, in either
+      processing order) and the <code>kerx</code>/<code>kern</code> state machines are emulated as HarfBuzz runs them.
+      An S class changes nothing from any reachable state and returns to a state equivalent to a start state (state
+      minimisation). Every island up to the bound runs through the whole chain from each start state, with every mark and
+      stack entry from before it stale; if it touches stale state or depends on its surroundings, its cheapest character
+      becomes U.</li>
     </ul></li>
-  <li><b>Positioning is pair-additive.</b> Only single adjustments, PairPos with ValueFormat2 = 0, and <code>kern</code>
-  or <code>kerx</code> pair formats can fire.</li>
+  <li><b>Positioning is pair-additive.</b> Only single adjustments, PairPos with ValueFormat2 = 0, the <code>kern</code>
+  and <code>kerx</code> pair formats, and kerning machines proven local by step 1 can fire.</li>
   <li><b>Width splits into local terms.</b> By 1 and 2, the width is a sum of terms, each touching at most one island and
   its S neighbours.</li>
   <li><b>The terms agree.</b> The model's terms are measured values of exactly those terms. Islands are measured with
   every S neighbour, and the checker verifies no model term spans two islands. ∎</li>
 </ol>
 <p>The proof trusts that the shaper implements OpenType and AAT as specified, that fontTools parses the tables
-correctly, and the analyzer's code, which is tested but not machine-checked. By default it also trusts that the shaper
-selects lookups as HarfBuzz does (script, language, default variation coordinates); a strict mode drops that assumption.</p>
+correctly, and the analyzer's code, which is tested but not machine-checked; its AAT emulation was compared with
+<code>hb-shape</code> on about 22,700 islands. By default it also trusts that the shaper selects lookups as HarfBuzz does
+(the scripts certified, language, default variation coordinates); a strict mode drops that assumption.</p>
+<p><b>Two additions for the breaker.</b> <i>Pair roles:</i> for each character, whether its glyph can be the first or
+second glyph of any pair adjustment (GPOS pair and cursive coverage, <code>kern</code> pairs; anything not analysed counts
+as every glyph). Only first × second pairs are measured, so a CJK font with {{cjk_hiragino_chars:,}} characters needs no
+pair table at all and one with {{cjk_sdgothic_chars:,}} builds in under a second. <i>Joining forms:</i> each Arabic
+(letter, form) is certified as a virtual character whose glyph is the font's isol, init, medi or fina substitute; the
+breaker picks forms from Unicode joining types, as HarfBuzz's Arabic shaper does, so lam-alef is just an island.</p>
 
 <h2>4 · Breaking before shaping, the way the host does</h2>
 <p>For each paragraph, one pass builds a width prefix in units, and a second finds break opportunities. Both are
@@ -208,6 +224,13 @@ assuming them (Table 1), and the breaker <b>defers</b> whenever a decision depen
 <tr><td>Sometimes breaks at a space inside an unbreakable segment</td><td>Examples (e.g. <code>self ⏎!= 1.</code>)</td><td>Defers when such a space could end the line</td></tr>
 <tr><td>Positions drift in float32 at some sizes</td><td>Drift by size (§5.5)</td><td>Defers decisions the drift could flip</td></tr>
 <tr><td>Android truncates the font size to 1/{{android_size_quantum}} px (e.g. {{android_size_ex}} → {{android_size_ex_eff}}); macOS and iOS do not</td><td>Effective size implied by measured widths at {{android_sizes_probed}} sizes, on the emulator</td><td>One probe layout at start-up detects it; sizes are truncated the same way</td></tr>
+<tr><td><code>\n</code>, U+2028 and U+2029 end a line; the break kerns with the character before it as a space does on macOS and iOS, not on Linux or Android</td><td>“LT⏎” loses Roboto's T-space kern on macOS only; CI on Linux</td><td>Mandatory records; a start-up probe decides the kerning</td></tr>
+<tr><td>Letter spacing is added to every glyph advance (half before the first); positive spacing turns ligatures off, negative keeps them</td><td>Widths with spacing against widths with <code>liga</code> off</td><td>A second certificate without ligatures; spacing per glyph cluster</td></tr>
+<tr><td>Word spacing goes on the last space of each run that is a break opportunity, also after a hard break</td><td>Glyph positions with and without spacing</td><td>Counted per record; defers where a space meets a bidi run boundary</td></tr>
+<tr><td>With a height multiplier, a line is round(size × height), size and height taken as float32</td><td>15 × 1.3 gives 19, not 20 (heights in Table 4)</td><td>The same formula</td></tr>
+<tr><td>Kerning from <code>kern</code>/<code>kerx</code> tables is split between the two glyphs</td><td>Times New Roman's space-A kern at a line start</td><td>Each pair's right-glyph share, measured from glyph boxes</td></tr>
+<tr><td>Bidirectional text: UAX #9 levels; shaping runs split at level changes, and scripts are itemized within each run</td><td>Hebrew and Arabic UI strings</td><td>Each run measured with the sidecar distilled in its direction</td></tr>
+<tr><td>UAX #14 rules LB15c, LB20a, LB21a/b, and LB19a's and LB30's East Asian exceptions; small kana break like ideographs</td><td>Validation mismatches, one rule each</td><td>Rule table extended</td></tr>
 </table>
 <p style="font:8.6pt 'Avenir Next',sans-serif;color:var(--muted)"><b>Table 1.</b> Host conventions the breaker
 reproduces, each measured from Flutter.</p>
@@ -221,10 +244,10 @@ against HarfBuzz, using exact ground truth that reshapes every candidate line.</
   <li><b>Errors:</b> {{census_certified:,}} of {{census_lines:,}} lines ({{census_certified_share:.1f}}%) were certified,
   and <b>{{census_wrong}} were wrong</b>.</li>
   <li><b>Coverage:</b> {{census_ge99}} faces certify at least 99% of their lines; {{census_zero}} certify none.</li>
-  <li><b>Causes of failure</b> ({{census_low}} faces under 99%, Figure 4b): {{census_low_aat}} use AAT state machines
-  the analyzer does not yet handle (reversed contextual, insertion, rearrangement, <code>kerx</code>/<code>kern</code>
-  state machines); in {{census_low_subst}} the font's substitutions genuinely touch common letters; in
-  {{census_low_island}} the exhaustive island check's budget lowered the island bound below 4.</li>
+  <li><b>Causes of failure</b> ({{census_low}} faces under 99%, Figure 4b): in {{census_low_subst}} the font's
+  substitutions genuinely touch common letters; {{census_low_aat}} have AAT contextual or ligature machines over common
+  letters that are not local (Apple Chancery, Marion, Aqua Kana); in {{census_low_island}} the exhaustive island check's budget
+  lowered the island bound below 4; the rest lack characters or class letters as marks.</li>
 </ul>
 <figure>{{svg:fig_census.svg}}
 <figcaption><b>Figure 4.</b> (a) Share of lines certified, per face. (b) The reason behind the most frequent unsafe
@@ -263,7 +286,32 @@ macOS, checked against Flutter's layout on three platforms. Lines checked on mac
 <figcaption><b>Figure 6.</b> No cell has a single mismatch. Values are the share of paragraph layouts the breaker hands
 back to Flutter: words wider than the line, characters outside the model, and decisions it will not guess.</figcaption></figure>
 
-<h3>5.4 · Speed</h3>
+<p><b>On other machines.</b> The same checks run on GitHub Actions (run {{ci_run}}), where each job builds its corpora
+from its own runner's files. The Linux engine, like Android's, rounds font sizes to 1/64 px; the start-up probe finds
+it.</p>
+{{ci_table}}
+<p style="font:8.6pt 'Avenir Next',sans-serif;color:var(--muted)"><b>Table 3.</b> The shipped sidecar against Flutter on
+GitHub's machines, default style.</p>
+
+<p><b>Style options and hard breaks.</b> Each rule in Table 1 was checked on the same corpora, joined one to four
+paragraphs at a time with <code>\n</code> ({{styles_texts:,}} texts), at 6 sizes and 8 widths, against Flutter laid out
+with the same options:</p>
+{{styles_table}}
+<p style="font:8.6pt 'Avenir Next',sans-serif;color:var(--muted)"><b>Table 4.</b> macOS release build. “Combined” sets
+letter spacing 0.7, word spacing 1.5, height 1.2 and <code>maxLines</code> 4 together.</p>
+
+<h3>5.4 · Other scripts and directions</h3>
+<p>Right-to-left and East Asian text use fonts the platform already has, so nothing is redistributed: a sidecar is
+built through Flutter for each and checked on 4,000 UI strings per language, from macOS localizations, at 3 sizes and 6
+widths, alone, joined with hard breaks, and with spacing.</p>
+{{scripts_table}}
+<p style="font:8.6pt 'Avenir Next',sans-serif;color:var(--muted)"><b>Table 5.</b> “Decided”: the share of layouts the
+breaker computes itself; the rest (vowel marks, characters a font lacks, words wider than a narrow line, Arabic mixed
+with other directions) go to Flutter. Hiragino Sans GB has no pair positioning ({{cjk_hiragino_chars:,}} characters,
+no pair table); Apple SD Gothic Neo's {{cjk_sdgothic_chars:,}} characters need {{cjk_sdgothic_classes}} pair classes, a
+{{=cjk_sdgothic_bytes/1024:.0f}} KB sidecar.</p>
+
+<h3>5.5 · Speed</h3>
 <p>All methods run on the same paragraphs, the ones break-first decides itself, at {{t_docs_size:g}} px. Each time is the median of
 {{timing_reps}} passes inside one run of a macOS release build, and then the median of {{timing_runs}} such runs; the
 speedups below differ by at most {{timing_spread_pct:.0f}}% between runs.</p>
@@ -277,6 +325,13 @@ speedups below differ by at most {{timing_spread_pct:.0f}}% between runs.</p>
   <li><b>End to end</b>, including paragraphs handed back to Flutter, the gain is {{t_docs_speedup_all:.1f}}× (docs)
   and {{t_chat_speedup_all:.1f}}× (chat).</li>
   <li><b>Android emulator</b>, release, one run: {{a_docs_speedup_tp:.1f}}× (docs) and {{a_chat_speedup_tp:.1f}}× (chat).</li>
+  <li><b>On GitHub's machines</b> (median of 3 runs; one on Android): {{ci_macos_docs_speedup:.1f}}× / {{ci_macos_chat_speedup:.1f}}×
+  on a virtual M1, {{ci_linux_docs_speedup:.1f}}× / {{ci_linux_chat_speedup:.1f}}× on Linux, and
+  {{ci_android_docs_speedup:.1f}}× / {{ci_android_chat_speedup:.1f}}× on the Android emulator (docs / chat).</li>
+  <li><b>Native code</b> does not change the picture. A line-for-line C port called through <code>dart:ffi</code> gives
+  the same line starts in all {{native_checked:,}} checks and is {{native_docs_speedup:.1f}}× (docs) and
+  {{native_chat_speedup:.1f}}× (chat) faster than the Dart breaker, {{native_chat_e2e_speedup:.1f}}× end to end; since
+  the breaker is already a small share of the cost it replaces, the package stays in Dart, which also runs on the web.</li>
 </ul>
 <figure>{{svg:fig_speed.svg}}
 <figcaption><b>Figure 7.</b> Time to compute every paragraph's height. (a) {{t_docs_paragraphs:,}} Python
@@ -291,12 +346,17 @@ a message. For {{list_messages:,}} messages, break-first computes all heights in
 {{list_heightsEqual:,}} of {{list_messages:,}} heights are equal, and the largest scroll-offset error over the whole list
 is {{list_maxScrollOffsetErrPx}} px. On the Android emulator the gain is {{a_list_speedup:.1f}}×, again with
 {{a_list_heightsEqual:,}} equal heights.</p>
+<p>The package's example app shows what this buys (video in the repository). A stock <code>ListView</code> asked to jump
+to message #{{demo_stock_to:,}} of {{demo_messages:,}} can only estimate where it is: it lands on #{{demo_stock_at:,}},
+in a {{demo_stock_ms:.0f}} ms frame spent laying out every message on the way. With break-first extents the list lands
+on #{{demo_bf_to:,}} in a {{demo_bf_ms:.0f}} ms frame, and knows its exact total height. All {{demo_equal:,}} extents
+equal <code>TextPainter</code>'s, which takes {{demo_tp_ms:.0f}} ms to compute them (Android emulator, release).</p>
 </div>
 <figure>{{svg:fig_list.svg}}
 <figcaption><b>Figure 8.</b> Computing every item's exact height for a chat list.</figcaption></figure>
 </div>
 
-<h3>5.5 · Font sizes and float drift</h3>
+<h3>5.6 · Font sizes and float drift</h3>
 <div class="two">
 <div>
 <p>Flutter's widths are linear in font size, so one file in font units serves every size. But SkParagraph accumulates
@@ -333,13 +393,18 @@ measures, all {{=len(mac_sizes)}} sizes in Table 2 had zero mismatches on every 
 <p>We found no prior static analysis of shaping tables. This survey is a web search, not an exhaustive review.</p>
 
 <h2>7 · Limitations</h2>
+<p>Everything outside this list is decided exactly or handed to Flutter; what is listed is handed to Flutter or not
+claimed.</p>
 <ul>
-  <li><b>Scripts.</b> Latin, Greek and Cyrillic only; Arabic joining and Indic syllables are future work. Only plain,
-  single-style, left-to-right paragraphs are covered.</li>
-  <li><b>Fonts.</b> The Flutter evaluation uses one font (Roboto); the census covers the faces installed on one Mac.</li>
-  <li><b>Proof.</b> The certificate relies on the trust base in §3, and the AAT analysis rejects reversed contextual
-  subtables, rearrangement, insertion and <code>kerx</code> state machines rather than analysing them.</li>
-  <li><b>Measurement.</b> Mobile timings come from an emulator, not a phone.</li>
+  <li><b>Scripts.</b> Indic syllables (reordering), Thai, Lao, Khmer and Burmese (dictionary line breaking), vowel and
+  other combining marks, emoji, and Arabic mixed with other directions go to Flutter, as does any character a font
+  lacks (fallback fonts differ between devices).</li>
+  <li><b>Styles.</b> A paragraph has one font and size: rich text with several, font features and
+  <code>strutStyle</code> go to Flutter.</li>
+  <li><b>Proof.</b> The trust base in §3; the AAT emulation follows HarfBuzz 15 and is tested, not proven. Fonts with only
+  a <code>mort</code> table, rare <code>kerx</code>/<code>kern</code> formats, and islands beyond the stated bounds are
+  blocked rather than analysed.</li>
+  <li><b>Measurement.</b> Mobile timings come from simulators and emulators, not phones.</li>
   <li><b>Scope of the gain.</b> The speedup is for measurement and line breaking; painting is unchanged, and lines that
   are drawn are still shaped.</li>
 </ul>
@@ -350,10 +415,12 @@ measures, all {{=len(mac_sizes)}} sizes in Table 2 had zero mismatches on every 
   <li><code>certify.py</code>: the analyzer;</li>
   <li><code>bfl.c</code>: the C prototype and checker;</li>
   <li><code>census.py</code>: the census;</li>
-  <li><code>flutter_bench/</code>: the Flutter build step, breaker and harness;</li>
+  <li><code>packages/break_first/</code>: the Flutter package (breaker, sidecar build step, tests, list example);</li>
+  <li><code>flutter_bench/</code>: the benchmark app, the validation and timing harness, and the script tests;</li>
+  <li><code>native/</code>: the C port; <code>.github/workflows/</code>: the CI that reruns the benchmarks;</li>
   <li><code>paper/make_figures.py</code>: the figures and every number in this paper, read from the result files.</li>
 </ul>
-<p>Environment: Flutter 3.47.5 (Dart 3.13.4), HarfBuzz 15.0.0, macOS on an Apple M3, iOS 17.5 simulator, and an
-Android API 35 emulator.</p>
+<p>Environment: Flutter 3.47.5 (Dart 3.13.4), HarfBuzz 15.0.0, macOS on an Apple M3, iOS 17.5 simulator, an Android
+API 35 emulator, and GitHub's macOS 15 and Ubuntu 24.04 runners.</p>
 </body>
 </html>

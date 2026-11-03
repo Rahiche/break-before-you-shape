@@ -65,5 +65,7 @@ with open(os.path.join(HERE, "paper.html"), "w", encoding="utf-8") as fp:
 chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 pdf = os.path.join(HERE, "paper.pdf")
 subprocess.run([chrome, "--headless=new", "--disable-gpu", "--no-pdf-header-footer", f"--print-to-pdf={pdf}",
-                "file://" + os.path.join(HERE, "paper.html")], capture_output=True, timeout=120)
+                "file://" + os.path.join(HERE, "paper.html")],
+               # Not captured: Chrome's helpers can outlive it and keep a pipe open.
+               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=300)
 print("paper.html", len(html), "bytes;", "paper.pdf", os.path.getsize(pdf) if os.path.exists(pdf) else "missing")

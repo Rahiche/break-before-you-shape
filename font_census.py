@@ -28,6 +28,7 @@ os.makedirs(out, exist_ok=True)
 freq = ":".join(p for p in [os.path.join(HERE, "corpus.txt")] + [os.path.join(HERE, "corpora", f) for f in
                 sorted(os.listdir(os.path.join(HERE, "corpora")))] if os.path.exists(p)) \
     if os.path.isdir(os.path.join(HERE, "corpora")) else ""
+freq = ":".join(p for p in freq.split(":") if not any(x in p for x in ("ui_he", "ui_ar", "ui_ja", "ui_zh", "ui_ko")))
 
 jobs, seen = [], set()
 for path, i in census.faces():

@@ -40,7 +40,8 @@ def load(name):
 
 
 # ---------------------------------------------------------------- census
-rows = [json.loads(l) for l in open(os.path.join(ROOT, "census", "results.jsonl"))]
+# CENSUS_RESULTS: another copy of the census results (e.g. while census.py rewrites them).
+rows = [json.loads(l) for l in open(os.environ.get("CENSUS_RESULTS", os.path.join(ROOT, "census", "results.jsonl")))]
 reasons = json.load(open(os.path.join(ROOT, "census", "reasons.json")))
 # The reason file names the most frequent unsafe character. When that is the rare
 # fraction slash, coverage was lost elsewhere: islands longer than the bound m (the
@@ -90,7 +91,8 @@ N["census_reasons"] = dict(top)
 N["census_low"] = len(reasons)
 N["census_low_aat"] = sum(v for k, v in cat.items() if k.startswith("AAT") or k in ("kerx state machine", "kern state machine"))
 N["census_low_subst"] = cat["substitution on common letters"] + cat["contextual lookup on common letters"]
-N["census_low_island"] = cat["island bound m < 4 (budget)"]
+N["census_low_island"] = cat.get("island bound m < 4 (budget)", 0)
+N["census_low_missing"] = cat.get("characters missing from font", 0)
 
 # ---------------------------------------------------------------- C prototype baselines (HarfBuzz)
 txt = open(os.path.join(ROOT, "results.txt")).read()
@@ -374,6 +376,118 @@ ax.spines["left"].set_visible(False)
 ax.set_xlabel("px at 16 px (Roboto): advances + pair terms + island terms")
 ax.set_title(f"Width of “{ex['phrase']}” as the model's local terms")
 save(fig, "fig_decomposition.svg")
+
+# ---------------------------------------------------------------- style options, scripts, CI, C port, demo
+def fmt_int(x):
+    return f"{x:,}"
+
+
+def table(head, rows):
+    """An HTML table; numeric cells right-aligned."""
+    out = ["<table><tr>" + "".join(f'<th{" class=\"n\"" if i else ""}>{h}</th>' for i, h in enumerate(head)) + "</tr>"]
+    for r in rows:
+        out.append("<tr>" + "".join(f'<td{" class=\"n\"" if i else ""}>{c}</td>' for i, c in enumerate(r)) + "</tr>")
+    return "\n".join(out) + "</table>"
+
+
+def cell_ok(different):
+    return f"<b>{fmt_int(different)}</b>"
+
+
+# Style options and hard breaks, macOS release, on the corpora joined into multi-line texts.
+st = load("macos_styles.json")["styles"]
+rows = [(k, v) for k, v in st.items() if isinstance(v, dict) and "identical" in v]
+N["styles_texts"] = sum(st["texts"].values())
+N["styles_configs"] = len(rows)
+N["styles_identical"] = sum(v["identical"] for _, v in rows)
+N["styles_different"] = sum(v["different"] for _, v in rows)
+N["styles_table"] = table(["Option", "Layouts", "Identical breaks", "Different", "Heights equal", "Deferred"], [
+    (k, fmt_int(v["identical"] + v["different"] + v["deferred"]), fmt_int(v["identical"]), cell_ok(v["different"]),
+     f"{fmt_int(v['heightIdentical'])} / {fmt_int(v['heightChecked'])}",
+     f"{100 * v['deferred'] / (v['identical'] + v['different'] + v['deferred']):.1f}%") for k, v in rows])
+
+# Other scripts and directions (UI strings; fonts are the platform's own, not redistributed).
+def cases(name, label, keep=lambda k: True):
+    d = load(name)
+    rs = [(k, v) for k, v in d.items() if isinstance(v, dict) and "identical" in v and keep(k)]
+    return label, sum(v["identical"] for _, v in rs), sum(v["different"] for _, v in rs), \
+        sum(v["identical"] + v["different"] + v["deferred"] for _, v in rs), len(rs)
+
+
+script_rows = [
+    cases("rtl_arial.json", "Hebrew, right-to-left paragraphs · Arial", lambda k: not k.startswith("mixed")),
+    cases("rtl_arial.json", "Hebrew + Latin and digits, mixed direction · Arial", lambda k: k.startswith("mixed")),
+    cases("rtl_times_new_roman.json", "Hebrew, right-to-left · Times New Roman", lambda k: not k.startswith("mixed")),
+    cases("rtl_times_new_roman.json", "Hebrew + Latin and digits, mixed · Times New Roman", lambda k: k.startswith("mixed")),
+    cases("rtl_arabic_arial.json", "Arabic (joining forms), right-to-left · Arial", lambda k: "Spacing" not in k),
+    cases("rtl_arabic_times_new_roman.json", "Arabic (joining forms) · Times New Roman", lambda k: "Spacing" not in k),
+    cases("cjk_hiragino_sans_gb.json", "Japanese and Chinese · Hiragino Sans GB"),
+    cases("cjk_apple_sd_gothic_neo.json", "Korean and Japanese · Apple SD Gothic Neo"),
+]
+N["scripts_identical"] = sum(r[1] for r in script_rows)
+N["scripts_different"] = sum(r[2] for r in script_rows)
+N["scripts_layouts"] = sum(r[3] for r in script_rows)
+N["scripts_table"] = table(["Text · font", "Layouts", "Identical", "Different", "Decided"], [
+    (r[0], fmt_int(r[3]), fmt_int(r[1]), cell_ok(r[2]), f"{100 * (r[1] + r[2]) / r[3]:.0f}%") for r in script_rows])
+N["cjk_sdgothic_chars"] = load("cjk_apple_sd_gothic_neo.json")["characters"]
+N["cjk_sdgothic_classes"] = "×".join(str(x) for x in load("cjk_apple_sd_gothic_neo.json")["pairClasses"])
+N["cjk_sdgothic_bytes"] = load("cjk_apple_sd_gothic_neo.json")["sidecarBytes"]
+N["cjk_hiragino_chars"] = load("cjk_hiragino_sans_gb.json")["characters"]
+
+# CI: the same benchmarks on GitHub's machines.
+CI = os.path.join(FR, "ci")
+ci_run = sorted(d for d in os.listdir(CI) if d.startswith("run-"))[-1]
+N["ci_run"] = ci_run[4:]
+
+
+def ci(name):
+    return json.load(open(os.path.join(CI, ci_run, name)))
+
+
+ci_rows = []
+for name, label in (("macos_release.json", "macOS 15, release (virtual Apple M1)"), ("linux_release.json", "Ubuntu 24.04, Linux desktop release"),
+                    ("ios_sim.json", "iOS simulator (CI)"), ("android_emu.json", "Android 15 emulator, x86_64 (CI)"),
+                    ("macos_host.json", "flutter_tester, macOS"), ("linux_host.json", "flutter_tester, Linux")):
+    d = ci(name)
+    t = totals(d)
+    ci_rows.append((label, t, d))
+N["ci_identical"] = sum(t["identical"] for _, t, _ in ci_rows)
+N["ci_different"] = sum(t["different"] for _, t, _ in ci_rows)
+N["ci_table"] = table(["Platform (GitHub Actions)", "Identical breaks", "Different", "Heights equal", "Size rounding"], [
+    (label, fmt_int(t["identical"]), cell_ok(t["different"]), f"{fmt_int(t['heights'])} / {fmt_int(t['heightChecked'])}",
+     "1/64 px" if d.get("fontSizeQuantized") else "none")
+    for label, t, d in ci_rows])
+ci_t = {}
+for plat in ("macos", "linux"):
+    runs = [ci(f"{plat}_timing_run{i}.json")["timing"] for i in (1, 2, 3)]
+    ci_t[plat] = {k: sorted(r[k]["textPainterMs"] / r[k]["breakFirstMs"] for r in runs)[1] for k in ("docs", "chat")}
+    ci_t[plat]["list"] = sorted(r["listExtents"]["textPainterMs"] / r["listExtents"]["breakFirstMs"] for r in runs)[1]
+a_ci = ci("android_emu.json")["timing"]
+ci_t["android"] = {k: a_ci[k]["textPainterMs"] / a_ci[k]["breakFirstMs"] for k in ("docs", "chat")}
+ci_t["android"]["list"] = a_ci["listExtents"]["textPainterMs"] / a_ci["listExtents"]["breakFirstMs"]
+for plat, v in ci_t.items():
+    for k, x in v.items():
+        N[f"ci_{plat}_{k}_speedup"] = x
+
+# The C port through dart:ffi.
+nat = load("native_macos.json")["runs"]
+med = lambda xs: sorted(xs)[len(xs) // 2]
+N["native_checked"] = nat[0]["exactness"]["checked"]
+N["native_mismatched"] = sum(r["exactness"]["mismatched"] for r in nat)
+N["native_docs_speedup"] = med([r["docs"]["dartMs"] / r["docs"]["cBatchMs"] for r in nat])
+N["native_chat_speedup"] = med([r["chat"]["dartMs"] / r["chat"]["cBatchMs"] for r in nat])
+N["native_chat_e2e_speedup"] = med([r["chat"]["endToEndDartMs"] / r["chat"]["endToEndCMs"] for r in nat])
+na = load("native_android_emu.json")["runs"][0]
+N["native_android_chat_speedup"] = na["chat"]["dartMs"] / na["chat"]["cBatchMs"]
+N["native_android_mismatched"] = na["exactness"]["mismatched"]
+
+# The list-extents demo (Android emulator, release).
+demo = open(os.path.join(ROOT, "media", "list_extents_android_measured.txt")).read()
+jumps = re.findall(r"jump (stock|breakFirst) to=(\d+) at=(\d+) frameMs=([\d.]+)", demo)
+N["demo_stock_to"], N["demo_stock_at"], N["demo_stock_ms"] = int(jumps[0][1]), int(jumps[0][2]), float(jumps[0][3])
+N["demo_bf_to"], N["demo_bf_at"], N["demo_bf_ms"] = int(jumps[1][1]), int(jumps[1][2]), float(jumps[1][3])
+v = re.search(r"verify size=[\d.]+ equal=(\d+) of (\d+) textPainterMs=([\d.]+)", demo)
+N["demo_equal"], N["demo_messages"], N["demo_tp_ms"] = int(v[1]), int(v[2]), float(v[3])
 
 with open(os.path.join(HERE, "numbers.json"), "w") as fp:
     json.dump(N, fp, indent=1, ensure_ascii=False)

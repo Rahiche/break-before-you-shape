@@ -9,6 +9,12 @@ break-first:  itemize → BREAK (model only, ~2 ns/char) → shape each line onc
 
 Prototype: [bfl.c](bfl.c) (C + HarfBuzz 15 + NEON, about 930 lines). Raw results: [results.txt](results.txt). Tables: [table.py](table.py).
 
+> **Status.** These are the notes from the prototype stage; their numbers and scope are from then. The current results
+> are in the [paper](paper/paper.pdf) and the [README](README.md). Since these notes, the AAT state machines are analysed
+> instead of rejected, and the Flutter package handles letter and word spacing, height multipliers, `maxLines`, hard
+> breaks, Hebrew and mixed-direction text, Arabic joining forms, and Chinese, Japanese and Korean, with no layout
+> different from Flutter's on macOS, Linux, the iOS simulator and the Android emulator.
+
 ---
 
 ## 1. Why this is normally considered impossible
@@ -230,6 +236,9 @@ This covers layout only: the line breaks and heights a list or a measurement nee
   - *Variable fonts:* advances and GPOS values are linear blends of master deltas, so distill per master and blend.
   - *Hinting:* distill at the target ppem.
 - **Other scripts.** Arabic joining is deterministic from Unicode `Joining_Type`, so it is still local: distill per joining form. Indic needs syllable-level entries (orthographic syllables are bounded and repeat heavily). CJK is mostly fixed-advance. Thai, Lao and Khmer need dictionary segmentation for *opportunities*, but their widths stay local.
+- **Since then** (see the paper, §7, for what remains): the `morx` and `kerx`/`kern` state machines are emulated and
+  analysed; UAX #14 is table-driven; bidi follows UAX #9; Arabic is distilled per joining form; CJK uses sparse pair
+  roles. Indic, Thai/Lao/Khmer, font fallback, variable-font axes and hinting are still open.
 - **Where it pays off most:** heights for virtualized lists and chat UIs without shaping anything off-screen, live re-wrap on resize, server-side and PDF layout, and JS text measurement that is exact without `measureText`.
 
 ## 9. Reproduce
