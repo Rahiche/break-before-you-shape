@@ -46,6 +46,7 @@ usage: certify.py font[:index] out.cert [m] [hb|all]
 import itertools
 import os
 import sys
+import unicodedata
 
 from fontTools.ttLib import TTFont
 
@@ -569,10 +570,62 @@ def pair_free():
     return True
 
 
+def pair_sets():
+    """Glyphs that can be the first, and the second, glyph of a pair adjustment:
+    GPOS pair positioning (first: its coverage; second: the listed second glyphs
+    or ClassDef2 classes, or every glyph when class 0 carries a value), cursive
+    attachment (its coverage, both sides), kern format 0 pairs. None means every
+    glyph: contextual positioning, kerx, other kern formats."""
+    first, second, every2 = set(), set(), False
+    if "kerx" in font:
+        return None, None
+    if "kern" in font:
+        for kt in font["kern"].kernTables:
+            if getattr(kt, "format", None) != 0:
+                return None, None
+            for left, right in kt.kernTable:
+                first.add(left)
+                second.add(right)
+    if "GPOS" in font:
+        for lk in active_lookups("GPOS")[1]:
+            for typ, st in subtables(lk, 9):
+                if typ == 2:
+                    first.update(st.Coverage.glyphs)
+                    if st.Format == 1:
+                        for ps in st.PairSet:
+                            second.update(r.SecondGlyph for r in ps.PairValueRecord)
+                    else:
+                        second.update((st.ClassDef2.classDefs if st.ClassDef2 else {}).keys())
+                        for c1 in st.Class1Record:
+                            v = c1.Class2Record[0].Value1
+                            if v is not None and any(getattr(v, a, 0) for a in v.__dict__):
+                                every2 = True
+                elif typ == 3:
+                    first.update(st.Coverage.glyphs)
+                    second.update(st.Coverage.glyphs)
+                elif typ in (7, 8):
+                    return None, None
+    return first, (None if every2 else second)
+
+
 with open(out_path, "w") as fp:
-    fp.write(f"# {font['name'].getDebugName(4)} m={M_ISLAND}{' pairs=none' if pair_free() else ''}\n")
+    free = pair_free()
+    fp.write(f"# {font['name'].getDebugName(4)} m={M_ISLAND}{' pairs=none' if free else ''}\n")
+    # A fourth column says whether the character's glyph can be the first (f) or
+    # second (s) glyph of a pair adjustment; the distiller measures only those
+    # pairs. P and K characters are marked both ways (their substitutes may pair).
+    # The column covers pairs of characters that are not combining marks: the
+    # breaker never accepts those (they are outside its line-break table).
+    p1, p2 = (set(), set()) if free else pair_sets()
     for cp in chars:
-        fp.write(f"{cp:04X} {gid[nominal[cp]]} {final[cp]}\n")
+        g = nominal[cp]
+        # Combining marks too: HarfBuzz sets their advance by Unicode category, so
+        # the character before one can change width with it (measured: Roboto's
+        # U+0387 next to U+0488).
+        island = final[cp] in ("P", "K") or unicodedata.category(chr(cp)).startswith("M")
+        f = "f" if island or p1 is None or g in p1 else ""
+        s2 = "s" if island or p2 is None or g in p2 else ""
+        fp.write(f"{cp:04X} {gid[g]} {final[cp]} {f + s2 or '-'}\n")
 
 counts = {c: sum(1 for cp in chars if final[cp] == c) for c in "SPKU"}
 top_u = max((cp for cp in chars if final[cp] == "U"), key=freq, default=None)

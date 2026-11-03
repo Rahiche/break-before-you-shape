@@ -1,0 +1,61 @@
+{
+ "font": "Apple SD Gothic Neo Regular (macOS system font, face 0)",
+ "characters": 16644,
+ "buildMs": 742,
+ "sidecarBytes": 323380,
+ "pairClasses": [
+  57,
+  51
+ ],
+ "canaryErrPx": 7.2021484375e-05,
+ "quantized": false,
+ "ui_ko messages": {
+  "texts": 4000,
+  "covered": 3968,
+  "identical": 71161,
+  "different": 0,
+  "deferred": 839,
+  "heightsEqual": 71161
+ },
+ "ui_ko joined with hard breaks": {
+  "texts": 1333,
+  "covered": 1301,
+  "identical": 23166,
+  "different": 0,
+  "deferred": 828,
+  "heightsEqual": 23166
+ },
+ "ui_ko letterSpacing 0.5, wordSpacing 1": {
+  "texts": 4000,
+  "covered": 3968,
+  "identical": 70987,
+  "different": 0,
+  "deferred": 1013,
+  "heightsEqual": 70987
+ },
+ "ui_ja messages": {
+  "texts": 4000,
+  "covered": 2953,
+  "identical": 52887,
+  "different": 0,
+  "deferred": 19113,
+  "heightsEqual": 52887
+ },
+ "ui_ja joined with hard breaks": {
+  "texts": 1333,
+  "covered": 575,
+  "identical": 10215,
+  "different": 0,
+  "deferred": 13779,
+  "heightsEqual": 10215
+ },
+ "ui_ja letterSpacing 0.5, wordSpacing 1": {
+  "texts": 4000,
+  "covered": 2953,
+  "identical": 52606,
+  "different": 0,
+  "deferred": 19394,
+  "heightsEqual": 52606
+ },
+ "examples": []
+}

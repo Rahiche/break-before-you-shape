@@ -193,7 +193,7 @@ class WidthModel {
 
   static Map<int, int> _classes(String certText) => {
     for (final line in certText.split('\n'))
-      if (!line.startsWith('#') && line.trim().split(RegExp(r'\s+')).length == 3)
+      if (!line.startsWith('#') && line.trim().split(RegExp(r'\s+')).length >= 3)
         int.parse(line.trim().split(RegExp(r'\s+'))[0], radix: 16): const {
           'S': certS,
           'K': certK,
@@ -271,21 +271,31 @@ class WidthModel {
     double Function(String text, int k)? measurePrefixNoLiga,
   }) {
     var name = 'font', m = 0;
+    // The certificate proves that no positioning depends on a neighbour: every
+    // pair term is zero and none is measured (CJK fonts).
+    var pairsNone = false;
     final cps = <int>[0], cl = <int>[certU];
+    // Fourth column: whether the character can be the first (f) or second (s)
+    // glyph of a pair adjustment. Without it, both.
+    final canFirst = <bool>[false], canSecond = <bool>[false];
     for (final line in certText.split('\n')) {
       if (line.startsWith('#')) {
         final mm = RegExp(r'm=(\d+)').firstMatch(line);
         if (mm != null) m = int.parse(mm.group(1)!);
+        pairsNone = line.contains(' pairs=none');
         name = line.substring(1).split(' m=').first.trim();
         continue;
       }
       final parts = line.trim().split(RegExp(r'\s+'));
-      if (parts.length != 3) continue;
+      if (parts.length != 3 && parts.length != 4) continue;
       final cp = int.parse(parts[0], radix: 16);
       final c = const {'S': certS, 'K': certK, 'P': certP, 'U': certU}[parts[2]]!;
       if (c == certU || cp >= 0x10000 || (cp >= 0xD800 && cp < 0xE000)) continue;
       cps.add(cp);
       cl.add(c);
+      final roles = parts.length == 4 ? parts[3] : 'fs';
+      canFirst.add(roles.contains('f'));
+      canSecond.add(roles.contains('s'));
     }
     final n1 = cps.length;
     final str = [for (final cp in cps) String.fromCharCode(cp)];
@@ -293,14 +303,31 @@ class WidthModel {
     for (var id = 1; id < n1; id++) {
       adv[id] = measure(str[id]);
     }
-    final dense = Float64List(n1 * n1);
+    // Pairs measured: first-capable × second-capable characters; every other pair
+    // is zero by the certificate (and with pairs=none, every pair).
+    final k1 = <int>[], k2 = <int>[];
+    final pos1 = Int32List(n1)..fillRange(0, n1, -1), pos2 = Int32List(n1)..fillRange(0, n1, -1);
+    for (var id = 1; id < n1 && !pairsNone; id++) {
+      if (canFirst[id]) {
+        pos1[id] = k1.length;
+        k1.add(id);
+      }
+      if (canSecond[id]) {
+        pos2[id] = k2.length;
+        k2.add(id);
+      }
+    }
+    final n2 = k2.length;
+    final dense = Float64List(k1.length * n2);
     // Right-glyph shares of kerned pairs: the pair minus the first glyph's cluster
     // growth ([measurePrefix] gives the width of the first k code units' clusters).
     Float64List? right;
-    for (var a = 1; a < n1; a++) {
-      for (var b = 1; b < n1; b++) {
+    for (var x = 0; x < k1.length; x++) {
+      final a = k1[x];
+      for (var y = 0; y < n2; y++) {
+        final b = k2[y];
         final ab = str[a] + str[b];
-        final v = dense[a * n1 + b] = measure(ab) - adv[a] - adv[b];
+        final v = dense[x * n2 + y] = measure(ab) - adv[a] - adv[b];
         // A pair with a primer may ligate, and a combining mark joins the cluster
         // before it: their boxes then split a ligature or a cluster, not a kern.
         // Characters outside the line-break table never reach the breaker.
@@ -308,30 +335,35 @@ class WidthModel {
         final used = lbClass(cps[a]) != lbXX && lbClass(cps[b]) != lbXX;
         if (v != 0 && measurePrefix != null && !ligates && used) {
           final rs = v - (measurePrefix(ab, 1) - adv[a]);
-          if (rs != 0) (right ??= Float64List(n1 * n1))[a * n1 + b] = rs;
+          if (rs != 0) (right ??= Float64List(k1.length * n2))[x * n2 + y] = rs;
         }
       }
     }
+    int code(Float64List? m, int a, int b) =>
+        m == null || pos1[a] < 0 || pos2[b] < 0 ? 0x8000 : (m[pos1[a] * n2 + pos2[b]] * 4).round() + 0x8000;
     // Compress: identical rows share a first-position class, identical columns a
     // second-position class.
     final rowClass = Int32List(n1), colClass = Int32List(n1);
     final rowKeys = <String, int>{}, colKeys = <String, int>{};
-    String key(Iterable<int> cells) => String.fromCharCodes([
-      for (final c in cells) ...[(dense[c] * 4).round() + 0x8000, if (right != null) (right[c] * 4).round() + 0x8000],
-    ]);
     for (var a = 0; a < n1; a++) {
-      rowClass[a] = rowKeys.putIfAbsent(key([for (var b = 0; b < n1; b++) a * n1 + b]), () => rowKeys.length);
+      final key = String.fromCharCodes([
+        for (final b in k2) ...[code(dense, a, b), if (right != null) code(right, a, b)],
+      ]);
+      rowClass[a] = rowKeys.putIfAbsent(key, () => rowKeys.length);
     }
     for (var b = 0; b < n1; b++) {
-      colClass[b] = colKeys.putIfAbsent(key([for (var a = 0; a < n1; a++) a * n1 + b]), () => colKeys.length);
+      final key = String.fromCharCodes([
+        for (final a in k1) ...[code(dense, a, b), if (right != null) code(right, a, b)],
+      ]);
+      colClass[b] = colKeys.putIfAbsent(key, () => colKeys.length);
     }
     final nF = rowKeys.length, nS = colKeys.length;
     final cls = Float64List(nF * nS);
     final clsRight = right == null ? null : Float64List(nF * nS);
-    for (var a = 0; a < n1; a++) {
-      for (var b = 0; b < n1; b++) {
-        cls[rowClass[a] * nS + colClass[b]] = dense[a * n1 + b];
-        if (clsRight != null) clsRight[rowClass[a] * nS + colClass[b]] = right![a * n1 + b];
+    for (var x = 0; x < k1.length; x++) {
+      for (var y = 0; y < n2; y++) {
+        cls[rowClass[k1[x]] * nS + colClass[k2[y]]] = dense[x * n2 + y];
+        if (clsRight != null) clsRight[rowClass[k1[x]] * nS + colClass[k2[y]]] = right![x * n2 + y];
       }
     }
     final fc = Int32List.fromList([for (var a = 0; a < n1; a++) rowClass[a] * nS]);
@@ -633,9 +665,11 @@ const int lbAL = 0,
     lbB2 = 15,
     lbGL = 16,
     lbBB = 17,
-    lbXX = 18;
-const int nLB = 19;
-const int _lbMax = 0x2200;
+    lbXX = 18,
+    lbID = 19,
+    lbNS = 20;
+const int nLB = 21;
+const int _lbMax = 0x10000;
 final Uint8List _lb = () {
   final t = Uint8List(_lbMax)..fillRange(0, _lbMax, lbXX);
   for (var c = 0x21; c < 0x7F; c++) {
@@ -674,6 +708,149 @@ final Uint8List _lb = () {
     if (c <= 0x5EA || c >= 0x5EF) t[c] = lbAL; // Hebrew letters (HL), geresh, gershayim
   }
   t[0x5BE] = lbBA; // maqaf
+  // CJK: ideographs, kana and Hangul syllables are ID (a break between any two),
+  // and so are small kana (CJ); iteration marks are NS; brackets OP and CL; the
+  // ideographic space BA.
+  void range(int a, int b, int c) {
+    for (var x = a; x <= b; x++) {
+      t[x] = c;
+    }
+  }
+
+  range(0x3041, 0x3096, lbID);
+  range(0x30A1, 0x30FA, lbID);
+  range(0x3400, 0x4DBF, lbID);
+  range(0x4E00, 0x9FFF, lbID);
+  range(0xAC00, 0xD7A3, lbID);
+  range(0xF900, 0xFAFF, lbID);
+  for (final c in [
+    0x3041,
+    0x3043,
+    0x3045,
+    0x3047,
+    0x3049,
+    0x3063,
+    0x3083,
+    0x3085,
+    0x3087,
+    0x308E,
+    0x3095,
+    0x3096,
+    0x30A1,
+    0x30A3,
+    0x30A5,
+    0x30A7,
+    0x30A9,
+    0x30C3,
+    0x30E3,
+    0x30E5,
+    0x30E7,
+    0x30EE,
+    0x30F5,
+    0x30F6,
+    0x30FC,
+  ]) {
+    t[c] = lbID; // small kana and the prolonged sound mark (CJ): measured, Flutter breaks before them
+  }
+  for (final c in [
+    0x3005,
+    0x301C,
+    0x303B,
+    0x303C,
+    0x309B,
+    0x309C,
+    0x309D,
+    0x309E,
+    0x30A0,
+    0x30FB,
+    0x30FD,
+    0x30FE,
+    0xFF1A,
+    0xFF1B,
+    0xFF65,
+  ]) {
+    t[c] = lbNS;
+  }
+  for (final c in [0x3006, 0x3007, 0x3012, 0x3013, 0x3020, 0x3030, 0x303D, 0x303E, 0x303F, 0x309F, 0x30FF]) {
+    t[c] = lbID;
+  }
+  range(0x3021, 0x3029, lbID);
+  range(0x3031, 0x3034, lbID);
+  range(0x3036, 0x303A, lbID);
+  t[0x3000] = lbBA;
+  for (final c in [
+    0x3001,
+    0x3002,
+    0x3009,
+    0x300B,
+    0x300D,
+    0x300F,
+    0x3011,
+    0x3015,
+    0x3017,
+    0x3019,
+    0x301B,
+    0x301E,
+    0x301F,
+    0xFF09,
+    0xFF0C,
+    0xFF0E,
+    0xFF3D,
+    0xFF5D,
+    0xFF60,
+    0xFF61,
+    0xFF63,
+    0xFF64,
+  ]) {
+    t[c] = lbCL;
+  }
+  for (final c in [
+    0x3008,
+    0x300A,
+    0x300C,
+    0x300E,
+    0x3010,
+    0x3014,
+    0x3016,
+    0x3018,
+    0x301A,
+    0x301D,
+    0xFF08,
+    0xFF3B,
+    0xFF5B,
+    0xFF5F,
+    0xFF62,
+  ]) {
+    t[c] = lbOP;
+  }
+  t[0xFF01] = t[0xFF1F] = lbEX;
+  t[0xFF04] = lbPR;
+  t[0xFF05] = lbPO;
+  for (final c in [
+    0xFF02,
+    0xFF03,
+    0xFF06,
+    0xFF07,
+    0xFF0A,
+    0xFF0B,
+    0xFF0D,
+    0xFF0F,
+    0xFF1C,
+    0xFF1D,
+    0xFF1E,
+    0xFF20,
+    0xFF3C,
+    0xFF3E,
+    0xFF3F,
+    0xFF40,
+    0xFF5C,
+    0xFF5E,
+  ]) {
+    t[c] = lbID;
+  }
+  range(0xFF10, 0xFF19, lbID);
+  range(0xFF21, 0xFF3A, lbID);
+  range(0xFF41, 0xFF5A, lbID);
   return t;
 }();
 
@@ -685,7 +862,15 @@ int lbClass(int codeUnit) => codeUnit < _lbMax ? _lb[codeUnit] : lbXX;
 // pair adjustment crosses a change of script. Spaces, digits and punctuation are
 // Common: they join the run of the preceding letter (or the first letter of the
 // paragraph when none precedes them).
-const int scCommon = 0, scLatin = 1, scGreek = 2, scCyrillic = 3, scHebrew = 4;
+const int scCommon = 0,
+    scLatin = 1,
+    scGreek = 2,
+    scCyrillic = 3,
+    scHebrew = 4,
+    scHan = 5,
+    scHiragana = 6,
+    scHangul = 7,
+    scKatakana = 8;
 int scriptOf(int cu) {
   if ((cu | 0x20) >= 0x61 && (cu | 0x20) <= 0x7A) return scLatin;
   if (cu < 0xC0) return cu == 0xAA || cu == 0xBA ? scLatin : scCommon;
@@ -695,6 +880,16 @@ int scriptOf(int cu) {
   }
   if (cu >= 0x400 && cu < 0x500) return scCyrillic;
   if (cu >= 0x590 && cu < 0x600) return scHebrew;
+  if (cu >= 0x3041 && cu <= 0x309A) return scHiragana;
+  if (cu >= 0x30A1 && cu <= 0x30FA) return scKatakana;
+  if (cu == 0x3005 ||
+      cu == 0x3007 ||
+      (cu >= 0x3021 && cu <= 0x3029) ||
+      (cu >= 0x3400 && cu <= 0x9FFF) ||
+      (cu >= 0xF900 && cu <= 0xFAFF)) {
+    return scHan;
+  }
+  if (cu >= 0xAC00 && cu <= 0xD7A3) return scHangul;
   return scCommon;
 }
 
@@ -852,6 +1047,19 @@ bool _strongLOrNumber(int cu) =>
     cu == 0xB9;
 
 bool _isPi(int cu) => cu == 0xAB || cu == 0x2018 || cu == 0x201C;
+
+/// East Asian Width F, W or H (for LB19a).
+bool _isEA(int cu) =>
+    (cu >= 0x1100 && cu <= 0x115F) ||
+    (cu >= 0x2E80 && cu <= 0x303E) ||
+    (cu >= 0x3041 && cu <= 0x33FF) ||
+    (cu >= 0x3400 && cu <= 0x4DBF) ||
+    (cu >= 0x4E00 && cu <= 0x9FFF) ||
+    (cu >= 0xA000 && cu <= 0xA4CF) ||
+    (cu >= 0xAC00 && cu <= 0xD7A3) ||
+    (cu >= 0xF900 && cu <= 0xFAFF) ||
+    (cu >= 0xFE30 && cu <= 0xFE4F) ||
+    (cu >= 0xFF00 && cu <= 0xFFE6);
 bool _isPf(int cu) => cu == 0xBB || cu == 0x2019 || cu == 0x201D;
 
 // Direct boundaries (no space between): true = no break allowed.
@@ -863,8 +1071,6 @@ final List<bool> _noBreak = () {
       no(a, x); // LB13
     }
     no(lbOP, a); // LB14
-    no(a, lbQU); // LB19 (with LB19a, quotes in non-East-Asian text)
-    no(lbQU, a);
     no(a, lbGL); // LB12a, LB12
     no(lbGL, a);
     no(a, lbBA); // LB21
@@ -888,6 +1094,11 @@ final List<bool> _noBreak = () {
   no(lbNU, lbOP);
   no(lbCP, lbAL);
   no(lbCP, lbNU); // LB30
+  for (var a = 0; a < nLB; a++) {
+    no(a, lbNS); // LB21: × NS
+  }
+  no(lbPR, lbID);
+  no(lbID, lbPO); // LB23a
   return t;
 }();
 
@@ -906,6 +1117,8 @@ final List<bool> defaultSpaceRules = () {
     }
   }
   t[lbB2 * nLB + lbB2] = false;
+  t[lbCL * nLB + lbNS] = false; // LB16: (CL | CP) SP* × NS
+  t[lbCP * nLB + lbNS] = false;
   return t;
 }();
 final List<bool> permissiveSpaceRules = List<bool>.filled(nLB * nLB, true);
@@ -1146,6 +1359,21 @@ bool isHardBreak(int cu) => cu == 0x0A || cu == 0x2028 || cu == 0x2029;
       continue;
     }
     var allowed = !_noBreak[ca * nLB + cx];
+    // LB30 (Unicode 15.1) keeps letters and digits with an opening bracket only if
+    // it is not East Asian: a fullwidth （ allows a break (measured: "Format|（PDF）").
+    if (!allowed && cx == lbOP && (ca == lbAL || ca == lbNU) && _isEA(x)) allowed = true;
+    // LB19, LB19a (Unicode 15.1): no break before a quotation mark unless it opens
+    // (Pi) between East Asian characters, none after one unless it closes (Pf)
+    // between them (measured: Flutter breaks around “某地” in Chinese).
+    if (allowed &&
+        cx == lbQU &&
+        !(_isPi(x) && _isEA(t.codeUnitAt(i - 1)) && i + 1 < len && _isEA(t.codeUnitAt(i + 1)))) {
+      allowed = false;
+    }
+    if (allowed && ca == lbQU) {
+      final q = t.codeUnitAt(i - 1);
+      if (!(_isPf(q) && _isEA(x) && i - 2 >= start && _isEA(t.codeUnitAt(i - 2)))) allowed = false;
+    }
     // LB20a: no break after a word-initial hyphen (HY, U+2010) or en dash (measured:
     // Flutter treats the en dash like the hyphen here, but not other BA, e.g. "|").
     final dash = ca == lbHY || t.codeUnitAt(i - 1) == 0x2010 || t.codeUnitAt(i - 1) == 0x2013;

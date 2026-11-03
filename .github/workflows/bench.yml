@@ -56,6 +56,11 @@ jobs:
         run: |
           python3 -m pip install --quiet --break-system-packages fonttools || python3 -m pip install --quiet fonttools
           tool/rtl_check.sh /System/Library/Fonts/Supplemental/Arial.ttf $PWD/../out/macos_rtl_arial.json
+      - name: Japanese, Chinese and Korean (Hiragino Sans GB, Apple SD Gothic Neo)
+        working-directory: flutter_bench
+        run: |
+          tool/script_check.sh "/System/Library/Fonts/Hiragino Sans GB.ttc" 0 $PWD/../out/macos_cjk_hiragino.json
+          tool/script_check.sh /System/Library/Fonts/AppleSDGothicNeo.ttc 0 $PWD/../out/macos_cjk_sdgothic.json
       - name: Exactness, release build
         working-directory: flutter_bench
         run: |
@@ -121,7 +126,8 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo apt-get install -y -q mandoc language-pack-de-base language-pack-fr-base language-pack-ru-base \
-            language-pack-uk-base language-pack-el-base language-pack-he-base language-pack-ar-base fonts-noto-core \
+            language-pack-uk-base language-pack-el-base language-pack-he-base language-pack-ar-base language-pack-ja-base \
+            language-pack-zh-hans-base language-pack-ko-base fonts-noto-core fonts-noto-cjk \
             python3-fonttools clang cmake ninja-build pkg-config libgtk-3-dev xvfb
       - uses: subosito/flutter-action@v2
         with:
@@ -137,6 +143,9 @@ jobs:
       - name: Right-to-left and mixed-direction Hebrew (Noto Sans Hebrew)
         working-directory: flutter_bench
         run: tool/rtl_check.sh /usr/share/fonts/truetype/noto/NotoSansHebrew-Regular.ttf $PWD/../out/linux_rtl_noto_sans_hebrew.json
+      - name: Japanese, Chinese and Korean (Noto Sans CJK)
+        working-directory: flutter_bench
+        run: tool/script_check.sh /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc 0 $PWD/../out/linux_cjk_noto_sans_cjk.json
       - name: Linux desktop target
         working-directory: flutter_bench
         run: flutter create --platforms=linux . >/dev/null && rm -f test/widget_test.dart

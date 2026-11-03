@@ -1,0 +1,61 @@
+{
+ "font": "Hiragino Sans GB W3 (macOS system font, face 0)",
+ "characters": 28092,
+ "buildMs": 646,
+ "sidecarBytes": 506148,
+ "pairClasses": [
+  1,
+  1
+ ],
+ "canaryErrPx": 2.1240234375e-05,
+ "quantized": false,
+ "ui_ja messages": {
+  "texts": 4000,
+  "covered": 3977,
+  "identical": 56388,
+  "different": 0,
+  "deferred": 15612,
+  "heightsEqual": 56388
+ },
+ "ui_ja joined with hard breaks": {
+  "texts": 1333,
+  "covered": 1311,
+  "identical": 11288,
+  "different": 0,
+  "deferred": 12706,
+  "heightsEqual": 11288
+ },
+ "ui_ja letterSpacing 0.5, wordSpacing 1": {
+  "texts": 4000,
+  "covered": 3977,
+  "identical": 68697,
+  "different": 0,
+  "deferred": 3303,
+  "heightsEqual": 68697
+ },
+ "ui_zh_CN messages": {
+  "texts": 4000,
+  "covered": 3982,
+  "identical": 59443,
+  "different": 0,
+  "deferred": 12557,
+  "heightsEqual": 59443
+ },
+ "ui_zh_CN joined with hard breaks": {
+  "texts": 1333,
+  "covered": 1315,
+  "identical": 13395,
+  "different": 0,
+  "deferred": 10599,
+  "heightsEqual": 13395
+ },
+ "ui_zh_CN letterSpacing 0.5, wordSpacing 1": {
+  "texts": 4000,
+  "covered": 3982,
+  "identical": 68932,
+  "different": 0,
+  "deferred": 3068,
+  "heightsEqual": 68932
+ },
+ "examples": []
+}

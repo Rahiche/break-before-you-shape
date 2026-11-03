@@ -97,8 +97,10 @@ def gettext_strings(lang):
 
 
 # UI strings from macOS localizations.
-for lang in ["en", "de", "fr", "ru", "uk", "el", "he", "ar"]:
-    dirs = [f"{lang}.lproj"] + (["English.lproj", "Base.lproj"] if lang == "en" else [])
+CJK = {"ja", "zh_CN", "ko"}  # no spaces between words: a length test instead of a word count
+for lang in ["en", "de", "fr", "ru", "uk", "el", "he", "ar", "ja", "zh_CN", "ko"]:
+    dirs = [f"{lang}.lproj"] + (["English.lproj", "Base.lproj"] if lang == "en" else []) + \
+        (["zh-Hans.lproj"] if lang == "zh_CN" else [])
     files = []
     for d in dirs:
         files += glob.glob(f"/System/Library/CoreServices/**/{d}/*.strings", recursive=True)
@@ -112,10 +114,11 @@ for lang in ["en", "de", "fr", "ru", "uk", "el", "he", "ar"]:
         except Exception:
             continue
         for v in values:
-            if isinstance(v, str) and len(v.split()) >= 4:
+            if isinstance(v, str) and (len(v.split()) >= 4 or (lang in CJK and len(v) >= 8)):
                 paras.append(v)
         if len(paras) > 20000:
             break
     if not files:
-        paras = [v for v in gettext_strings(lang) if isinstance(v, str) and len(v.split()) >= 4]
+        paras = [v for v in gettext_strings(lang)
+                 if isinstance(v, str) and (len(v.split()) >= 4 or (lang in CJK and len(v) >= 8))]
     write(f"ui_{lang}", paras, 4000)
