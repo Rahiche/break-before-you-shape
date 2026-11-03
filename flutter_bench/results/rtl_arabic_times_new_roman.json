@@ -1,7 +1,7 @@
 {
  "font": "Times New Roman (macOS system font)",
  "characters": 1147,
- "buildMs": 64282,
+ "buildMs": 187456,
  "canaryErrPx": 0.0,
  "quantized": false,
  "messages": {
@@ -30,19 +30,19 @@
  },
  "mixed: RTL paragraphs": {
   "texts": 4000,
-  "covered": 28,
-  "identical": 459,
+  "covered": 2080,
+  "identical": 37334,
   "different": 0,
-  "deferred": 71541,
-  "heightsEqual": 459
+  "deferred": 34666,
+  "heightsEqual": 37334
  },
  "mixed: RTL paragraphs with hard breaks": {
   "texts": 1333,
-  "covered": 7,
-  "identical": 105,
+  "covered": 333,
+  "identical": 5959,
   "different": 0,
-  "deferred": 23889,
-  "heightsEqual": 105
+  "deferred": 18035,
+  "heightsEqual": 5959
  },
  "mixed: RTL paragraphs, spaced": {
   "texts": 4000,
@@ -54,11 +54,11 @@
  },
  "mixed: LTR paragraphs": {
   "texts": 4000,
-  "covered": 28,
-  "identical": 459,
+  "covered": 2079,
+  "identical": 37316,
   "different": 0,
-  "deferred": 71541,
-  "heightsEqual": 459
+  "deferred": 34684,
+  "heightsEqual": 37316
  },
  "examples": []
 }

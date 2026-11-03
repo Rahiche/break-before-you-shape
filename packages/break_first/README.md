@@ -94,5 +94,5 @@ Each rule below was measured in Flutter (3.47), and is checked by the tests:
 One font and size per paragraph, with the options above. The bundled sidecar is Roboto: Latin, Greek and Cyrillic. A
 sidecar built from another font covers Hebrew, Arabic (per joining form), Chinese, Japanese and Korean too:
 `buildSidecar(rtl: true)` distills it right to left, and `buildBidiRecords` combines a left-to-right and a right-to-left
-sidecar for mixed-direction text. Font features, `strutStyle`, vowel marks, emoji, characters the font lacks and other
-scripts go to Flutter. See the [paper](../../paper/paper.pdf) for the method, its proofs and the checks.
+sidecar for mixed-direction text. Font features, `strutStyle`, vowel marks, letter-spaced Arabic, emoji, characters the
+font lacks and other scripts go to Flutter. See the [paper](../../paper/paper.pdf) for the method, its proofs and the checks.

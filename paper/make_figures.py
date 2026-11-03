@@ -419,8 +419,10 @@ script_rows = [
     cases("rtl_arial.json", "Hebrew + Latin and digits, mixed direction · Arial", lambda k: k.startswith("mixed")),
     cases("rtl_times_new_roman.json", "Hebrew, right-to-left · Times New Roman", lambda k: not k.startswith("mixed")),
     cases("rtl_times_new_roman.json", "Hebrew + Latin and digits, mixed · Times New Roman", lambda k: k.startswith("mixed")),
-    cases("rtl_arabic_arial.json", "Arabic (joining forms), right-to-left · Arial", lambda k: "Spacing" not in k),
-    cases("rtl_arabic_times_new_roman.json", "Arabic (joining forms) · Times New Roman", lambda k: "Spacing" not in k),
+    cases("rtl_arabic_arial.json", "Arabic (joining forms), right-to-left · Arial", lambda k: not k.startswith("mixed")),
+    cases("rtl_arabic_arial.json", "Arabic + Latin and digits, mixed · Arial", lambda k: k.startswith("mixed")),
+    cases("rtl_arabic_times_new_roman.json", "Arabic (joining forms) · Times New Roman", lambda k: not k.startswith("mixed")),
+    cases("rtl_arabic_times_new_roman.json", "Arabic + Latin and digits, mixed · Times New Roman", lambda k: k.startswith("mixed")),
     cases("cjk_hiragino_sans_gb.json", "Japanese and Chinese · Hiragino Sans GB"),
     cases("cjk_apple_sd_gothic_neo.json", "Korean and Japanese · Apple SD Gothic Neo"),
 ]

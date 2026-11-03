@@ -32,7 +32,7 @@ Every number in the paper is generated from the files in `results/`, `census/` a
 | Same sidecar on the iOS simulator / Android emulator | 192,193 of 192,193 / 192,176 of 192,176 identical |
 | On GitHub Actions: Linux, macOS, iOS simulator, Android emulator ([run](flutter_bench/results/ci/run-41614792200)) | **5,529,364** layouts identical, 0 different |
 | Letter and word spacing, height multiplier, `maxLines`, hard line breaks (macOS release) | **4,575,628** layouts identical, 0 different |
-| Hebrew (alone and mixed with Latin), Arabic, Japanese, Chinese, Korean; Arial, Times New Roman, Hiragino Sans GB, Apple SD Gothic Neo | **1,209,076** layouts identical, 0 different; the other 950,852 handed to Flutter |
+| Hebrew and Arabic (alone and mixed with Latin), Japanese, Chinese, Korean; Arial, Times New Roman, Hiragino Sans GB, Apple SD Gothic Neo | **1,357,183** layouts identical, 0 different; the other 946,745 handed to Flutter |
 | Speed vs `TextPainter` (macOS release, median of 3 runs) | **18.5×** (docs), **25.2×** (chat); re-wrap at a new width 11.6× / 9.6× |
 | Speed on GitHub Actions (docs / chat) | 26.0× / 27.6× macOS (virtual M1), 18.9× / 24.7× Linux, 24.5× / 38.6× Android emulator |
 | C port of the breaker through `dart:ffi` | same line starts in all 2,552,760 checks; 2.0× / 2.3× faster than the Dart breaker, so the package stays in Dart |
@@ -90,5 +90,5 @@ gh workflow run bench.yml
 - `flutter_bench/assets/Roboto-Regular.ttf` is Roboto, under the Apache License 2.0 (`Roboto_LICENSE.txt`).
 - The macOS benchmark app has the app sandbox disabled, so it can write its results file.
 - Scope: Latin, Greek, Cyrillic, Hebrew, Arabic, Chinese, Japanese and Korean, in either direction, with one font and
-  size per paragraph. Indic and Southeast Asian scripts, vowel marks, emoji, characters a font lacks, Arabic mixed with
-  other directions and rich text go to Flutter. Mobile timings come from simulators and emulators, not phones.
+  size per paragraph. Indic and Southeast Asian scripts, vowel marks, emoji, characters a font lacks, letter-spaced
+  Arabic and rich text go to Flutter. Mobile timings come from simulators and emulators, not phones.

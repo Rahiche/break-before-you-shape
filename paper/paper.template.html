@@ -306,8 +306,8 @@ built through Flutter for each and checked on 4,000 UI strings per language, fro
 widths, alone, joined with hard breaks, and with spacing.</p>
 {{scripts_table}}
 <p style="font:8.6pt 'Avenir Next',sans-serif;color:var(--muted)"><b>Table 5.</b> “Decided”: the share of layouts the
-breaker computes itself; the rest (vowel marks, characters a font lacks, words wider than a narrow line, Arabic mixed
-with other directions) go to Flutter. Hiragino Sans GB has no pair positioning ({{cjk_hiragino_chars:,}} characters,
+breaker computes itself; the rest (vowel marks, characters a font lacks, words wider than a narrow line, and all
+letter-spaced Arabic) go to Flutter. Hiragino Sans GB has no pair positioning ({{cjk_hiragino_chars:,}} characters,
 no pair table); Apple SD Gothic Neo's {{cjk_sdgothic_chars:,}} characters need {{cjk_sdgothic_classes}} pair classes, a
 {{=cjk_sdgothic_bytes/1024:.0f}} KB sidecar.</p>
 
@@ -397,7 +397,7 @@ measures, all {{=len(mac_sizes)}} sizes in Table 2 had zero mismatches on every 
 claimed.</p>
 <ul>
   <li><b>Scripts.</b> Indic syllables (reordering), Thai, Lao, Khmer and Burmese (dictionary line breaking), vowel and
-  other combining marks, emoji, and Arabic mixed with other directions go to Flutter, as does any character a font
+  other combining marks, emoji, and letter-spaced Arabic go to Flutter, as does any character a font
   lacks (fallback fonts differ between devices).</li>
   <li><b>Styles.</b> A paragraph has one font and size: rich text with several, font features and
   <code>strutStyle</code> go to Flutter.</li>
