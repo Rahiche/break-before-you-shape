@@ -4,6 +4,13 @@ Exact line breaking from a precompiled, certified width model: line breaks and p
 any text shaping, and identical to what the text engine produces.
 
 Paper: [paper/paper.pdf](paper/paper.pdf) ([HTML](paper/paper.html)). Longer research notes: [RESEARCH.md](RESEARCH.md).
+Flutter package: [packages/break_first](packages/break_first).
+
+![Jumping to message #2,500 in a 10,000-message chat list: stock ListView vs break-first extents](media/list_extents_jump.gif)
+
+A chat list of 10,000 messages on the Android emulator, release build ([video](media/list_extents_android.mp4)).
+The stock `ListView` asked for #2,500 lands on #1,969, in a 717 ms frame. With break-first extents it lands on #2,500
+in a 22 ms frame. All 10,000 extents equal `TextPainter`'s ([measured log](media/list_extents_android_measured.txt)).
 
 ## The idea
 
@@ -36,7 +43,9 @@ number in the paper is generated from the files in `results/`, `census/` and `fl
 | `bfl.c` | C prototype: distillation, breaker, island-table checker, HarfBuzz baselines |
 | `census.py`, `census_reasons.py` | Census over every local font face, and what blocks the rest |
 | `make_corpus.py`, `make_corpora.py` | Corpora from local files (not shipped: see below) |
-| `flutter_bench/` | Flutter app: sidecar build step (`test/build_sidecar_test.dart`), breaker (`lib/breakfirst.dart`), validation and timing harness (`lib/bench.dart`) |
+| `packages/break_first/` | The Flutter package: breaker and width model, sidecar build step, tests, and the list-extents example |
+| `flutter_bench/` | Benchmark app on the package: sidecar build (`test/build_sidecar_test.dart`), validation and timing harness (`lib/bench.dart`) |
+| `media/` | The list-extents demo video, and the numbers it measured |
 | `paper/` | `make_figures.py` (figures and every number), `build_paper.py` (fills the template, prints the PDF) |
 | `results*.txt`, `census/`, `flutter_bench/results/` | Raw results |
 

@@ -305,7 +305,7 @@ pdata = load("paper_data.json")
 dr = pdata["drift"]
 # The breaker's drift margin per unit of x position, as the code ships it.
 margin = float(re.search(r"const double driftPerPx = ([\d.e+-]+);",
-                         open(os.path.join(ROOT, "flutter_bench", "lib", "breakfirst.dart")).read())[1])
+                         open(os.path.join(ROOT, "packages", "break_first", "lib", "src", "width_model.dart")).read())[1])
 N["drift_margin"] = margin
 fig, ax = plt.subplots(figsize=(3.4, 2.0))
 xs = [d["size"] for d in dr]

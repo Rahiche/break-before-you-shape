@@ -1,0 +1,28 @@
+name: break_first_example
+description: "Exact list extents for a chat list with break_first."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  break_first:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/roboto.bfw
+  fonts:
+    # The exact font file the sidecar was built from.
+    - family: RobotoSidecar
+      fonts:
+        - asset: assets/Roboto-Regular.ttf

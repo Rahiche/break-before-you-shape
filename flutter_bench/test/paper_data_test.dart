@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:bf_bench/bench.dart';
-import 'package:bf_bench/breakfirst.dart';
+import 'package:break_first/break_first.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 

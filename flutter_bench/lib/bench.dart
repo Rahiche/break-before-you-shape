@@ -3,37 +3,23 @@
 // and timing against TextPainter, ui.Paragraph and a per-word cache. Every
 // result goes into one JSON map.
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:break_first/break_first.dart';
+import 'package:break_first/break_first.dart' as pkg;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
-
-import 'breakfirst.dart';
 
 const family = 'BFRoboto';
 const corpora = ['en_docs', 'en_man', 'en_legal', 'ui_en', 'ui_de', 'ui_fr', 'ui_ru', 'ui_uk', 'ui_el'];
 const chatCorpora = ['ui_en', 'ui_de', 'ui_fr', 'ui_ru', 'ui_uk', 'ui_el'];
 
-final _ps = ui.ParagraphStyle(textDirection: ui.TextDirection.ltr);
-
-ui.Paragraph paragraph(String s, double width, double size) {
-  final b = ui.ParagraphBuilder(_ps)
-    ..pushStyle(ui.TextStyle(fontFamily: family, fontSize: size))
-    ..addText(s);
-  return b.build()..layout(ui.ParagraphConstraints(width: width));
-}
+ui.Paragraph paragraph(String s, double width, double size) =>
+    layoutParagraph(s, fontFamily: family, fontSize: size, width: width);
 
 /// Width of [s] on one line, trailing spaces included (cluster advances).
-double measure(String s, double size) {
-  final p = paragraph(s, double.infinity, size);
-  var r = 0.0;
-  for (final b in p.getBoxesForRange(0, s.length)) {
-    if (b.right > r) r = b.right;
-  }
-  p.dispose();
-  return r;
-}
+double measure(String s, double size) => measureText(s, fontFamily: family, fontSize: size);
 
 /// Flutter's line starts, one query per line: the text position at the left edge
 /// of each line. [flutterLineStartsSlow] asks every character for its line and is
@@ -67,18 +53,15 @@ Future<Uint8List> loadFont() async {
   return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
 }
 
-int upemOf(Uint8List font) {
-  final bd = ByteData.sublistView(font);
-  final n = bd.getUint16(4);
-  for (var i = 0; i < n; i++) {
-    final rec = 12 + 16 * i;
-    if (String.fromCharCodes(font.sublist(rec, rec + 4)) == 'head') return bd.getUint16(bd.getUint32(rec + 8) + 18);
+/// A corpus, one paragraph per line; empty when this machine could not generate
+/// it (tool/prepare_assets.sh).
+Future<List<String>> loadCorpus(String name) async {
+  try {
+    return (await rootBundle.loadString('assets/$name.txt')).split('\n').where((p) => p.isNotEmpty).toList();
+  } on FlutterError {
+    return const [];
   }
-  throw StateError('no head table');
 }
-
-Future<List<String>> loadCorpus(String name) async =>
-    (await rootBundle.loadString('assets/$name.txt')).split('\n').where((p) => p.isNotEmpty).toList();
 
 /// Build step (run on the host, under flutter_tester): measure Flutter at
 /// size = units per em and return the sidecar plus build statistics.
@@ -88,14 +71,10 @@ Future<(WidthModel, Map<String, Object?>)> buildSidecar() async {
   final cert = await rootBundle.loadString('assets/roboto.cert');
   final sw = Stopwatch()..start();
   var calls = 0, nonIntegral = 0;
-  final size = upem.toDouble();
-  final lineHeight = paragraph('Hg', double.infinity, size).height;
-  final model = WidthModel.distill(cert, (s) {
+  final model = pkg.buildSidecar(fontFamily: family, font: font, certificate: cert, measured: (_, w) {
     calls++;
-    final w = measure(s, size);
     if ((w - w.roundToDouble()).abs() > 1e-3) nonIntegral++;
-    return w;
-  }, upem, lineHeight);
+  });
   final ms = sw.elapsedMilliseconds;
   final bytes = model.encode();
   return (
@@ -103,19 +82,14 @@ Future<(WidthModel, Map<String, Object?>)> buildSidecar() async {
     {
       'font': model.name, 'upem': upem, 'characters': model.n1 - 1, 'pairClasses': [model.cls.length ~/ model.nS, model.nS],
       'islands': model.islandCount, 'm': model.m, 'layouts': calls, 'buildMs': ms, 'nonIntegralMeasurements': nonIntegral,
-      'bytes': bytes.length, 'gzipBytes': gzip.encode(bytes).length, 'lineHeightUnits': lineHeight,
+      'bytes': bytes.length, 'gzipBytes': gzip.encode(bytes).length, 'lineHeightUnits': model.lineHeight,
     }
   );
 }
 
 /// Canary: the shipped sidecar must reproduce Flutter's widths on this device.
 Map<String, Object?> canary(WidthModel md) {
-  var maxErr = 0.0;
-  for (final e in md.probes.entries) {
-    final flutter = measure(e.key, 16.0) / (16.0 / md.upem);
-    final err = (flutter - e.value).abs() * 16.0 / md.upem;
-    if (err > maxErr) maxErr = err;
-  }
+  final maxErr = canaryError(md, family);
   return {'probes': md.probes.length, 'maxErrPx': maxErr, 'pass': maxErr < 1e-3};
 }
 
@@ -127,6 +101,7 @@ Future<Map<String, Object?>> validate(WidthModel md, {int sample = 100000, List<
   var startsChecked = 0, startsDisagree = 0;
   for (final name in corpora) {
     final all = await loadCorpus(name);
+    if (all.isEmpty) continue;
     final paras = all.length > sample ? [for (var i = 0; i < sample; i++) all[(i * all.length) ~/ sample]] : all;
     final records = [for (final p in paras) buildRecords(md, p)];
     var same = 0, diff = 0, deferred = 0, lines = 0, heightSame = 0, heightChecked = 0;
@@ -420,6 +395,7 @@ Future<Map<String, Object?>> timing(WidthModel md, {int reps = 5}) async {
 
   await runOn('docs', await loadCorpus('en_docs'), 16.0, 400.0);
   final chat = <String>[for (final c in chatCorpora) ...await loadCorpus(c)];
+  if (chat.isEmpty) return out;
   await runOn('chat', chat, 16.0, 280.0);
 
   // Exact item extents for a long chat list: every height, both ways.
