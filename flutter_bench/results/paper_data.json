@@ -1,0 +1,198 @@
+{
+ "example": {
+  "phrase": "To office: AV",
+  "size": 16.0,
+  "terms": [
+   {
+    "kind": "advance",
+    "text": "T",
+    "units": 1222.0
+   },
+   {
+    "kind": "pair",
+    "text": "To",
+    "units": -99.0
+   },
+   {
+    "kind": "advance",
+    "text": "o",
+    "units": 1168.0
+   },
+   {
+    "kind": "advance",
+    "text": " ",
+    "units": 507.0
+   },
+   {
+    "kind": "advance",
+    "text": "o",
+    "units": 1168.0
+   },
+   {
+    "kind": "island-left",
+    "text": "o|ffi",
+    "units": 0.0
+   },
+   {
+    "kind": "island",
+    "text": "ffi",
+    "units": 1748.0,
+    "unitsIfSeparate": 1919.0
+   },
+   {
+    "kind": "advance",
+    "text": "c",
+    "units": 1072.0
+   },
+   {
+    "kind": "advance",
+    "text": "e",
+    "units": 1085.0
+   },
+   {
+    "kind": "advance",
+    "text": ":",
+    "units": 496.0
+   },
+   {
+    "kind": "advance",
+    "text": " ",
+    "units": 507.0
+   },
+   {
+    "kind": "advance",
+    "text": "A",
+    "units": 1336.0
+   },
+   {
+    "kind": "pair",
+    "text": "AV",
+    "units": -87.0
+   },
+   {
+    "kind": "advance",
+    "text": "V",
+    "units": 1303.0
+   }
+  ],
+  "modelUnits": 11426.0,
+  "modelPxAt16": 89.265625,
+  "flutterPxAt16": 89.265625,
+  "sumOfAdvancesUnits": 11783.0,
+  "upem": 2048
+ },
+ "drift": [
+  {
+   "size": 10.0,
+   "exactPositions": true,
+   "maxAbsPx": 0.0,
+   "maxRel": 0.0,
+   "longestParagraphPx": 16340.3759765625
+  },
+  {
+   "size": 11.0,
+   "exactPositions": false,
+   "maxAbsPx": 0.10205078125,
+   "maxRel": 0.000005948273810940065,
+   "longestParagraphPx": 17974.515625
+  },
+  {
+   "size": 12.0,
+   "exactPositions": true,
+   "maxAbsPx": 0.0,
+   "maxRel": 0.0,
+   "longestParagraphPx": 19608.451171875
+  },
+  {
+   "size": 13.0,
+   "exactPositions": false,
+   "maxAbsPx": 0.12548828125,
+   "maxRel": 0.000006977872936136791,
+   "longestParagraphPx": 21242.36328125
+  },
+  {
+   "size": 14.0,
+   "exactPositions": false,
+   "maxAbsPx": 0.1259765625,
+   "maxRel": 0.000005506774356975239,
+   "longestParagraphPx": 22876.65234375
+  },
+  {
+   "size": 15.0,
+   "exactPositions": false,
+   "maxAbsPx": 0.125,
+   "maxRel": 0.000006344822882286484,
+   "longestParagraphPx": 24510.681640625
+  },
+  {
+   "size": 16.0,
+   "exactPositions": true,
+   "maxAbsPx": 0.0,
+   "maxRel": 0.0,
+   "longestParagraphPx": 26144.6015625
+  },
+  {
+   "size": 17.0,
+   "exactPositions": false,
+   "maxAbsPx": 0.13671875,
+   "maxRel": 0.000006123296958033547,
+   "longestParagraphPx": 27778.517578125
+  },
+  {
+   "size": 18.0,
+   "exactPositions": false,
+   "maxAbsPx": 0.1728515625,
+   "maxRel": 0.000005876805424351171,
+   "longestParagraphPx": 29412.50390625
+  },
+  {
+   "size": 18.4,
+   "exactPositions": false,
+   "maxAbsPx": 0.3972656249970896,
+   "maxRel": 0.000013213164989459342,
+   "longestParagraphPx": 30065.89453125
+  },
+  {
+   "size": 20.0,
+   "exactPositions": true,
+   "maxAbsPx": 0.0,
+   "maxRel": 0.0,
+   "longestParagraphPx": 32680.751953125
+  },
+  {
+   "size": 21.3,
+   "exactPositions": false,
+   "maxAbsPx": 0.1632324218735448,
+   "maxRel": 0.000004689890890341061,
+   "longestParagraphPx": 34805.1640625
+  },
+  {
+   "size": 24.0,
+   "exactPositions": true,
+   "maxAbsPx": 0.0,
+   "maxRel": 0.0,
+   "longestParagraphPx": 39216.90234375
+  },
+  {
+   "size": 28.0,
+   "exactPositions": false,
+   "maxAbsPx": 0.251953125,
+   "maxRel": 0.000005506774356975239,
+   "longestParagraphPx": 45753.3046875
+  },
+  {
+   "size": 32.0,
+   "exactPositions": true,
+   "maxAbsPx": 0.0,
+   "maxRel": 0.0,
+   "longestParagraphPx": 52289.203125
+  },
+  {
+   "size": 33.7,
+   "exactPositions": false,
+   "maxAbsPx": 0.25390625000727596,
+   "maxRel": 0.000005736532871468537,
+   "longestParagraphPx": 55067.1484375
+  }
+ ]
+}

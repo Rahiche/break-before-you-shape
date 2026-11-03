@@ -1,0 +1,181 @@
+corpus: 5170 paragraphs, 0.89 MB
+
+== Helvetica [proven]
+   certificate: S 557  P 1  K 2  U 1 | islands up to m=4 verified: 90 islands, 100350 shapes, 0.07s | demoted 0
+
+== Helvetica (upem 2048)
+   distill 0.46s | repertoire 561 | glyph-changing pairs 2 | residuals 2 | classes 20x31 | model 6.8 KB
+   probes missed: 3-gram 0/300000, 4-gram 2/150000, words 0/294918, max eps 151 units
+   lines checked 151612 (x6 widths) | model width exact 100.0000% | max err 0 units | unknown-char lines 0
+   eps=0 (certified) lines 99.98%, of which wrong 0
+   paragraphs with identical breaks: model v1 100.000% v2 100.000% | hybrid 100.000% (shaped 0.019% of decisions) | shape-first 99.932% | word-cache 99.268%
+   rewrap at a new width (pass C only): 0.385 ns/char, 343 us for the whole corpus
+   speed (23981 lines): break-first v2 2.61 ns/char (383 MB/s, 97 ns/line; v1 3.81) | shape-first 57.0 ns/char | warm word-cache 4.4 ns/char | speedup 22x / 1.7x
+
+== Helvetica Neue [proven]
+   certificate: S 559  P 1  K 2  U 1 | islands up to m=3 verified: 26 islands, 29094 shapes, 0.02s | demoted 0
+
+== Helvetica Neue (upem 1000)
+   distill 0.40s | repertoire 563 | glyph-changing pairs 3 | residuals 4 | classes 20x35 | model 7.2 KB
+   probes missed: 3-gram 2/300000, 4-gram 0/150000, words 0/294918, max eps 92 units
+   lines checked 152914 (x6 widths) | model width exact 100.0000% | max err 0 units | unknown-char lines 0
+   eps=0 (certified) lines 99.86%, of which wrong 0
+   paragraphs with identical breaks: model v1 100.000% v2 100.000% | hybrid 100.000% (shaped 0.128% of decisions) | shape-first 100.000% | word-cache 100.000%
+   rewrap at a new width (pass C only): 0.918 ns/char, 817 us for the whole corpus
+   speed (24203 lines): break-first v2 3.02 ns/char (331 MB/s, 111 ns/line; v1 3.93) | shape-first 53.4 ns/char | warm word-cache 4.3 ns/char | speedup 18x / 1.4x
+
+== System Font [proven]
+   certificate: S 460  P 1  K 0  U 20 | islands up to m=4 verified: 4 islands, 3684 shapes, 0.00s | demoted 0
+
+== System Font (upem 2048)
+   distill 18.15s | repertoire 481 | glyph-changing pairs 13294 | residuals 275 | classes 139x137 | model 81.4 KB
+   probes missed: 3-gram 31/300000, 4-gram 30/150000, words 0/294918, max eps 1128 units
+   lines checked 141359 (x6 widths) | model width exact 100.0000% | max err 0 units | unknown-char lines 0
+   eps=0 (certified) lines 96.12%, of which wrong 0
+   paragraphs with identical breaks: model v1 100.000% v2 100.000% | hybrid 100.000% (shaped 3.160% of decisions) | shape-first 99.468% | word-cache 96.441%
+   rewrap at a new width (pass C only): 24.743 ns/char, 22042 us for the whole corpus
+   speed (22432 lines): break-first v2 20.25 ns/char (49 MB/s, 804 ns/line; v1 3.68) | shape-first 90.0 ns/char | warm word-cache 4.3 ns/char | speedup 4x / 0.2x
+
+== .New York [proven]
+   certificate: S 451  P 0  K 0  U 3 | islands up to m=4 verified: 0 islands, 0 shapes, 0.00s | demoted 0
+
+== .New York (upem 2048)
+   distill 0.57s | repertoire 454 | glyph-changing pairs 15 | residuals 0 | classes 78x60 | model 21.8 KB
+   probes missed: 3-gram 1/300000, 4-gram 3/150000, words 0/294918, max eps 60 units
+   lines checked 136068 (x6 widths) | model width exact 100.0000% | max err 0 units | unknown-char lines 0
+   eps=0 (certified) lines 95.99%, of which wrong 0
+   paragraphs with identical breaks: model v1 100.000% v2 100.000% | hybrid 100.000% (shaped 3.268% of decisions) | shape-first 99.994% | word-cache 99.965%
+   rewrap at a new width (pass C only): 16.746 ns/char, 14918 us for the whole corpus
+   speed (21654 lines): break-first v2 14.21 ns/char (70 MB/s, 585 ns/line; v1 3.75) | shape-first 62.2 ns/char | warm word-cache 4.8 ns/char | speedup 4x / 0.3x
+
+== Avenir Next Bold [proven]
+   certificate: S 435  P 1  K 2  U 1 | islands up to m=4 verified: 90 islands, 78390 shapes, 0.04s | demoted 0
+
+== Avenir Next Bold (upem 1000)
+   distill 0.44s | repertoire 439 | glyph-changing pairs 2 | residuals 0 | classes 70x73 | model 23.4 KB
+   probes missed: 3-gram 6/300000, 4-gram 4/150000, words 0/294918, max eps 452 units
+   lines checked 166459 (x6 widths) | model width exact 100.0000% | max err 0 units | unknown-char lines 0
+   eps=0 (certified) lines 99.98%, of which wrong 0
+   paragraphs with identical breaks: model v1 100.000% v2 100.000% | hybrid 100.000% (shaped 0.016% of decisions) | shape-first 99.458% | word-cache 97.682%
+   rewrap at a new width (pass C only): 0.492 ns/char, 438 us for the whole corpus
+   speed (26237 lines): break-first v2 2.58 ns/char (388 MB/s, 88 ns/line; v1 3.90) | shape-first 53.9 ns/char | warm word-cache 5.9 ns/char | speedup 21x / 2.3x
+
+== Palatino [proven]
+   certificate: S 457  P 1  K 2  U 1 | islands up to m=4 verified: 90 islands, 82350 shapes, 0.07s | demoted 0
+
+== Palatino (upem 2048)
+   distill 0.67s | repertoire 461 | glyph-changing pairs 2 | residuals 2 | classes 19x31 | model 5.9 KB
+   probes missed: 3-gram 1/300000, 4-gram 1/150000, words 0/294918, max eps 264 units
+   lines checked 151769 (x6 widths) | model width exact 100.0000% | max err 0 units | unknown-char lines 0
+   eps=0 (certified) lines 99.98%, of which wrong 0
+   paragraphs with identical breaks: model v1 100.000% v2 100.000% | hybrid 100.000% (shaped 0.019% of decisions) | shape-first 99.987% | word-cache 99.684%
+   rewrap at a new width (pass C only): 0.384 ns/char, 342 us for the whole corpus
+   speed (24024 lines): break-first v2 2.78 ns/char (359 MB/s, 103 ns/line; v1 4.16) | shape-first 59.5 ns/char | warm word-cache 4.3 ns/char | speedup 21x / 1.6x
+
+== Georgia [proven]
+   certificate: S 453  P 0  K 0  U 1 | islands up to m=4 verified: 0 islands, 0 shapes, 0.00s | demoted 0
+
+== Georgia (upem 2048)
+   distill 0.24s | repertoire 454 | glyph-changing pairs 0 | residuals 0 | classes 1x1 | model 3.6 KB
+   probes missed: 3-gram 0/300000, 4-gram 0/150000, words 0/294918, max eps 0 units
+   lines checked 151869 (x6 widths) | model width exact 100.0000% | max err 0 units | unknown-char lines 0
+   eps=0 (certified) lines 100.00%, of which wrong 0
+   paragraphs with identical breaks: model v1 100.000% v2 100.000% | hybrid 100.000% (shaped 0.000% of decisions) | shape-first 100.000% | word-cache 100.000%
+   rewrap at a new width (pass C only): 0.273 ns/char, 244 us for the whole corpus
+   speed (24035 lines): break-first v2 3.39 ns/char (295 MB/s, 126 ns/line; v1 3.84) | shape-first 17.4 ns/char | warm word-cache 4.3 ns/char | speedup 5x / 1.3x
+
+== Times New Roman [proven]
+   certificate: S 556  P 0  K 0  U 1 | islands up to m=4 verified: 0 islands, 0 shapes, 0.00s | demoted 0
+
+== Times New Roman (upem 2048)
+   distill 0.42s | repertoire 557 | glyph-changing pairs 0 | residuals 0 | classes 19x34 | model 6.9 KB
+   probes missed: 3-gram 1/300000, 4-gram 2/150000, words 0/294918, max eps 188 units
+   lines checked 137786 (x6 widths) | model width exact 100.0000% | max err 0 units | unknown-char lines 0
+   eps=0 (certified) lines 100.00%, of which wrong 0
+   paragraphs with identical breaks: model v1 100.000% v2 100.000% | hybrid 100.000% (shaped 0.000% of decisions) | shape-first 99.939% | word-cache 99.310%
+   rewrap at a new width (pass C only): 0.255 ns/char, 227 us for the whole corpus
+   speed (21959 lines): break-first v2 2.25 ns/char (444 MB/s, 91 ns/line; v1 3.77) | shape-first 32.4 ns/char | warm word-cache 4.3 ns/char | speedup 14x / 1.9x
+
+== Baskerville [proven]
+   certificate: S 567  P 1  K 2  U 1 | islands up to m=4 verified: 90 islands, 102150 shapes, 0.10s | demoted 0
+
+== Baskerville (upem 2048)
+   distill 0.68s | repertoire 571 | glyph-changing pairs 2 | residuals 3 | classes 53x58 | model 16.5 KB
+   probes missed: 3-gram 4/300000, 4-gram 3/150000, words 0/294918, max eps 246 units
+   lines checked 137667 (x6 widths) | model width exact 100.0000% | max err 0 units | unknown-char lines 0
+   eps=0 (certified) lines 99.98%, of which wrong 0
+   paragraphs with identical breaks: model v1 100.000% v2 100.000% | hybrid 100.000% (shaped 0.021% of decisions) | shape-first 99.626% | word-cache 94.610%
+   rewrap at a new width (pass C only): 0.464 ns/char, 413 us for the whole corpus
+   speed (21933 lines): break-first v2 2.96 ns/char (338 MB/s, 120 ns/line; v1 3.94) | shape-first 99.1 ns/char | warm word-cache 4.5 ns/char | speedup 33x / 1.5x
+
+== Hoefler Text [proven]
+   certificate: S 300  P 2  K 7  U 1 | islands up to m=3 verified: 806 islands, 484406 shapes, 0.34s | demoted 0
+
+== Hoefler Text (upem 2000)
+   distill 0.53s | repertoire 310 | glyph-changing pairs 14 | residuals 109 | classes 55x53 | model 15.1 KB
+   probes missed: 3-gram 0/300000, 4-gram 0/150000, words 0/294918, max eps 0 units
+   lines checked 145274 (x6 widths) | model width exact 100.0000% | max err 0 units | unknown-char lines 0
+   eps=0 (certified) lines 99.24%, of which wrong 0
+   paragraphs with identical breaks: model v1 100.000% v2 100.000% | hybrid 100.000% (shaped 0.673% of decisions) | shape-first 99.894% | word-cache 98.897%
+   rewrap at a new width (pass C only): 5.191 ns/char, 4625 us for the whole corpus
+   speed (23070 lines): break-first v2 6.25 ns/char (160 MB/s, 241 ns/line; v1 4.19) | shape-first 81.7 ns/char | warm word-cache 4.4 ns/char | speedup 13x / 0.7x
+
+== Charter Roman [proven]
+   certificate: S 424  P 0  K 0  U 0 | islands up to m=4 verified: 0 islands, 0 shapes, 0.00s | demoted 0
+
+== Charter Roman (upem 2048)
+   distill 0.32s | repertoire 424 | glyph-changing pairs 0 | residuals 0 | classes 30x36 | model 7.5 KB
+   probes missed: 3-gram 2/300000, 4-gram 3/150000, words 0/294918, max eps 112 units
+   lines checked 150286 (x6 widths) | model width exact 100.0000% | max err 0 units | unknown-char lines 0
+   eps=0 (certified) lines 100.00%, of which wrong 0
+   paragraphs with identical breaks: model v1 100.000% v2 100.000% | hybrid 100.000% (shaped 0.000% of decisions) | shape-first 100.000% | word-cache 99.987%
+   rewrap at a new width (pass C only): 0.282 ns/char, 251 us for the whole corpus
+   speed (23844 lines): break-first v2 2.38 ns/char (420 MB/s, 89 ns/line; v1 4.02) | shape-first 23.0 ns/char | warm word-cache 4.6 ns/char | speedup 10x / 1.9x
+
+== Didot [proven]
+   certificate: S 345  P 1  K 2  U 1 | islands up to m=4 verified: 90 islands, 62190 shapes, 0.05s | demoted 0
+
+== Didot (upem 1000)
+   distill 0.53s | repertoire 349 | glyph-changing pairs 2 | residuals 0 | classes 46x39 | model 9.7 KB
+   probes missed: 3-gram 2/300000, 4-gram 5/150000, words 0/294918, max eps 125 units
+   lines checked 154321 (x6 widths) | model width exact 100.0000% | max err 0 units | unknown-char lines 0
+   eps=0 (certified) lines 99.98%, of which wrong 0
+   paragraphs with identical breaks: model v1 100.000% v2 100.000% | hybrid 100.000% (shaped 0.019% of decisions) | shape-first 99.594% | word-cache 94.720%
+   rewrap at a new width (pass C only): 0.411 ns/char, 366 us for the whole corpus
+   speed (24408 lines): break-first v2 2.90 ns/char (344 MB/s, 106 ns/line; v1 4.15) | shape-first 80.4 ns/char | warm word-cache 4.4 ns/char | speedup 28x / 1.5x
+
+== Gill Sans [proven]
+   certificate: S 230  P 1  K 2  U 1 | islands up to m=4 verified: 90 islands, 41490 shapes, 0.02s | demoted 0
+
+== Gill Sans (upem 2048)
+   distill 0.43s | repertoire 234 | glyph-changing pairs 2 | residuals 2 | classes 45x41 | model 9.1 KB
+   probes missed: 3-gram 8/300000, 4-gram 4/150000, words 0/294918, max eps 307 units
+   lines checked 139180 (x6 widths) | model width exact 100.0000% | max err 0 units | unknown-char lines 0
+   eps=0 (certified) lines 99.98%, of which wrong 0
+   paragraphs with identical breaks: model v1 100.000% v2 100.000% | hybrid 100.000% (shaped 0.021% of decisions) | shape-first 98.839% | word-cache 90.358%
+   rewrap at a new width (pass C only): 0.384 ns/char, 342 us for the whole corpus
+   speed (22180 lines): break-first v2 2.73 ns/char (366 MB/s, 110 ns/line; v1 3.86) | shape-first 58.9 ns/char | warm word-cache 4.4 ns/char | speedup 22x / 1.6x
+
+== Futura Medium [proven]
+   certificate: S 335  P 1  K 2  U 1 | islands up to m=4 verified: 90 islands, 60390 shapes, 0.04s | demoted 0
+
+== Futura Medium (upem 2048)
+   distill 0.49s | repertoire 339 | glyph-changing pairs 2 | residuals 14 | classes 77x89 | model 29.6 KB
+   probes missed: 3-gram 12/300000, 4-gram 9/150000, words 0/294918, max eps 289 units
+   lines checked 155759 (x6 widths) | model width exact 100.0000% | max err 0 units | unknown-char lines 0
+   eps=0 (certified) lines 99.98%, of which wrong 0
+   paragraphs with identical breaks: model v1 100.000% v2 100.000% | hybrid 100.000% (shaped 0.019% of decisions) | shape-first 100.000% | word-cache 99.994%
+   rewrap at a new width (pass C only): 0.384 ns/char, 342 us for the whole corpus
+   speed (24639 lines): break-first v2 2.71 ns/char (369 MB/s, 98 ns/line; v1 4.04) | shape-first 66.4 ns/char | warm word-cache 4.3 ns/char | speedup 24x / 1.6x
+
+== Zapfino [proven]
+   certificate: S 0  P 0  K 0  U 342 | islands up to m=4 verified: 0 islands, 0 shapes, 0.00s | demoted 0
+
+== Zapfino (upem 400)
+   distill 1.14s | repertoire 342 | glyph-changing pairs 31 | residuals 579 | classes 70x75 | model 30.0 KB
+   probes missed: 3-gram 6/300000, 4-gram 2/150000, words 234/294918, max eps 320 units
+   lines checked 202765 (x6 widths) | model width exact 77.2688% | max err 690 units | unknown-char lines 0
+   eps=0 (certified) lines 0.00%, of which wrong 0
+   paragraphs with identical breaks: model v1 85.048% v2 85.048% | hybrid 100.000% (shaped 100.000% of decisions) | shape-first 97.927% | word-cache 85.048%
+   rewrap at a new width (pass C only): 846.245 ns/char, 753862 us for the whole corpus
+   speed (32160 lines): break-first v2 765.92 ns/char (1 MB/s, 21216 ns/line; v1 5.20) | shape-first 200.6 ns/char | warm word-cache 4.2 ns/char | speedup 0x / 0.0x

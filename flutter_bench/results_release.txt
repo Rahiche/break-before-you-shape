@@ -1,0 +1,16 @@
+corpus: 5170 paragraphs, 890824 UTF-16 code units; Roboto Regular 16.0px
+measure: "a"=8.703125 " "=3.9609375 "a "=12.6640625 " a"=12.6640625 "AV"=19.9375 "A"+"V"=20.6171875 "fi"=8.859375 "f"+"i"=9.4375
+sidecar: Roboto: 364 characters, 132496 pairs, 90 islands up to m=4; 197930 layouts in 2634 ms; 800685 bytes (11266 gzipped)
+model covers 5163/5170 paragraphs; max |model - Flutter| single-line width: 0.00e+0 px
+width 150.0px: identical breaks in 4795/4795 paragraphs (45437 lines); 368 deferred to Flutter
+width 670.8px: identical breaks in 5148/5148 paragraphs (11803 lines); 15 deferred to Flutter
+ALL 25 widths: identical breaks in 127440/127440 paragraph layouts (535338 lines); 1635 deferred to Flutter (1.27%)
+layout of all 5170 paragraphs at 400px (line counts), ms:
+  Flutter TextPainter        296.67  (first run 294.55)
+  Flutter ui.Paragraph       288.26
+  break-first (+ fallbacks)  14.21  (first run 16.37)
+  speedup vs TextPainter 20.9x, vs ui.Paragraph 20.3x; 15.95 ns per code unit
+resize (re-wrap already laid-out paragraphs at a new width), ms:
+  Flutter ui.Paragraph.layout  91.32
+  break-first (cached records) 1.99
+  speedup 45.8x

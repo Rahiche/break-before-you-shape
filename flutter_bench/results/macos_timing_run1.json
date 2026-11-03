@@ -1,0 +1,477 @@
+{
+ "platform": "macos",
+ "mode": "all",
+ "sidecar": {
+  "bytes": 573104,
+  "loadMs": 3.507,
+  "describe": "Roboto: 699 characters, pair classes 114x121, 90 islands up to m=4"
+ },
+ "fontSizeQuantized": false,
+ "canary": {
+  "probes": 5,
+  "maxErrPx": 0.0,
+  "pass": true
+ },
+ "validate": {
+  "en_docs": {
+   "paragraphs": 5170,
+   "covered": 5166,
+   "identical": 365378,
+   "different": 0,
+   "deferred": 6574,
+   "lines": 1524566,
+   "heightIdentical": 365378,
+   "heightChecked": 365378,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     61055,
+     0,
+     937
+    ],
+    "13.0": [
+     61055,
+     0,
+     937
+    ],
+    "16.0": [
+     61055,
+     0,
+     937
+    ],
+    "18.4": [
+     60579,
+     0,
+     1413
+    ],
+    "21.3": [
+     60579,
+     0,
+     1413
+    ],
+    "24.0": [
+     61055,
+     0,
+     937
+    ]
+   }
+  },
+  "en_man": {
+   "paragraphs": 5000,
+   "covered": 4976,
+   "identical": 351491,
+   "different": 0,
+   "deferred": 6781,
+   "lines": 1841999,
+   "heightIdentical": 351491,
+   "heightChecked": 351491,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     58905,
+     0,
+     807
+    ],
+    "13.0": [
+     58757,
+     0,
+     955
+    ],
+    "16.0": [
+     58905,
+     0,
+     807
+    ],
+    "18.4": [
+     58006,
+     0,
+     1706
+    ],
+    "21.3": [
+     58013,
+     0,
+     1699
+    ],
+    "24.0": [
+     58905,
+     0,
+     807
+    ]
+   }
+  },
+  "en_legal": {
+   "paragraphs": 1285,
+   "covered": 1273,
+   "identical": 89466,
+   "different": 0,
+   "deferred": 2190,
+   "lines": 706709,
+   "heightIdentical": 89466,
+   "heightChecked": 89466,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     15058,
+     0,
+     218
+    ],
+    "13.0": [
+     14995,
+     0,
+     281
+    ],
+    "16.0": [
+     15058,
+     0,
+     218
+    ],
+    "18.4": [
+     14649,
+     0,
+     627
+    ],
+    "21.3": [
+     14648,
+     0,
+     628
+    ],
+    "24.0": [
+     15058,
+     0,
+     218
+    ]
+   }
+  },
+  "ui_en": {
+   "paragraphs": 4000,
+   "covered": 3993,
+   "identical": 287226,
+   "different": 0,
+   "deferred": 270,
+   "lines": 473356,
+   "heightIdentical": 287226,
+   "heightChecked": 287226,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     47882,
+     0,
+     34
+    ],
+    "13.0": [
+     47882,
+     0,
+     34
+    ],
+    "16.0": [
+     47882,
+     0,
+     34
+    ],
+    "18.4": [
+     47845,
+     0,
+     71
+    ],
+    "21.3": [
+     47853,
+     0,
+     63
+    ],
+    "24.0": [
+     47882,
+     0,
+     34
+    ]
+   }
+  },
+  "ui_de": {
+   "paragraphs": 4000,
+   "covered": 3993,
+   "identical": 286413,
+   "different": 0,
+   "deferred": 1083,
+   "lines": 539191,
+   "heightIdentical": 286413,
+   "heightChecked": 286413,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     47754,
+     0,
+     162
+    ],
+    "13.0": [
+     47754,
+     0,
+     162
+    ],
+    "16.0": [
+     47754,
+     0,
+     162
+    ],
+    "18.4": [
+     47698,
+     0,
+     218
+    ],
+    "21.3": [
+     47699,
+     0,
+     217
+    ],
+    "24.0": [
+     47754,
+     0,
+     162
+    ]
+   }
+  },
+  "ui_fr": {
+   "paragraphs": 4000,
+   "covered": 3996,
+   "identical": 283965,
+   "different": 0,
+   "deferred": 3747,
+   "lines": 455103,
+   "heightIdentical": 283965,
+   "heightChecked": 283965,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     47336,
+     0,
+     616
+    ],
+    "13.0": [
+     47336,
+     0,
+     616
+    ],
+    "16.0": [
+     47336,
+     0,
+     616
+    ],
+    "18.4": [
+     47309,
+     0,
+     643
+    ],
+    "21.3": [
+     47312,
+     0,
+     640
+    ],
+    "24.0": [
+     47336,
+     0,
+     616
+    ]
+   }
+  },
+  "ui_ru": {
+   "paragraphs": 4000,
+   "covered": 3990,
+   "identical": 286658,
+   "different": 0,
+   "deferred": 622,
+   "lines": 555907,
+   "heightIdentical": 286658,
+   "heightChecked": 286658,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     47791,
+     0,
+     89
+    ],
+    "13.0": [
+     47791,
+     0,
+     89
+    ],
+    "16.0": [
+     47791,
+     0,
+     89
+    ],
+    "18.4": [
+     47746,
+     0,
+     134
+    ],
+    "21.3": [
+     47748,
+     0,
+     132
+    ],
+    "24.0": [
+     47791,
+     0,
+     89
+    ]
+   }
+  },
+  "ui_uk": {
+   "paragraphs": 4000,
+   "covered": 3993,
+   "identical": 286930,
+   "different": 0,
+   "deferred": 566,
+   "lines": 534979,
+   "heightIdentical": 286930,
+   "heightChecked": 286930,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     47832,
+     0,
+     84
+    ],
+    "13.0": [
+     47832,
+     0,
+     84
+    ],
+    "16.0": [
+     47832,
+     0,
+     84
+    ],
+    "18.4": [
+     47801,
+     0,
+     115
+    ],
+    "21.3": [
+     47801,
+     0,
+     115
+    ],
+    "24.0": [
+     47832,
+     0,
+     84
+    ]
+   }
+  },
+  "ui_el": {
+   "paragraphs": 4000,
+   "covered": 3995,
+   "identical": 287375,
+   "different": 0,
+   "deferred": 265,
+   "lines": 569480,
+   "heightIdentical": 287375,
+   "heightChecked": 287375,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     47912,
+     0,
+     28
+    ],
+    "13.0": [
+     47912,
+     0,
+     28
+    ],
+    "16.0": [
+     47912,
+     0,
+     28
+    ],
+    "18.4": [
+     47863,
+     0,
+     77
+    ],
+    "21.3": [
+     47864,
+     0,
+     76
+    ],
+    "24.0": [
+     47912,
+     0,
+     28
+    ]
+   }
+  },
+  "sizes": [
+   12.0,
+   13.0,
+   16.0,
+   18.4,
+   21.3,
+   24.0
+  ],
+  "widthSteps": 12,
+  "lineStartMethodCheck": {
+   "checked": 23666,
+   "disagree": 0
+  },
+  "mismatchExamples": []
+ },
+ "timing": {
+  "docs": {
+   "paragraphsAll": 5170,
+   "paragraphs": 5089,
+   "codeUnits": 870779,
+   "size": 16.0,
+   "width": 400.0,
+   "textPainterMs": 223.846,
+   "uiParagraphMs": 221.986,
+   "breakFirstMs": 13.506,
+   "wordCacheColdMs": 267.224,
+   "wordCacheWarmMs": 11.512,
+   "wordCacheIdentical": 5086,
+   "wordCacheChecked": 5089,
+   "textPainterAllMs": 228.65,
+   "breakFirstAllMs": 14.549,
+   "relayoutFlutterMs": 17.715,
+   "relayoutBreakFirstMs": 1.462,
+   "relayoutWordCacheMs": 3.221,
+   "breakFirstNsPerCodeUnit": 15.510250017513055
+  },
+  "chat": {
+   "paragraphsAll": 24000,
+   "paragraphs": 23736,
+   "codeUnits": 1342438,
+   "size": 16.0,
+   "width": 280.0,
+   "textPainterMs": 568.646,
+   "uiParagraphMs": 563.882,
+   "breakFirstMs": 26.047,
+   "wordCacheColdMs": 408.945,
+   "wordCacheWarmMs": 27.642,
+   "wordCacheIdentical": 23733,
+   "wordCacheChecked": 23736,
+   "textPainterAllMs": 593.868,
+   "breakFirstAllMs": 26.99,
+   "relayoutFlutterMs": 42.848,
+   "relayoutBreakFirstMs": 5.259,
+   "relayoutWordCacheMs": 5.135,
+   "breakFirstNsPerCodeUnit": 19.402758265186176
+  },
+  "listExtents": {
+   "messages": 24000,
+   "breakFirstMs": 35.823,
+   "textPainterMs": 586.644,
+   "heightsEqual": 24000,
+   "maxScrollOffsetErrPx": 0.0,
+   "totalExtentPx": 952831.0
+  }
+ }
+}

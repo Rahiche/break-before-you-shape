@@ -1,0 +1,17 @@
+{
+ "font": "Roboto",
+ "upem": 2048,
+ "characters": 699,
+ "pairClasses": [
+  114,
+  121
+ ],
+ "islands": 90,
+ "m": 4,
+ "layouts": 614675,
+ "buildMs": 8472,
+ "nonIntegralMeasurements": 0,
+ "bytes": 573104,
+ "gzipBytes": 10357,
+ "lineHeightUnits": 2400.0
+}

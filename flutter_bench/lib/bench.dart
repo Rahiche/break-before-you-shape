@@ -1,0 +1,500 @@
+// Experiments for the paper, run against Flutter's own text stack: building the
+// sidecar, exactness (line breaks and heights) across corpora, sizes and widths,
+// and timing against TextPainter, ui.Paragraph and a per-word cache. Every
+// result goes into one JSON map.
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
+import 'package:flutter/painting.dart';
+import 'package:flutter/services.dart';
+
+import 'breakfirst.dart';
+
+const family = 'BFRoboto';
+const corpora = ['en_docs', 'en_man', 'en_legal', 'ui_en', 'ui_de', 'ui_fr', 'ui_ru', 'ui_uk', 'ui_el'];
+const chatCorpora = ['ui_en', 'ui_de', 'ui_fr', 'ui_ru', 'ui_uk', 'ui_el'];
+
+final _ps = ui.ParagraphStyle(textDirection: ui.TextDirection.ltr);
+
+ui.Paragraph paragraph(String s, double width, double size) {
+  final b = ui.ParagraphBuilder(_ps)
+    ..pushStyle(ui.TextStyle(fontFamily: family, fontSize: size))
+    ..addText(s);
+  return b.build()..layout(ui.ParagraphConstraints(width: width));
+}
+
+/// Width of [s] on one line, trailing spaces included (cluster advances).
+double measure(String s, double size) {
+  final p = paragraph(s, double.infinity, size);
+  var r = 0.0;
+  for (final b in p.getBoxesForRange(0, s.length)) {
+    if (b.right > r) r = b.right;
+  }
+  p.dispose();
+  return r;
+}
+
+/// Flutter's line starts, one query per line: the text position at the left edge
+/// of each line. [flutterLineStartsSlow] asks every character for its line and is
+/// used to check this one.
+List<int> flutterLineStarts(ui.Paragraph p, String s) {
+  final starts = <int>[0];
+  final lines = p.computeLineMetrics();
+  for (var i = 1; i < lines.length; i++) {
+    final lm = lines[i];
+    starts.add(p.getPositionForOffset(ui.Offset(0, lm.baseline - lm.ascent / 2)).offset);
+  }
+  return starts;
+}
+
+List<int> flutterLineStartsSlow(ui.Paragraph p, String s) {
+  final starts = <int>[0];
+  var last = p.getLineNumberAt(0) ?? 0;
+  for (var i = 1; i < s.length; i++) {
+    final ln = p.getLineNumberAt(i);
+    if (ln != null && ln != last) {
+      starts.add(i);
+      last = ln;
+    }
+  }
+  return starts;
+}
+
+Future<Uint8List> loadFont() async {
+  final data = await rootBundle.load('assets/Roboto-Regular.ttf');
+  await (FontLoader(family)..addFont(Future.value(data))).load();
+  return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+}
+
+int upemOf(Uint8List font) {
+  final bd = ByteData.sublistView(font);
+  final n = bd.getUint16(4);
+  for (var i = 0; i < n; i++) {
+    final rec = 12 + 16 * i;
+    if (String.fromCharCodes(font.sublist(rec, rec + 4)) == 'head') return bd.getUint16(bd.getUint32(rec + 8) + 18);
+  }
+  throw StateError('no head table');
+}
+
+Future<List<String>> loadCorpus(String name) async =>
+    (await rootBundle.loadString('assets/$name.txt')).split('\n').where((p) => p.isNotEmpty).toList();
+
+/// Build step (run on the host, under flutter_tester): measure Flutter at
+/// size = units per em and return the sidecar plus build statistics.
+Future<(WidthModel, Map<String, Object?>)> buildSidecar() async {
+  final font = await loadFont();
+  final upem = upemOf(font);
+  final cert = await rootBundle.loadString('assets/roboto.cert');
+  final sw = Stopwatch()..start();
+  var calls = 0, nonIntegral = 0;
+  final size = upem.toDouble();
+  final lineHeight = paragraph('Hg', double.infinity, size).height;
+  final model = WidthModel.distill(cert, (s) {
+    calls++;
+    final w = measure(s, size);
+    if ((w - w.roundToDouble()).abs() > 1e-3) nonIntegral++;
+    return w;
+  }, upem, lineHeight);
+  final ms = sw.elapsedMilliseconds;
+  final bytes = model.encode();
+  return (
+    model,
+    {
+      'font': model.name, 'upem': upem, 'characters': model.n1 - 1, 'pairClasses': [model.cls.length ~/ model.nS, model.nS],
+      'islands': model.islandCount, 'm': model.m, 'layouts': calls, 'buildMs': ms, 'nonIntegralMeasurements': nonIntegral,
+      'bytes': bytes.length, 'gzipBytes': gzip.encode(bytes).length, 'lineHeightUnits': lineHeight,
+    }
+  );
+}
+
+/// Canary: the shipped sidecar must reproduce Flutter's widths on this device.
+Map<String, Object?> canary(WidthModel md) {
+  var maxErr = 0.0;
+  for (final e in md.probes.entries) {
+    final flutter = measure(e.key, 16.0) / (16.0 / md.upem);
+    final err = (flutter - e.value).abs() * 16.0 / md.upem;
+    if (err > maxErr) maxErr = err;
+  }
+  return {'probes': md.probes.length, 'maxErrPx': maxErr, 'pass': maxErr < 1e-3};
+}
+
+/// Exactness of line breaks and heights against Flutter's layout.
+Future<Map<String, Object?>> validate(WidthModel md, {int sample = 100000, List<double>? sizes, int widthSteps = 12}) async {
+  sizes ??= [12.0, 13.0, 16.0, 18.4, 21.3, 24.0];
+  final out = <String, Object?>{};
+  var examples = <String>[];
+  var startsChecked = 0, startsDisagree = 0;
+  for (final name in corpora) {
+    final all = await loadCorpus(name);
+    final paras = all.length > sample ? [for (var i = 0; i < sample; i++) all[(i * all.length) ~/ sample]] : all;
+    final records = [for (final p in paras) buildRecords(md, p)];
+    var same = 0, diff = 0, deferred = 0, lines = 0, heightSame = 0, heightChecked = 0;
+    final perSize = <String, List<int>>{}; // size -> [identical, different, deferred]
+    var maxHeightErr = 0.0, maxWidthErr = 0.0;
+    for (final size in sizes) {
+      final scale = scaleFor(md, size);
+      for (var k = 0; k < widthSteps; k++) {
+        // Line widths from about 9 to 45 em, as a list item or column would be.
+        final w = size * (9.0 + k * 36.0 / (widthSteps - 1));
+        for (var i = 0; i < paras.length; i++) {
+          final r = records[i];
+          if (r == null) continue;
+          final ours = r.lineStarts(w, scale);
+          final ps = perSize.putIfAbsent('$size', () => [0, 0, 0]);
+          if (ours == null) {
+            deferred++;
+            ps[2]++;
+            continue;
+          }
+          final p = paragraph(paras[i], w, size);
+          final theirs = flutterLineStarts(p, paras[i]);
+          if (i < 150 && k % 4 == 0) {
+            final slow = flutterLineStartsSlow(p, paras[i]);
+            startsChecked++;
+            if (slow.length != theirs.length || [for (var j = 0; j < slow.length; j++) slow[j] == theirs[j]].contains(false)) {
+              startsDisagree++;
+            }
+          }
+          lines += theirs.length;
+          var eq = ours.length == theirs.length;
+          for (var j = 0; eq && j < ours.length; j++) {
+            eq = ours[j] == theirs[j];
+          }
+          if (eq) {
+            same++;
+            ps[0]++;
+            heightChecked++;
+            final hErr = (ours.length * lineHeightPx(md, size) - p.height).abs();
+            if (hErr < 1e-3) heightSame++;
+            if (hErr > maxHeightErr) maxHeightErr = hErr;
+          } else {
+            diff++;
+            ps[1]++;
+            if (examples.length < 10) {
+              examples.add('$name size=$size w=${w.toStringAsFixed(1)} para=$i ours=$ours flutter=$theirs | '
+                  '${paras[i].substring(0, paras[i].length.clamp(0, 140))}');
+            }
+          }
+          p.dispose();
+        }
+      }
+    }
+    // Single-line widths at 16 px against Flutter.
+    for (var i = 0; i < paras.length && i < 400; i++) {
+      final r = records[i];
+      if (r == null) continue;
+      final e = (r.prefix[paras[i].length] * 16.0 / md.upem - measure(paras[i], 16.0)).abs();
+      if (e > maxWidthErr) maxWidthErr = e;
+    }
+    final covered = records.where((r) => r != null).length;
+    out[name] = {
+      'paragraphs': paras.length, 'covered': covered, 'identical': same, 'different': diff, 'deferred': deferred,
+      'lines': lines, 'heightIdentical': heightSame, 'heightChecked': heightChecked, 'maxHeightErrPx': maxHeightErr,
+      'maxSingleLineWidthErrPx': maxWidthErr, 'perSize': perSize,
+    };
+  }
+  out['sizes'] = sizes;
+  out['widthSteps'] = widthSteps;
+  out['lineStartMethodCheck'] = {'checked': startsChecked, 'disagree': startsDisagree};
+  out['mismatchExamples'] = examples;
+  return out;
+}
+
+/// A per-word cache in the style of Pretext or Minikin: each word measured once
+/// with ui.Paragraph, lines from cached word widths plus space widths.
+class WordCache {
+  WordCache(this.size);
+  final double size;
+  final Map<String, double> cache = {};
+  late final double space = measure(' ', size);
+
+  double word(String w) => cache[w] ??= measure(w, size);
+
+  /// Line count, with the same break opportunities as break-first (found here,
+  /// per call, as a word cache's segmentation step would).
+  int lineCount(String t, double maxWidth) {
+    final o = breakOpportunities(t);
+    if (o == null) return -1;
+    final (ends, nexts) = o;
+    final count = ends.length;
+    final segW = Float64List(count);
+    for (var j = 0; j < count; j++) {
+      segW[j] = word(t.substring(j == 0 ? 0 : nexts[j - 1], ends[j]));
+    }
+    var n = 1, k = 0;
+    for (;;) {
+      var best = -1;
+      var w = 0.0;
+      for (var j = k; j < count; j++) {
+        if (j > k) w += (nexts[j - 1] - ends[j - 1]) * space;
+        w += segW[j];
+        if (fitsLine(w, maxWidth)) {
+          best = j;
+        } else {
+          break;
+        }
+      }
+      if (best < 0) best = k;
+      if (best == count - 1) return n;
+      k = best + 1;
+      n++;
+    }
+  }
+}
+
+double _median(List<double> xs) => (xs.toList()..sort())[xs.length ~/ 2];
+
+/// Timing: every method lays out every paragraph at one width and reports line
+/// counts and heights, as a list computing item extents would.
+Future<Map<String, Object?>> timing(WidthModel md, {int reps = 5}) async {
+  final out = <String, Object?>{};
+  Future<void> runOn(String label, List<String> all, double size, double w) async {
+    final scale = scaleFor(md, size);
+    final style = TextStyle(fontFamily: family, fontSize: size);
+    final w2s = [w * 0.75, w * 1.25];
+    // Speed is compared on the paragraphs break-first decides itself (at w and at
+    // both re-wrap widths), so every method does the same work. End-to-end times
+    // over all paragraphs, fallbacks included, are reported separately.
+    final paras = [
+      for (final p in all)
+        if (() {
+          final r = buildRecords(md, p);
+          return r != null && r.lineCount(w, scale) >= 0 && w2s.every((x) => r.lineCount(x, scale) >= 0);
+        }())
+          p
+    ];
+    final units = paras.fold<int>(0, (a, p) => a + p.length);
+    double textPainter(List<String> ps) {
+      final sw = Stopwatch()..start();
+      var h = 0.0;
+      for (final p in ps) {
+        final tp = TextPainter(text: TextSpan(text: p, style: style), textDirection: TextDirection.ltr)
+          ..layout(maxWidth: w);
+        h += tp.height;
+        tp.dispose();
+      }
+      if (h < 0) stdout.writeln(h);
+      return sw.elapsedMicroseconds / 1000;
+    }
+
+    double uiParagraph() {
+      final sw = Stopwatch()..start();
+      var h = 0.0;
+      for (final p in paras) {
+        final para = paragraph(p, w, size);
+        h += para.height;
+        para.dispose();
+      }
+      if (h < 0) stdout.writeln(h);
+      return sw.elapsedMicroseconds / 1000;
+    }
+
+    double breakFirst(List<String> ps) {
+      final sw = Stopwatch()..start();
+      var h = 0.0;
+      for (final p in ps) {
+        final c = buildRecords(md, p)?.lineCount(w, scale) ?? -1;
+        if (c >= 0) {
+          h += c * lineHeightPx(md, size);
+        } else {
+          final para = paragraph(p, w, size); // not decided: Flutter lays it out
+          h += para.height;
+          para.dispose();
+        }
+      }
+      if (h < 0) stdout.writeln(h);
+      return sw.elapsedMicroseconds / 1000;
+    }
+
+    double wordCache(WordCache wc) {
+      final sw = Stopwatch()..start();
+      var n = 0;
+      for (final p in paras) {
+        n += wc.lineCount(p, w);
+      }
+      if (n < 0) stdout.writeln(n);
+      return sw.elapsedMicroseconds / 1000;
+    }
+
+    textPainter(paras); // warm-up
+    breakFirst(paras);
+    final tp = _median([for (var k = 0; k < reps; k++) textPainter(paras)]);
+    final up = _median([for (var k = 0; k < reps; k++) uiParagraph()]);
+    final bf = _median([for (var k = 0; k < reps; k++) breakFirst(paras)]);
+    final wcCold = wordCache(WordCache(size));
+    final warm = WordCache(size);
+    wordCache(warm);
+    final wcWarm = _median([for (var k = 0; k < reps; k++) wordCache(warm)]);
+    final tpAll = _median([for (var k = 0; k < reps; k++) textPainter(all)]);
+    final bfAll = _median([for (var k = 0; k < reps; k++) breakFirst(all)]);
+    // Word cache exactness.
+    var wcSame = 0;
+    for (final s in paras) {
+      final p = paragraph(s, w, size);
+      final flutter = p.computeLineMetrics().length;
+      p.dispose();
+      if (warm.lineCount(s, w) == flutter) wcSame++;
+    }
+    // Re-wrap at a new width: Flutter re-lays out existing paragraphs (no
+    // reshaping); break-first re-runs only the greedy pass over its records; the
+    // word cache re-runs its greedy pass over cached segment widths.
+    final laid = [for (final p in paras) paragraph(p, w, size)];
+    final recs = [for (final p in paras) buildRecords(md, p)!];
+    final segs = [
+      for (final p in paras)
+        () {
+          final (ends, nexts) = breakOpportunities(p)!;
+          final sw = Float64List(ends.length), gap = Float64List(ends.length);
+          for (var j = 0; j < ends.length; j++) {
+            sw[j] = warm.word(p.substring(j == 0 ? 0 : nexts[j - 1], ends[j]));
+            gap[j] = (nexts[j] - ends[j]) * warm.space;
+          }
+          return (sw, gap);
+        }()
+    ];
+    double relayoutFlutter(double w2) {
+      final sw = Stopwatch()..start();
+      var h = 0.0;
+      for (final p in laid) {
+        p.layout(ui.ParagraphConstraints(width: w2));
+        h += p.height;
+      }
+      if (h < 0) stdout.writeln(h);
+      return sw.elapsedMicroseconds / 1000;
+    }
+
+    double relayoutBF(double w2) {
+      final sw = Stopwatch()..start();
+      var h = 0.0;
+      for (final r in recs) {
+        h += r.lineCount(w2, scale) * lineHeightPx(md, size);
+      }
+      if (h < 0) stdout.writeln(h);
+      return sw.elapsedMicroseconds / 1000;
+    }
+
+    double relayoutWC(double w2) {
+      final sw = Stopwatch()..start();
+      var n = 0;
+      for (final (segW, gap) in segs) {
+        var lines = 1, k = 0;
+        for (;;) {
+          var best = -1;
+          var x = 0.0;
+          for (var j = k; j < segW.length; j++) {
+            if (j > k) x += gap[j - 1];
+            x += segW[j];
+            if (fitsLine(x, w2)) {
+              best = j;
+            } else {
+              break;
+            }
+          }
+          if (best < 0) best = k;
+          if (best == segW.length - 1) break;
+          k = best + 1;
+          lines++;
+        }
+        n += lines;
+      }
+      if (n < 0) stdout.writeln(n);
+      return sw.elapsedMicroseconds / 1000;
+    }
+
+    final rf = _median([for (var k = 0; k < reps; k++) relayoutFlutter(w2s[k % 2])]);
+    final rb = _median([for (var k = 0; k < reps; k++) relayoutBF(w2s[k % 2])]);
+    final rw = _median([for (var k = 0; k < reps; k++) relayoutWC(w2s[k % 2])]);
+    for (final p in laid) {
+      p.dispose();
+    }
+    out[label] = {
+      'paragraphsAll': all.length, 'paragraphs': paras.length, 'codeUnits': units, 'size': size, 'width': w,
+      'textPainterMs': tp, 'uiParagraphMs': up, 'breakFirstMs': bf, 'wordCacheColdMs': wcCold, 'wordCacheWarmMs': wcWarm,
+      'wordCacheIdentical': wcSame, 'wordCacheChecked': paras.length,
+      'textPainterAllMs': tpAll, 'breakFirstAllMs': bfAll,
+      'relayoutFlutterMs': rf, 'relayoutBreakFirstMs': rb, 'relayoutWordCacheMs': rw,
+      'breakFirstNsPerCodeUnit': 1e6 * bf / units,
+    };
+  }
+
+  await runOn('docs', await loadCorpus('en_docs'), 16.0, 400.0);
+  final chat = <String>[for (final c in chatCorpora) ...await loadCorpus(c)];
+  await runOn('chat', chat, 16.0, 280.0);
+
+  // Exact item extents for a long chat list: every height, both ways.
+  final scale = scaleFor(md, 16.0);
+  final sw = Stopwatch()..start();
+  final ours = [
+    for (final m in chat)
+      () {
+        final c = buildRecords(md, m)?.lineCount(280.0, scale) ?? -1;
+        if (c >= 0) return c * lineHeightPx(md, 16.0);
+        final p = paragraph(m, 280.0, 16.0);
+        final h = p.height;
+        p.dispose();
+        return h;
+      }()
+  ];
+  final bfMs = sw.elapsedMicroseconds / 1000;
+  sw.reset();
+  final style = TextStyle(fontFamily: family, fontSize: 16.0);
+  final theirs = [
+    for (final m in chat)
+      () {
+        final tp = TextPainter(text: TextSpan(text: m, style: style), textDirection: TextDirection.ltr)
+          ..layout(maxWidth: 280.0);
+        final h = tp.height;
+        tp.dispose();
+        return h;
+      }()
+  ];
+  final tpMs = sw.elapsedMicroseconds / 1000;
+  var equal = 0;
+  var offsetErr = 0.0, a = 0.0, b = 0.0;
+  for (var i = 0; i < chat.length; i++) {
+    if ((ours[i] - theirs[i]).abs() < 1e-3) equal++;
+    a += ours[i];
+    b += theirs[i];
+    if ((a - b).abs() > offsetErr) offsetErr = (a - b).abs();
+  }
+  out['listExtents'] = {
+    'messages': chat.length, 'breakFirstMs': bfMs, 'textPainterMs': tpMs, 'heightsEqual': equal,
+    'maxScrollOffsetErrPx': offsetErr, 'totalExtentPx': b,
+  };
+  return out;
+}
+
+Future<Map<String, Object?>> runApp({String mode = 'all', int sample = 100000}) async {
+  final result = <String, Object?>{'platform': Platform.operatingSystem, 'mode': mode};
+  await loadFont();
+  final bytes = (await rootBundle.load('assets/roboto.bfw')).buffer.asUint8List();
+  final sw = Stopwatch()..start();
+  final md = WidthModel.decode(bytes);
+  result['sidecar'] = {'bytes': bytes.length, 'loadMs': sw.elapsedMicroseconds / 1000, 'describe': md.describe()};
+  calibrateFontSize(md, measure);
+  result['fontSizeQuantized'] = quantizeFontSize;
+  result['canary'] = canary(md);
+  if (mode == 'sizes') result['sizes'] = await sizeProbe(md);
+  if (mode == 'all' || mode == 'validate') result['validate'] = await validate(md, sample: sample);
+  if (mode == 'all' || mode == 'timing') result['timing'] = await timing(md);
+  return result;
+}
+
+/// How Flutter's widths at a font size compare with the model's linear scaling:
+/// the effective size each measurement implies.
+Future<Map<String, Object?>> sizeProbe(WidthModel md) async {
+  final texts = (await loadCorpus('en_docs')).take(40).toList();
+  final out = <String, Object?>{};
+  for (final size in [12.0, 13.0, 16.0, 17.5, 18.4, 21.3, 24.0, 15.7]) {
+    final eff = <double>[];
+    for (final t in texts) {
+      final r = buildRecords(md, t);
+      if (r == null) continue;
+      eff.add(measure(t, size) / r.prefix[t.length] * md.upem);
+    }
+    eff.sort();
+    out['$size'] = {'minEffectiveSize': eff.first, 'maxEffectiveSize': eff.last};
+  }
+  return out;
+}

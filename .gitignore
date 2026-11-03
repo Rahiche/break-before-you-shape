@@ -1,0 +1,27 @@
+# Build outputs
+/bfl
+__pycache__/
+*.pyc
+
+# Work in progress from other sessions (not part of the paper)
+/experiments/
+/flutter_render/
+
+# Corpora are extracted from this machine's files (Python docstrings, macOS man
+# pages, licence texts, macOS UI strings); regenerate them instead of shipping them.
+/corpus.txt
+/corpora/
+/flutter_bench/assets/*.txt
+!/flutter_bench/assets/Roboto_LICENSE.txt
+
+# Per-font certificates of the system fonts (derived from Apple's fonts) and logs
+/certs/
+/certs_all/
+/census/certs/
+*_log.txt
+/flutter_bench/results/*.log
+/flutter_bench/results/android_logcat.txt
+
+# Tooling
+.claude/
+.DS_Store

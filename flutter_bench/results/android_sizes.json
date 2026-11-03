@@ -1,0 +1,49 @@
+{
+ "platform": "android",
+ "mode": "sizes",
+ "sidecar": {
+  "bytes": 573104,
+  "loadMs": 78.808,
+  "describe": "Roboto: 699 characters, pair classes 114x121, 90 islands up to m=4"
+ },
+ "canary": {
+  "probes": 5,
+  "maxErrPx": 0.0,
+  "pass": true
+ },
+ "sizes": {
+  "12.0": {
+   "minEffectiveSize": 12.0,
+   "maxEffectiveSize": 12.0
+  },
+  "13.0": {
+   "minEffectiveSize": 13.0,
+   "maxEffectiveSize": 13.0
+  },
+  "16.0": {
+   "minEffectiveSize": 16.0,
+   "maxEffectiveSize": 16.0
+  },
+  "17.5": {
+   "minEffectiveSize": 17.5,
+   "maxEffectiveSize": 17.500006114274036
+  },
+  "18.4": {
+   "minEffectiveSize": 18.390590025730603,
+   "maxEffectiveSize": 18.390639938810633
+  },
+  "21.3": {
+   "minEffectiveSize": 21.296857979302832,
+   "maxEffectiveSize": 21.296898665516018
+  },
+  "24.0": {
+   "minEffectiveSize": 24.0,
+   "maxEffectiveSize": 24.0
+  },
+  "15.7": {
+   "minEffectiveSize": 15.687430705185866,
+   "maxEffectiveSize": 15.687502474668394
+  }
+ },
+ "source": "results/android_sizes.log (BF_MODE=sizes, emulator-5554, release); effective size = Flutter width / model width in units * upem"
+}

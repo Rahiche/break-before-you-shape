@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Break Before You Shape</title>
+<style>
+  :root { --ink:#1f2328; --muted:#59636e; --rule:#d0d7de; --accent:#0969da; --bg:#ffffff; --soft:#f6f8fa;
+          --s:#dafbe1; --p:#ddf4ff; --k:#fff8c5; --u:#ffebe9; --hot:#fff1e5; --new:#ddf4ff; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --ink:#e6edf3; --muted:#9198a1; --rule:#3d444d; --accent:#4493f8; --bg:#0d1117; --soft:#151b23;
+    --s:#1b3a28; --p:#0c2d4a; --k:#3b3214; --u:#4a1d1d; --hot:#3a2a12; --new:#0c2d4a; } }
+  :root[data-theme="dark"] { --ink:#e6edf3; --muted:#9198a1; --rule:#3d444d; --accent:#4493f8; --bg:#0d1117; --soft:#151b23;
+    --s:#1b3a28; --p:#0c2d4a; --k:#3b3214; --u:#4a1d1d; --hot:#3a2a12; --new:#0c2d4a; }
+  @page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+  html { background: var(--bg); }
+  body { font: 10.2pt/1.45 "Charter", "Georgia", serif; color: var(--ink); background: var(--bg); max-width: 860px;
+         margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font: 700 22pt/1.15 "Avenir Next", "Helvetica Neue", sans-serif; margin: 6px 0 2px; letter-spacing: -0.01em; }
+  .subtitle { font: 500 12.5pt/1.3 "Avenir Next", "Helvetica Neue", sans-serif; color: var(--muted); margin: 0 0 6px; }
+  .meta { font: 9pt "Avenir Next", sans-serif; color: var(--muted); margin-bottom: 14px; }
+  h2 { font: 700 12.5pt "Avenir Next", "Helvetica Neue", sans-serif; margin: 20px 0 6px; border-top: 1px solid var(--rule);
+       padding-top: 10px; }
+  h3 { font: 600 10.5pt "Avenir Next", "Helvetica Neue", sans-serif; margin: 12px 0 4px; }
+  p { margin: 0 0 7px; text-align: justify; hyphens: auto; }
+  .abstract { background: var(--soft); border-left: 3px solid var(--accent); padding: 10px 14px; margin: 8px 0 12px; }
+  .abstract p { margin: 0; }
+  ul, ol { margin: 4px 0 8px 18px; padding: 0; }
+  li { margin: 2px 0; }
+  figure { margin: 12px 0 14px; break-inside: avoid; }
+  figure svg { width: 100%; height: auto; display: block; }
+  /* Charts are drawn for a light background: keep them on a light card in dark mode. */
+  figure svg:not(.pipe) { background: #ffffff; border-radius: 6px; padding: 6px; box-sizing: border-box; }
+  figcaption { font: 8.6pt/1.35 "Avenir Next", "Helvetica Neue", sans-serif; color: var(--muted); margin-top: 4px; }
+  figcaption b { color: var(--ink); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  table { border-collapse: collapse; width: 100%; font: 8.8pt/1.35 "Avenir Next", "Helvetica Neue", sans-serif; margin: 6px 0 4px; }
+  th, td { border-bottom: 1px solid var(--rule); padding: 4px 6px; text-align: left; vertical-align: top; }
+  th { font-weight: 600; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .k { font-variant-numeric: tabular-nums; }
+  .theorem { border: 1px solid var(--rule); border-radius: 6px; padding: 8px 12px; margin: 8px 0; background: var(--soft); }
+  .classes { font: 13pt/2 "Roboto", "Helvetica Neue", sans-serif; letter-spacing: 0.5px; }
+  .classes span { padding: 2px 1px; border-radius: 2px; }
+  .c-S { background: var(--s); } .c-P { background: var(--p); outline: 1px solid var(--accent); }
+  .c-K { background: var(--k); } .c-U { background: var(--u); text-decoration: underline wavy #cf222e; }
+  .legend span { display: inline-block; padding: 0 6px; margin-right: 6px; border-radius: 3px; font: 8.5pt "Avenir Next", sans-serif; }
+  code { font: 8.8pt "SF Mono", Menlo, monospace; }
+  .pipe text { font: 11px "Avenir Next", "Helvetica Neue", sans-serif; fill: var(--ink); }
+  .pipe .box { fill: var(--soft); stroke: var(--rule); }
+  .pipe .hot { fill: var(--hot); stroke: #d4a72c; }
+  .pipe .new { fill: var(--new); stroke: var(--accent); }
+  .pipe .lbl { font-weight: 600; }
+  .pipe .arrow { stroke: var(--muted); stroke-width: 1.2; marker-end: url(#ah); fill: none; }
+  @media (max-width: 640px) { .two { grid-template-columns: 1fr; } body { font-size: 10.5pt; } }
+  @media print { body { max-width: none; padding: 0; } h2 { break-after: avoid; } }
+</style>
+</head>
+<body>
+
+<h1>Break Before You Shape</h1>
+<p class="subtitle">Exact line breaking from a precompiled, certified width model</p>
+<p class="meta">Draft · {{date}} · every number in this paper is read from result files produced on one Apple M3 machine</p>
+
+<div class="abstract"><p><b>Abstract.</b>
+Text engines shape a paragraph before they can break it into lines, because widths depend on kerning, ligatures and
+contextual forms. We show that, for the fonts and scripts we test, a line's shaped width is a <i>local</i> function of its
+text, and that this locality can be <i>proven</i> from a font's layout tables. We compile a shaper's behaviour into a
+small per-font model by measuring it as a black box, and a static analysis of OpenType and AAT tables certifies the lines
+on which the model is exact. Lines are then broken before anything is shaped. Across {{census_faces}} local font faces,
+{{census_certified:,}} certified lines contain no error. Inside Flutter, a {{=build_gzipBytes/1024:.0f}}&nbsp;KB (gzipped)
+file built once on the developer's machine reproduces Flutter's own line breaks and paragraph heights in
+{{mac_identical:,}} of {{=mac_identical+mac_different:,}} paragraph layouts ({{w_corpora}} corpora in {{w_languages}}
+languages written in Latin, Greek and Cyrillic, {{w_sizes}} font sizes, {{w_widths}} widths), and in every layout checked on
+an iOS simulator ({{ios_identical:,}}) and an Android emulator ({{android_identical:,}}). It hands
+{{mac_deferredPct:.2f}}% of layouts back to the engine and computes paragraph heights
+{{=min(t_docs_speedup_tp,t_chat_speedup_tp):.0f}}–{{=max(t_docs_speedup_tp,t_chat_speedup_tp):.0f}}× faster than <code>TextPainter</code>.</p></div>
+
+<h2>1 · Introduction</h2>
+<p>Every mainstream text stack (Chrome, WebKit, Android, Skia's SkParagraph, CoreText, DirectWrite) runs the same order:
+<i>shape</i> the paragraph with a shaper such as HarfBuzz, <i>break</i> it into lines using the shaped advances, and often
+<i>reshape</i> around the breaks. Shaping is the expensive step, and much of it is wasted. A chat list computing
+thousands of item heights, or an editor re-wrapping on every resize, shapes text that it never draws. Figure 1 shows the
+alternative this paper makes exact: break first, from a precompiled model, then shape only what is drawn.</p>
+
+<figure>
+<svg class="pipe" viewBox="0 0 820 150" role="img" aria-label="Two text-layout pipelines">
+  <defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+    <path d="M0,0 L8,4 L0,8 z" fill="#6e7781"/></marker></defs>
+  <text x="0" y="16" class="lbl">Today</text>
+  <rect class="box" x="0" y="24" width="120" height="40" rx="6"/><text x="60" y="49" text-anchor="middle">text + style</text>
+  <rect class="hot" x="150" y="24" width="160" height="40" rx="6"/><text x="230" y="42" text-anchor="middle">shape paragraph</text>
+  <text x="230" y="57" text-anchor="middle" style="font-size:9px;fill:#9a6700">every glyph, drawn or not</text>
+  <rect class="box" x="340" y="24" width="140" height="40" rx="6"/><text x="410" y="49" text-anchor="middle">break into lines</text>
+  <rect class="hot" x="510" y="24" width="140" height="40" rx="6"/><text x="580" y="49" text-anchor="middle">(re)shape lines</text>
+  <rect class="box" x="680" y="24" width="140" height="40" rx="6"/><text x="750" y="49" text-anchor="middle">position, paint</text>
+  <path class="arrow" d="M120,44 H148"/><path class="arrow" d="M310,44 H338"/><path class="arrow" d="M480,44 H508"/><path class="arrow" d="M650,44 H678"/>
+  <text x="0" y="96" class="lbl">Break-first</text>
+  <rect class="box" x="0" y="104" width="120" height="40" rx="6"/><text x="60" y="129" text-anchor="middle">text + style</text>
+  <rect class="new" x="150" y="104" width="190" height="40" rx="6"/><text x="245" y="122" text-anchor="middle">break, from the model</text>
+  <text x="245" y="137" text-anchor="middle" style="font-size:9px;fill:#0969da">no shaping · heights · re-wrap</text>
+  <rect class="box" x="370" y="104" width="170" height="40" rx="6"/><text x="455" y="122" text-anchor="middle">shape visible lines</text>
+  <text x="455" y="137" text-anchor="middle" style="font-size:9px;fill:#59636e">once, lazily</text>
+  <rect class="box" x="570" y="104" width="140" height="40" rx="6"/><text x="640" y="129" text-anchor="middle">position, paint</text>
+  <path class="arrow" d="M120,124 H148"/><path class="arrow" d="M340,124 H368"/><path class="arrow" d="M540,124 H568"/>
+  <rect class="new" x="730" y="104" width="90" height="40" rx="6" style="stroke-dasharray:3 2"/>
+  <text x="775" y="121" text-anchor="middle" style="font-size:9.5px">model file</text>
+  <text x="775" y="135" text-anchor="middle" style="font-size:9px;fill:#59636e">built once</text>
+  <path class="arrow" d="M730,110 C 600,80 400,80 290,102"/>
+</svg>
+<figcaption><b>Figure 1.</b> Shape-first layout shapes every glyph before it knows where lines end. Break-first computes
+line breaks and heights from a precompiled model, so text that is measured but never drawn is never shaped.</figcaption>
+</figure>
+
+<p><b>Contributions.</b></p>
+<ol>
+  <li><b>Distillation.</b> A shaper is measured as a black box (every character, every pair, every ligature island in
+  context) and compiled into exact tables. The model matches the target engine by construction.</li>
+  <li><b>A certificate.</b> A static analysis of OpenType (GSUB, GPOS, GDEF) and AAT (<code>morx</code>,
+  <code>kern</code>, <code>kerx</code>) tables proves on which lines the model's width equals the shaped width.</li>
+  <li><b>Break-first layout.</b> Width-independent records give every candidate line's width in O(1), so a resize costs
+  one greedy pass. Where the host engine's behaviour is uncertain, the breaker defers instead of guessing.</li>
+  <li><b>Evidence.</b> A census of {{census_faces}} font faces, and a Flutter implementation checked against Flutter's
+  own layout on three platforms.</li>
+</ol>
+
+<h2>2 · Width is local, and can be distilled</h2>
+<p>A line's shaped width is the sum of its glyph advances plus positioning adjustments. In practice those adjustments are
+<i>local</i>: pair kerning touches two adjacent glyphs, and a ligature replaces a short run of letters. So the width of
+any line decomposes into a few kinds of terms: one advance per character, one term per adjacent pair, and a term for each
+ligature <i>island</i> with its two neighbours. Figure 2 shows a real decomposition, measured from Flutter.</p>
+
+<figure>{{svg:fig_decomposition.svg}}
+<figcaption><b>Figure 2.</b> “{{ex_phrase}}” in Roboto at {{ex_size:g}} px. Gray: advances alone, which sum to
+{{ex_sum_adv_px:.3f}} px. Red: pair terms (kerning). Blue: a ligature island. The model sums to
+{{ex_model_px:.4f}} px; Flutter measures {{ex_flutter_px:.4f}} px.</figcaption>
+</figure>
+
+<p><b>Distillation.</b> We do not parse kerning or ligature tables. We ask the target shaper. For Flutter, the oracle is
+Flutter's own <code>ui.Paragraph</code>, run under <code>flutter_tester</code> on the developer's machine:
+<ul>
+  <li>every character alone;</li>
+  <li>every ordered pair;</li>
+  <li>every certificate island alone, and next to every safe neighbour (§3).</li>
+</ul>
+We measure at a font size equal to the font's units per em, so values are font units. All {{build_layouts:,}}
+measurements came back as exact integers, and widths scale linearly with size (§5.5), so <b>one file serves every
+size</b>. For Roboto (Latin, Greek and Cyrillic, {{build_characters}} characters), identical rows and columns of the pair
+matrix collapse into {{build_pair_classes}} classes. With {{build_islands}} islands, the file is
+{{=build_bytes/1024:.0f}} KB, {{=build_gzipBytes/1024:.1f}} KB gzipped, and builds in {{=build_buildMs/1000:.1f}} s.</p>
+
+<h2>3 · A certificate from the font's tables</h2>
+<p>Locality is not guaranteed: a contextual substitution can make a glyph depend on text arbitrarily far away. So each
+character is classified from the font's layout tables, without running the shaper:</p>
+<ul>
+  <li><b>S</b> (safe): no substitution can change or consume its glyph;</li>
+  <li><b>P</b> (primer): it can start a substitution, such as the first letter of a ligature;</li>
+  <li><b>K</b> (passive): it can only be consumed by a substitution a primer started;</li>
+  <li><b>U</b> (unsafe): everything else.</li>
+</ul>
+<p>An <i>island</i> is a maximal run of P/K characters that contains a primer.</p>
+
+<figure>
+<div class="classes">{{classes_sample}}</div>
+<div class="legend"><span class="c-S">S safe</span><span class="c-P">P primer</span><span class="c-K">K passive</span><span class="c-U">U unsafe</span></div>
+<figcaption><b>Figure 3.</b> Roboto's certificate on sample text. Islands form only around <i>f</i>. Unsafe characters
+send their paragraph to the engine.</figcaption>
+</figure>
+
+<div class="theorem"><b>Theorem.</b> Let a line contain no U character, and let every island in it have at most <i>m</i>
+characters. Then the shaped width of the line equals the model's width.</div>
+<p><b>Proof sketch.</b></p>
+<ol>
+  <li><b>Substitution leaves S glyphs untouched, and islands are closed.</b>
+    <ul>
+      <li><i>OpenType.</i> A single, multiple or alternate lookup fires only at its coverage glyphs, which are U. A
+      contextual rule fires only if every position matches a glyph that can occur, so for each live rule the cheapest
+      position's characters are made U. Ligatures start at P and consume only P/K glyphs.</li>
+      <li><i>AAT.</i> Action reachability is computed over the alphabet; subtables that cannot act are the identity. In
+      the rest, S classes return every reachable state to a start state with no substitution, the start states agree,
+      end of text has no effect after an island, and a bounded exhaustive check shows no action inside an island reaches
+      state stored before it.</li>
+    </ul></li>
+  <li><b>Positioning is pair-additive.</b> Only single adjustments, PairPos with ValueFormat2 = 0, and <code>kern</code>
+  or <code>kerx</code> pair formats can fire.</li>
+  <li><b>Width splits into local terms.</b> By 1 and 2, the width is a sum of terms, each touching at most one island and
+  its S neighbours.</li>
+  <li><b>The terms agree.</b> The model's terms are measured values of exactly those terms. Islands are measured with
+  every S neighbour, and the checker verifies no model term spans two islands. ∎</li>
+</ol>
+<p>The proof trusts that the shaper implements OpenType and AAT as specified, that fontTools parses the tables
+correctly, and the analyzer's code, which is tested but not machine-checked. By default it also trusts that the shaper
+selects lookups as HarfBuzz does (script, language, default variation coordinates); a strict mode drops that assumption.</p>
+
+<h2>4 · Breaking before shaping, the way the host does</h2>
+<p>For each paragraph, one pass builds a width prefix in units, and a second finds break opportunities. Both are
+independent of the box width, so re-wrapping at a new width only re-runs the greedy pass over these records. To
+reproduce a specific engine, the breaker must also reproduce that engine's conventions. We measured Flutter's rather than
+assuming them (Table 1), and the breaker <b>defers</b> whenever a decision depends on something it cannot certify.</p>
+
+<table>
+<tr><th>Flutter (SkParagraph) convention</th><th>How it was established</th><th>Breaker</th></tr>
+<tr><td>Shapes once, breaks on shaped cluster advances; kerning sits on the left glyph</td><td>Exactness against Flutter's breaks</td><td>Pair terms attach to the left character</td></tr>
+<tr><td>Line fits if its width, floored to 1/100 px in float32, ≤ box</td><td>Accepted and rejected widths around the box edge</td><td>Same test, emulated in float32</td></tr>
+<tr><td>Line height = font line height, rounded to whole px</td><td>Every height in Table 2 ({{mac_heightChecked:,}} on macOS)</td><td>lines × rounded height</td></tr>
+<tr><td>No kerning across script runs; spaces join the preceding run</td><td>“Time Machine” inside Russian text</td><td>Pair term 0 at a script change</td></tr>
+<tr><td>UAX #14 with Unicode 15.1 number rules; word-initial dash binds</td><td>Per-class tallies of taken vs refused breaks</td><td>Rule table for the characters it handles</td></tr>
+<tr><td>Sometimes breaks at a space inside an unbreakable segment</td><td>Examples (e.g. <code>self ⏎!= 1.</code>)</td><td>Defers when such a space could end the line</td></tr>
+<tr><td>Positions drift in float32 at some sizes</td><td>Drift by size (§5.5)</td><td>Defers decisions the drift could flip</td></tr>
+<tr><td>Android truncates the font size to 1/{{android_size_quantum}} px (e.g. {{android_size_ex}} → {{android_size_ex_eff}}); macOS and iOS do not</td><td>Effective size implied by measured widths at {{android_sizes_probed}} sizes, on the emulator</td><td>One probe layout at start-up detects it; sizes are truncated the same way</td></tr>
+</table>
+<p style="font:8.6pt 'Avenir Next',sans-serif;color:var(--muted)"><b>Table 1.</b> Host conventions the breaker
+reproduces, each measured from Flutter.</p>
+
+<h2>5 · Evaluation</h2>
+<h3>5.1 · Census: how often does the certificate apply?</h3>
+<p>We ran the analyzer and the checker on every font face on the machine that covers basic Latin
+({{census_faces}} faces). For each, the checker compares every certified line of a {{census_paragraphs:,}}-paragraph English corpus sample at {{w_census_widths}} widths
+against HarfBuzz, using exact ground truth that reshapes every candidate line.</p>
+<ul>
+  <li><b>Errors:</b> {{census_certified:,}} of {{census_lines:,}} lines ({{census_certified_share:.1f}}%) were certified,
+  and <b>{{census_wrong}} were wrong</b>.</li>
+  <li><b>Coverage:</b> {{census_ge99}} faces certify at least 99% of their lines; {{census_zero}} certify none.</li>
+  <li><b>Causes of failure</b> ({{census_low}} faces under 99%, Figure 4b): {{census_low_aat}} use AAT state machines
+  the analyzer does not yet handle (reversed contextual, insertion, rearrangement, <code>kerx</code>/<code>kern</code>
+  state machines); in {{census_low_subst}} the font's substitutions genuinely touch common letters; in
+  {{census_low_island}} the exhaustive island check's budget lowered the island bound below 4.</li>
+</ul>
+<figure>{{svg:fig_census.svg}}
+<figcaption><b>Figure 4.</b> (a) Share of lines certified, per face. (b) The reason behind the most frequent unsafe
+character, for the faces under 99%.</figcaption></figure>
+
+<h3>5.2 · Today's shortcuts are not exact</h3>
+<p>The usual alternatives to full reshaping lose context, and the error is measurable. Against exact ground truth in
+HarfBuzz ({{c_fonts}} fonts, {{c_paragraphs:,}} paragraphs, {{c_widths}} widths; Zapfino is left out, because its
+long contextual swashes are exactly what the certificate hands back to the shaper):</p>
+<ul>
+  <li><b>Shape once, then break</b> (what SkParagraph does) gets up to {{=100-c_shapefirst_min:.1f}}% of paragraphs wrong.</li>
+  <li><b>Per-word caches</b> (Minikin, Pretext) get up to {{=100-c_wordcache_min:.1f}}% wrong.</li>
+  <li><b>The distilled model</b> gets {{=100-c_breakfirst_min:.1f}}% wrong.</li>
+</ul>
+<figure>{{svg:fig_baselines.svg}}
+<figcaption><b>Figure 5.</b> Share of paragraphs whose line breaks differ from exact ground truth (C prototype, HarfBuzz
+15).</figcaption></figure>
+
+<h3>5.3 · Exactness inside Flutter</h3>
+<p>The real test is a production engine. A Flutter app (Flutter 3.47.5) loads the sidecar built on the host and compares
+every line break and every paragraph height with Flutter's own layout. The run covers {{w_corpora}} corpora:
+<ul>
+  <li>English Python documentation, man pages and license texts;</li>
+  <li>user-interface strings in English, German, French, Russian, Ukrainian and Greek, from macOS localizations.</li>
+</ul>
+Each paragraph is laid out at {{=len(mac_sizes)}} font sizes ({{sizes_list}} px) × {{mac_widths}} box widths.</p>
+<table>
+<tr><th>Platform</th><th class="n">Paragraph layouts</th><th class="n">Identical breaks</th><th class="n">Identical heights</th><th class="n">Deferred</th><th class="n">Canary</th></tr>
+<tr><td>macOS, release (all paragraphs)</td><td class="n">{{=mac_identical+mac_different+mac_deferred:,}}</td><td class="n">{{mac_identical:,}} / {{=mac_identical+mac_different:,}}</td><td class="n">{{mac_heights:,}} / {{mac_heightChecked:,}}</td><td class="n">{{mac_deferredPct:.2f}}%</td><td class="n">{{mac_canary_px}} px</td></tr>
+<tr><td>iOS 17.5 simulator, debug ({{ios_per_corpus}} per corpus)</td><td class="n">{{=ios_identical+ios_different+ios_deferred:,}}</td><td class="n">{{ios_identical:,}} / {{=ios_identical+ios_different:,}}</td><td class="n">{{ios_heights:,}} / {{ios_heightChecked:,}}</td><td class="n">{{ios_deferredPct:.2f}}%</td><td class="n">{{ios_canary_px}} px</td></tr>
+<tr><td>Android 15 emulator, release ({{android_per_corpus}} per corpus)</td><td class="n">{{=android_identical+android_different+android_deferred:,}}</td><td class="n">{{android_identical:,}} / {{=android_identical+android_different:,}}</td><td class="n">{{android_heights:,}} / {{android_heightChecked:,}}</td><td class="n">{{android_deferredPct:.2f}}%</td><td class="n">{{android_canary_px}} px</td></tr>
+</table>
+<p style="font:8.6pt 'Avenir Next',sans-serif;color:var(--muted)"><b>Table 2.</b> One sidecar file, built once on
+macOS, checked against Flutter's layout on three platforms. Lines checked on macOS: {{mac_lines:,}}.</p>
+<figure>{{svg:fig_exactness.svg}}
+<figcaption><b>Figure 6.</b> No cell has a single mismatch. Values are the share of paragraph layouts the breaker hands
+back to Flutter: words wider than the line, characters outside the model, and decisions it will not guess.</figcaption></figure>
+
+<h3>5.4 · Speed</h3>
+<p>All methods run on the same paragraphs, the ones break-first decides itself, at {{t_docs_size:g}} px. Each time is the median of
+{{timing_reps}} passes inside one run of a macOS release build, and then the median of {{timing_runs}} such runs; the
+speedups below differ by at most {{timing_spread_pct:.0f}}% between runs.</p>
+<ul>
+  <li><b>Paragraph heights:</b> break-first is <b>{{t_docs_speedup_tp:.1f}}×</b> (docs) and
+  <b>{{t_chat_speedup_tp:.1f}}×</b> (chat) faster than <code>TextPainter</code>.</li>
+  <li><b>Re-wrapping at a new width</b> is <b>{{t_docs_speedup_relayout:.1f}}×</b> (docs) and
+  <b>{{t_chat_speedup_relayout:.1f}}×</b> (chat) faster than Flutter's re-layout, which already skips reshaping.</li>
+  <li><b>A warm word cache</b> is about as fast, but only after measuring every word once (the cold column), and it
+  still breaks {{t_docs_wc_wrong}} docs and {{t_chat_wc_wrong}} chat paragraphs differently from Flutter.</li>
+  <li><b>End to end</b>, including paragraphs handed back to Flutter, the gain is {{t_docs_speedup_all:.1f}}× (docs)
+  and {{t_chat_speedup_all:.1f}}× (chat).</li>
+  <li><b>Android emulator</b>, release, one run: {{a_docs_speedup_tp:.1f}}× (docs) and {{a_chat_speedup_tp:.1f}}× (chat).</li>
+</ul>
+<figure>{{svg:fig_speed.svg}}
+<figcaption><b>Figure 7.</b> Time to compute every paragraph's height. (a) {{t_docs_paragraphs:,}} Python
+documentation paragraphs at {{t_docs_width:g}} px. (b) {{t_chat_paragraphs:,}} UI messages at {{t_chat_width:g}} px.
+(c) Re-wrapping the already laid-out docs paragraphs at a new width.</figcaption></figure>
+
+<div class="two">
+<div>
+<p><b>An app-level case: exact list extents.</b> A chat list needs every item's height to place its scrollbar and jump to
+a message. For {{list_messages:,}} messages, break-first computes all heights in {{list_breakFirstMs:.0f}} ms against
+{{list_textPainterMs:.0f}} ms with <code>TextPainter</code> ({{list_speedup:.1f}}×), fallbacks included.
+{{list_heightsEqual:,}} of {{list_messages:,}} heights are equal, and the largest scroll-offset error over the whole list
+is {{list_maxScrollOffsetErrPx}} px. On the Android emulator the gain is {{a_list_speedup:.1f}}×, again with
+{{a_list_heightsEqual:,}} equal heights.</p>
+</div>
+<figure>{{svg:fig_list.svg}}
+<figcaption><b>Figure 8.</b> Computing every item's exact height for a chat list.</figcaption></figure>
+</div>
+
+<h3>5.5 · Font sizes and float drift</h3>
+<div class="two">
+<div>
+<p>Flutter's widths are linear in font size, so one file in font units serves every size. But SkParagraph accumulates
+positions across a paragraph in float32.</p>
+<ul>
+  <li><b>Exact sizes</b> ({{drift_exact_sizes}} px for Roboto): size/units-per-em is a short binary fraction and
+  positions are exact.</li>
+  <li><b>Other sizes:</b> positions drift by up to {{drift_max_rel:.1e}} of the x position, as much as
+  {{drift_max_abs:.2f}} px on a paragraph-long line.</li>
+</ul>
+<p>The breaker certifies exact sizes outright. At other sizes it defers any decision that a width error of
+2 × {{drift_margin:.1e}} of the x position could flip: drift at both ends of the line, each allowed
+{{=drift_margin/drift_max_rel:.1f}}× the largest drift measured.
+On Android the engine also truncates the font size to 1/{{android_size_quantum}} px, which a single start-up probe
+detects. With both
+measures, all {{=len(mac_sizes)}} sizes in Table 2 had zero mismatches on every platform.</p>
+</div>
+<figure>{{svg:fig_drift.svg}}
+<figcaption><b>Figure 9.</b> Largest drift between the model and Flutter, relative to x position, by font size.</figcaption></figure>
+</div>
+
+<h2>6 · Related work</h2>
+<ul>
+  <li><b>TeX's TFM lig/kern programs</b> are a hand-made per-font width automaton: the closest ancestor of the model,
+  without contextual forms or a certificate.</li>
+  <li><b>PDF libraries</b> sum AFM widths and kerning pairs, ignoring substitution.</li>
+  <li><b>WebKit's simple text path</b> skips the shaper only when kerning and ligatures are off.</li>
+  <li><b>Android's Minikin and Pretext</b> measure and cache words, which loses context across words (§5.2).</li>
+  <li><b>HarfBuzz's <code>UNSAFE_TO_CONCAT</code></b> makes reshaping after breaking cheaper, but keeps the
+  shape-first order.</li>
+  <li><b><code>typeset</code></b> (2026) computes widths from advances and pair kerning with a HarfBuzz fallback,
+  without contextual terms or a proof.</li>
+</ul>
+<p>We found no prior static analysis of shaping tables. This survey is a web search, not an exhaustive review.</p>
+
+<h2>7 · Limitations</h2>
+<ul>
+  <li><b>Scripts.</b> Latin, Greek and Cyrillic only; Arabic joining and Indic syllables are future work. Only plain,
+  single-style, left-to-right paragraphs are covered.</li>
+  <li><b>Fonts.</b> The Flutter evaluation uses one font (Roboto); the census covers the faces installed on one Mac.</li>
+  <li><b>Proof.</b> The certificate relies on the trust base in §3, and the AAT analysis rejects reversed contextual
+  subtables, rearrangement, insertion and <code>kerx</code> state machines rather than analysing them.</li>
+  <li><b>Measurement.</b> Mobile timings come from an emulator, not a phone.</li>
+  <li><b>Scope of the gain.</b> The speedup is for measurement and line breaking; painting is unchanged, and lines that
+  are drawn are still shaped.</li>
+</ul>
+
+<h2>8 · Reproducibility</h2>
+<p>All code and results are in the accompanying folder:</p>
+<ul>
+  <li><code>certify.py</code>: the analyzer;</li>
+  <li><code>bfl.c</code>: the C prototype and checker;</li>
+  <li><code>census.py</code>: the census;</li>
+  <li><code>flutter_bench/</code>: the Flutter build step, breaker and harness;</li>
+  <li><code>paper/make_figures.py</code>: the figures and every number in this paper, read from the result files.</li>
+</ul>
+<p>Environment: Flutter 3.47.5 (Dart 3.13.4), HarfBuzz 15.0.0, macOS on an Apple M3, iOS 17.5 simulator, and an
+Android API 35 emulator.</p>
+</body>
+</html>
