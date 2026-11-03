@@ -1,0 +1,427 @@
+{
+ "platform": "linux",
+ "mode": "validate",
+ "sidecar": {
+  "bytes": 573104,
+  "loadMs": 20.879,
+  "describe": "Roboto: 699 characters, pair classes 114x121, 90 islands up to m=4"
+ },
+ "fontSizeQuantized": true,
+ "canary": {
+  "probes": 5,
+  "maxErrPx": 0.0,
+  "pass": true
+ },
+ "validate": {
+  "en_docs": {
+   "paragraphs": 120,
+   "covered": 120,
+   "identical": 8488,
+   "different": 0,
+   "deferred": 152,
+   "lines": 36238,
+   "heightIdentical": 8488,
+   "heightChecked": 8488,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     1419,
+     0,
+     21
+    ],
+    "13.0": [
+     1419,
+     0,
+     21
+    ],
+    "16.0": [
+     1419,
+     0,
+     21
+    ],
+    "18.4": [
+     1406,
+     0,
+     34
+    ],
+    "21.3": [
+     1406,
+     0,
+     34
+    ],
+    "24.0": [
+     1419,
+     0,
+     21
+    ]
+   }
+  },
+  "en_man": {
+   "paragraphs": 120,
+   "covered": 119,
+   "identical": 8293,
+   "different": 0,
+   "deferred": 275,
+   "lines": 38572,
+   "heightIdentical": 8293,
+   "heightChecked": 8293,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     1387,
+     0,
+     41
+    ],
+    "13.0": [
+     1387,
+     0,
+     41
+    ],
+    "16.0": [
+     1387,
+     0,
+     41
+    ],
+    "18.4": [
+     1373,
+     0,
+     55
+    ],
+    "21.3": [
+     1372,
+     0,
+     56
+    ],
+    "24.0": [
+     1387,
+     0,
+     41
+    ]
+   }
+  },
+  "en_legal": {
+   "paragraphs": 120,
+   "covered": 119,
+   "identical": 8110,
+   "different": 0,
+   "deferred": 458,
+   "lines": 65204,
+   "heightIdentical": 8110,
+   "heightChecked": 8110,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     1370,
+     0,
+     58
+    ],
+    "13.0": [
+     1353,
+     0,
+     75
+    ],
+    "16.0": [
+     1370,
+     0,
+     58
+    ],
+    "18.4": [
+     1324,
+     0,
+     104
+    ],
+    "21.3": [
+     1323,
+     0,
+     105
+    ],
+    "24.0": [
+     1370,
+     0,
+     58
+    ]
+   }
+  },
+  "ui_en": {
+   "paragraphs": 120,
+   "covered": 119,
+   "identical": 8567,
+   "different": 0,
+   "deferred": 1,
+   "lines": 14446,
+   "heightIdentical": 8567,
+   "heightChecked": 8567,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     1428,
+     0,
+     0
+    ],
+    "13.0": [
+     1428,
+     0,
+     0
+    ],
+    "16.0": [
+     1428,
+     0,
+     0
+    ],
+    "18.4": [
+     1427,
+     0,
+     1
+    ],
+    "21.3": [
+     1428,
+     0,
+     0
+    ],
+    "24.0": [
+     1428,
+     0,
+     0
+    ]
+   }
+  },
+  "ui_de": {
+   "paragraphs": 120,
+   "covered": 120,
+   "identical": 8497,
+   "different": 0,
+   "deferred": 143,
+   "lines": 17598,
+   "heightIdentical": 8497,
+   "heightChecked": 8497,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     1417,
+     0,
+     23
+    ],
+    "13.0": [
+     1417,
+     0,
+     23
+    ],
+    "16.0": [
+     1417,
+     0,
+     23
+    ],
+    "18.4": [
+     1415,
+     0,
+     25
+    ],
+    "21.3": [
+     1414,
+     0,
+     26
+    ],
+    "24.0": [
+     1417,
+     0,
+     23
+    ]
+   }
+  },
+  "ui_fr": {
+   "paragraphs": 120,
+   "covered": 120,
+   "identical": 8393,
+   "different": 0,
+   "deferred": 247,
+   "lines": 15556,
+   "heightIdentical": 8393,
+   "heightChecked": 8393,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     1400,
+     0,
+     40
+    ],
+    "13.0": [
+     1398,
+     0,
+     42
+    ],
+    "16.0": [
+     1400,
+     0,
+     40
+    ],
+    "18.4": [
+     1398,
+     0,
+     42
+    ],
+    "21.3": [
+     1397,
+     0,
+     43
+    ],
+    "24.0": [
+     1400,
+     0,
+     40
+    ]
+   }
+  },
+  "ui_ru": {
+   "paragraphs": 120,
+   "covered": 120,
+   "identical": 8568,
+   "different": 0,
+   "deferred": 72,
+   "lines": 17619,
+   "heightIdentical": 8568,
+   "heightChecked": 8568,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     1429,
+     0,
+     11
+    ],
+    "13.0": [
+     1429,
+     0,
+     11
+    ],
+    "16.0": [
+     1429,
+     0,
+     11
+    ],
+    "18.4": [
+     1425,
+     0,
+     15
+    ],
+    "21.3": [
+     1427,
+     0,
+     13
+    ],
+    "24.0": [
+     1429,
+     0,
+     11
+    ]
+   }
+  },
+  "ui_uk": {
+   "paragraphs": 120,
+   "covered": 120,
+   "identical": 8599,
+   "different": 0,
+   "deferred": 41,
+   "lines": 18764,
+   "heightIdentical": 8599,
+   "heightChecked": 8599,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     1434,
+     0,
+     6
+    ],
+    "13.0": [
+     1434,
+     0,
+     6
+    ],
+    "16.0": [
+     1434,
+     0,
+     6
+    ],
+    "18.4": [
+     1431,
+     0,
+     9
+    ],
+    "21.3": [
+     1432,
+     0,
+     8
+    ],
+    "24.0": [
+     1434,
+     0,
+     6
+    ]
+   }
+  },
+  "ui_el": {
+   "paragraphs": 120,
+   "covered": 120,
+   "identical": 8580,
+   "different": 0,
+   "deferred": 60,
+   "lines": 17632,
+   "heightIdentical": 8580,
+   "heightChecked": 8580,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     1430,
+     0,
+     10
+    ],
+    "13.0": [
+     1430,
+     0,
+     10
+    ],
+    "16.0": [
+     1430,
+     0,
+     10
+    ],
+    "18.4": [
+     1430,
+     0,
+     10
+    ],
+    "21.3": [
+     1430,
+     0,
+     10
+    ],
+    "24.0": [
+     1430,
+     0,
+     10
+    ]
+   }
+  },
+  "sizes": [
+   12.0,
+   13.0,
+   16.0,
+   18.4,
+   21.3,
+   24.0
+  ],
+  "widthSteps": 12,
+  "lineStartMethodCheck": {
+   "checked": 18593,
+   "disagree": 0
+  },
+  "mismatchExamples": []
+ }
+}

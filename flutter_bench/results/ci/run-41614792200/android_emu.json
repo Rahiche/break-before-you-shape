@@ -1,0 +1,477 @@
+{
+ "platform": "android",
+ "mode": "all",
+ "sidecar": {
+  "bytes": 573104,
+  "loadMs": 8.41,
+  "describe": "Roboto: 699 characters, pair classes 114x121, 90 islands up to m=4"
+ },
+ "fontSizeQuantized": true,
+ "canary": {
+  "probes": 5,
+  "maxErrPx": 0.0,
+  "pass": true
+ },
+ "validate": {
+  "en_docs": {
+   "paragraphs": 300,
+   "covered": 300,
+   "identical": 21053,
+   "different": 0,
+   "deferred": 547,
+   "lines": 90397,
+   "heightIdentical": 21053,
+   "heightChecked": 21053,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     3519,
+     0,
+     81
+    ],
+    "13.0": [
+     3519,
+     0,
+     81
+    ],
+    "16.0": [
+     3519,
+     0,
+     81
+    ],
+    "18.4": [
+     3485,
+     0,
+     115
+    ],
+    "21.3": [
+     3492,
+     0,
+     108
+    ],
+    "24.0": [
+     3519,
+     0,
+     81
+    ]
+   }
+  },
+  "en_man": {
+   "paragraphs": 300,
+   "covered": 299,
+   "identical": 20955,
+   "different": 0,
+   "deferred": 573,
+   "lines": 100903,
+   "heightIdentical": 20955,
+   "heightChecked": 20955,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     3504,
+     0,
+     84
+    ],
+    "13.0": [
+     3504,
+     0,
+     84
+    ],
+    "16.0": [
+     3504,
+     0,
+     84
+    ],
+    "18.4": [
+     3469,
+     0,
+     119
+    ],
+    "21.3": [
+     3470,
+     0,
+     118
+    ],
+    "24.0": [
+     3504,
+     0,
+     84
+    ]
+   }
+  },
+  "en_legal": {
+   "paragraphs": 300,
+   "covered": 299,
+   "identical": 20060,
+   "different": 0,
+   "deferred": 1468,
+   "lines": 180241,
+   "heightIdentical": 20060,
+   "heightChecked": 20060,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.453125,
+   "perSize": {
+    "12.0": [
+     3413,
+     0,
+     175
+    ],
+    "13.0": [
+     3330,
+     0,
+     258
+    ],
+    "16.0": [
+     3413,
+     0,
+     175
+    ],
+    "18.4": [
+     3237,
+     0,
+     351
+    ],
+    "21.3": [
+     3254,
+     0,
+     334
+    ],
+    "24.0": [
+     3413,
+     0,
+     175
+    ]
+   }
+  },
+  "ui_en": {
+   "paragraphs": 300,
+   "covered": 300,
+   "identical": 21526,
+   "different": 0,
+   "deferred": 74,
+   "lines": 38693,
+   "heightIdentical": 21526,
+   "heightChecked": 21526,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     3590,
+     0,
+     10
+    ],
+    "13.0": [
+     3588,
+     0,
+     12
+    ],
+    "16.0": [
+     3590,
+     0,
+     10
+    ],
+    "18.4": [
+     3583,
+     0,
+     17
+    ],
+    "21.3": [
+     3585,
+     0,
+     15
+    ],
+    "24.0": [
+     3590,
+     0,
+     10
+    ]
+   }
+  },
+  "ui_de": {
+   "paragraphs": 300,
+   "covered": 300,
+   "identical": 21398,
+   "different": 0,
+   "deferred": 202,
+   "lines": 47279,
+   "heightIdentical": 21398,
+   "heightChecked": 21398,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     3569,
+     0,
+     31
+    ],
+    "13.0": [
+     3569,
+     0,
+     31
+    ],
+    "16.0": [
+     3569,
+     0,
+     31
+    ],
+    "18.4": [
+     3562,
+     0,
+     38
+    ],
+    "21.3": [
+     3560,
+     0,
+     40
+    ],
+    "24.0": [
+     3569,
+     0,
+     31
+    ]
+   }
+  },
+  "ui_fr": {
+   "paragraphs": 300,
+   "covered": 300,
+   "identical": 21023,
+   "different": 0,
+   "deferred": 577,
+   "lines": 42863,
+   "heightIdentical": 21023,
+   "heightChecked": 21023,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     3510,
+     0,
+     90
+    ],
+    "13.0": [
+     3502,
+     0,
+     98
+    ],
+    "16.0": [
+     3510,
+     0,
+     90
+    ],
+    "18.4": [
+     3496,
+     0,
+     104
+    ],
+    "21.3": [
+     3495,
+     0,
+     105
+    ],
+    "24.0": [
+     3510,
+     0,
+     90
+    ]
+   }
+  },
+  "ui_ru": {
+   "paragraphs": 300,
+   "covered": 299,
+   "identical": 21317,
+   "different": 0,
+   "deferred": 211,
+   "lines": 46649,
+   "heightIdentical": 21317,
+   "heightChecked": 21317,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     3556,
+     0,
+     32
+    ],
+    "13.0": [
+     3556,
+     0,
+     32
+    ],
+    "16.0": [
+     3556,
+     0,
+     32
+    ],
+    "18.4": [
+     3548,
+     0,
+     40
+    ],
+    "21.3": [
+     3545,
+     0,
+     43
+    ],
+    "24.0": [
+     3556,
+     0,
+     32
+    ]
+   }
+  },
+  "ui_uk": {
+   "paragraphs": 300,
+   "covered": 300,
+   "identical": 21502,
+   "different": 0,
+   "deferred": 98,
+   "lines": 42547,
+   "heightIdentical": 21502,
+   "heightChecked": 21502,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     3585,
+     0,
+     15
+    ],
+    "13.0": [
+     3585,
+     0,
+     15
+    ],
+    "16.0": [
+     3585,
+     0,
+     15
+    ],
+    "18.4": [
+     3581,
+     0,
+     19
+    ],
+    "21.3": [
+     3581,
+     0,
+     19
+    ],
+    "24.0": [
+     3585,
+     0,
+     15
+    ]
+   }
+  },
+  "ui_el": {
+   "paragraphs": 300,
+   "covered": 300,
+   "identical": 21514,
+   "different": 0,
+   "deferred": 86,
+   "lines": 44381,
+   "heightIdentical": 21514,
+   "heightChecked": 21514,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     3587,
+     0,
+     13
+    ],
+    "13.0": [
+     3587,
+     0,
+     13
+    ],
+    "16.0": [
+     3587,
+     0,
+     13
+    ],
+    "18.4": [
+     3583,
+     0,
+     17
+    ],
+    "21.3": [
+     3583,
+     0,
+     17
+    ],
+    "24.0": [
+     3587,
+     0,
+     13
+    ]
+   }
+  },
+  "sizes": [
+   12.0,
+   13.0,
+   16.0,
+   18.4,
+   21.3,
+   24.0
+  ],
+  "widthSteps": 12,
+  "lineStartMethodCheck": {
+   "checked": 23229,
+   "disagree": 0
+  },
+  "mismatchExamples": []
+ },
+ "timing": {
+  "docs": {
+   "paragraphsAll": 4605,
+   "paragraphs": 4527,
+   "codeUnits": 784065,
+   "size": 16.0,
+   "width": 400.0,
+   "textPainterMs": 511.54,
+   "uiParagraphMs": 559.684,
+   "breakFirstMs": 20.887,
+   "wordCacheColdMs": 490.178,
+   "wordCacheWarmMs": 19.948,
+   "wordCacheIdentical": 4524,
+   "wordCacheChecked": 4527,
+   "textPainterAllMs": 539.368,
+   "breakFirstAllMs": 29.455,
+   "relayoutFlutterMs": 32.617,
+   "relayoutBreakFirstMs": 3.388,
+   "relayoutWordCacheMs": 3.783,
+   "breakFirstNsPerCodeUnit": 26.639373011166168
+  },
+  "chat": {
+   "paragraphsAll": 24000,
+   "paragraphs": 23403,
+   "codeUnits": 1531039,
+   "size": 16.0,
+   "width": 280.0,
+   "textPainterMs": 1544.424,
+   "uiParagraphMs": 1190.786,
+   "breakFirstMs": 39.973,
+   "wordCacheColdMs": 917.727,
+   "wordCacheWarmMs": 42.222,
+   "wordCacheIdentical": 23402,
+   "wordCacheChecked": 23403,
+   "textPainterAllMs": 1235.442,
+   "breakFirstAllMs": 69.972,
+   "relayoutFlutterMs": 97.369,
+   "relayoutBreakFirstMs": 8.865,
+   "relayoutWordCacheMs": 6.994,
+   "breakFirstNsPerCodeUnit": 26.108413959409265
+  },
+  "listExtents": {
+   "messages": 24000,
+   "breakFirstMs": 78.136,
+   "textPainterMs": 1307.82,
+   "heightsEqual": 24000,
+   "maxScrollOffsetErrPx": 0.0,
+   "totalExtentPx": 1088097.0
+  }
+ }
+}
