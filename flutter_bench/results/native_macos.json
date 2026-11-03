@@ -1,0 +1,135 @@
+{
+ "platform": "macos",
+ "machine": "Apple M3 (local)",
+ "runs": [
+  {
+   "exactness": {
+    "checked": 2552760,
+    "mismatched": 0,
+    "examples": []
+   },
+   "docs": {
+    "paragraphs": 5170,
+    "codeUnits": 890824,
+    "size": 16.0,
+    "width": 400.0,
+    "countsAgree": 5170,
+    "dartMs": 12.994,
+    "cCopyMs": 0.653,
+    "cBatchMs": 6.54,
+    "cPerCallMs": 6.47,
+    "rewrapDartMs": 1.555,
+    "rewrapCMs": 0.532,
+    "endToEndDartMs": 14.103,
+    "endToEndCMs": 7.389,
+    "textPainterMs": 246.975,
+    "dartNsPerCodeUnit": 14.58649519994971,
+    "cBatchNsPerCodeUnit": 7.341517516366869
+   },
+   "chat": {
+    "paragraphs": 24000,
+    "codeUnits": 1368951,
+    "size": 16.0,
+    "width": 280.0,
+    "countsAgree": 24000,
+    "dartMs": 22.221,
+    "cCopyMs": 1.229,
+    "cBatchMs": 9.681,
+    "cPerCallMs": 11.396,
+    "rewrapDartMs": 3.475,
+    "rewrapCMs": 2.465,
+    "endToEndDartMs": 23.696,
+    "endToEndCMs": 10.972,
+    "textPainterMs": 610.937,
+    "dartNsPerCodeUnit": 16.23213686976378,
+    "cBatchNsPerCodeUnit": 7.071838217730218
+   }
+  },
+  {
+   "exactness": {
+    "checked": 2552760,
+    "mismatched": 0,
+    "examples": []
+   },
+   "docs": {
+    "paragraphs": 5170,
+    "codeUnits": 890824,
+    "size": 16.0,
+    "width": 400.0,
+    "countsAgree": 5170,
+    "dartMs": 12.847,
+    "cCopyMs": 0.65,
+    "cBatchMs": 6.498,
+    "cPerCallMs": 6.436,
+    "rewrapDartMs": 1.478,
+    "rewrapCMs": 0.474,
+    "endToEndDartMs": 13.455,
+    "endToEndCMs": 7.034,
+    "textPainterMs": 232.936,
+    "dartNsPerCodeUnit": 14.421479439260729,
+    "cBatchNsPerCodeUnit": 7.294370156170018
+   },
+   "chat": {
+    "paragraphs": 24000,
+    "codeUnits": 1368951,
+    "size": 16.0,
+    "width": 280.0,
+    "countsAgree": 24000,
+    "dartMs": 21.628,
+    "cCopyMs": 1.239,
+    "cBatchMs": 9.591,
+    "cPerCallMs": 9.644,
+    "rewrapDartMs": 2.958,
+    "rewrapCMs": 1.034,
+    "endToEndDartMs": 23.496,
+    "endToEndCMs": 10.863,
+    "textPainterMs": 595.266,
+    "dartNsPerCodeUnit": 15.79895847258229,
+    "cBatchNsPerCodeUnit": 7.006094447500312
+   }
+  },
+  {
+   "exactness": {
+    "checked": 2552760,
+    "mismatched": 0,
+    "examples": []
+   },
+   "docs": {
+    "paragraphs": 5170,
+    "codeUnits": 890824,
+    "size": 16.0,
+    "width": 400.0,
+    "countsAgree": 5170,
+    "dartMs": 12.832,
+    "cCopyMs": 0.636,
+    "cBatchMs": 6.517,
+    "cPerCallMs": 6.381,
+    "rewrapDartMs": 1.511,
+    "rewrapCMs": 0.566,
+    "endToEndDartMs": 13.428,
+    "endToEndCMs": 6.94,
+    "textPainterMs": 240.504,
+    "dartNsPerCodeUnit": 14.404641096333282,
+    "cBatchNsPerCodeUnit": 7.315698723878118
+   },
+   "chat": {
+    "paragraphs": 24000,
+    "codeUnits": 1368951,
+    "size": 16.0,
+    "width": 280.0,
+    "countsAgree": 24000,
+    "dartMs": 22.33,
+    "cCopyMs": 1.248,
+    "cBatchMs": 9.732,
+    "cPerCallMs": 9.512,
+    "rewrapDartMs": 2.925,
+    "rewrapCMs": 1.218,
+    "endToEndDartMs": 23.397,
+    "endToEndCMs": 11.062,
+    "textPainterMs": 587.808,
+    "dartNsPerCodeUnit": 16.311759880375558,
+    "cBatchNsPerCodeUnit": 7.109093020860498
+   }
+  }
+ ]
+}

@@ -1,0 +1,49 @@
+{
+ "platform": "android",
+ "machine": "Android API 35 emulator, arm64, on Apple M3 (local)",
+ "runs": [
+  {
+   "exactness": {
+    "checked": 194400,
+    "mismatched": 0,
+    "examples": []
+   },
+   "docs": {
+    "paragraphs": 5170,
+    "codeUnits": 890824,
+    "size": 16.0,
+    "width": 400.0,
+    "countsAgree": 5170,
+    "dartMs": 30.323,
+    "cCopyMs": 0.647,
+    "cBatchMs": 14.659,
+    "cPerCallMs": 14.819,
+    "rewrapDartMs": 4.278,
+    "rewrapCMs": 0.95,
+    "endToEndDartMs": 37.621,
+    "endToEndCMs": 15.84,
+    "textPainterMs": 611.073,
+    "dartNsPerCodeUnit": 34.03927150593159,
+    "cBatchNsPerCodeUnit": 16.45555126489632
+   },
+   "chat": {
+    "paragraphs": 24000,
+    "codeUnits": 1368951,
+    "size": 16.0,
+    "width": 280.0,
+    "countsAgree": 24000,
+    "dartMs": 22.854,
+    "cCopyMs": 1.247,
+    "cBatchMs": 9.943,
+    "cPerCallMs": 9.883,
+    "rewrapDartMs": 5.004,
+    "rewrapCMs": 1.722,
+    "endToEndDartMs": 27.725,
+    "endToEndCMs": 11.228,
+    "textPainterMs": 1099.589,
+    "dartNsPerCodeUnit": 16.694534720380787,
+    "cBatchNsPerCodeUnit": 7.263225637732833
+   }
+  }
+ ]
+}

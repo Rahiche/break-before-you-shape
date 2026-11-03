@@ -25,3 +25,6 @@ __pycache__/
 # Tooling
 .claude/
 .DS_Store
+
+# Native experiment builds
+flutter_bench/android/app/src/main/jniLibs/

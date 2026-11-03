@@ -11,6 +11,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
 
+import 'native.dart';
+
 const family = 'BFRoboto';
 const corpora = ['en_docs', 'en_man', 'en_legal', 'ui_en', 'ui_de', 'ui_fr', 'ui_ru', 'ui_uk', 'ui_el'];
 const chatCorpora = ['ui_en', 'ui_de', 'ui_fr', 'ui_ru', 'ui_uk', 'ui_el'];
@@ -441,6 +443,152 @@ Future<Map<String, Object?>> timing(WidthModel md, {int reps = 5}) async {
   return out;
 }
 
+/// The FFI experiment: the C port of the breaker against the Dart one, in the
+/// same release build. First every answer must match (line starts at 6 sizes and
+/// 12 widths); then the same work is timed both ways. The C timings include
+/// copying the paragraphs into native memory.
+Future<Map<String, Object?>> nativeBench(WidthModel md, Uint8List sidecar, String libraryPath,
+    {int sample = 100000, int reps = 5}) async {
+  final nb = NativeBreaker(libraryPath, sidecar);
+  final out = <String, Object?>{'exactness': await nativeExactness(md, nb, sample: sample)};
+  await _nativeTiming(md, nb, out, reps);
+  return out;
+}
+
+/// Line starts from the C port against the Dart breaker, for every paragraph (up
+/// to [sample] per corpus) at 6 sizes and 12 widths.
+Future<Map<String, Object?>> nativeExactness(WidthModel md, NativeBreaker nb, {int sample = 100000}) async {
+  var checked = 0, mismatched = 0;
+  final examples = <String>[];
+  for (final name in corpora) {
+    final all = await loadCorpus(name);
+    if (all.isEmpty) continue;
+    final paras = all.length > sample ? [for (var i = 0; i < sample; i++) all[(i * all.length) ~/ sample]] : all;
+    nb.load(paras);
+    final records = [for (final p in paras) buildRecords(md, p)];
+    for (final size in [12.0, 13.0, 16.0, 18.4, 21.3, 24.0]) {
+      final scale = scaleFor(md, size);
+      for (var k = 0; k < 12; k++) {
+        final w = size * (9.0 + k * 36.0 / 11);
+        for (var i = 0; i < paras.length; i++) {
+          final dart = records[i]?.lineStarts(w, scale);
+          final c = nb.lineStarts(i, w, scale);
+          checked++;
+          final same = dart == null ? c == null : c != null && c.length == dart.length &&
+              [for (var j = 0; j < c.length; j++) c[j] == dart[j]].every((x) => x);
+          if (!same) {
+            mismatched++;
+            if (examples.length < 5) examples.add('$name size=$size w=$w i=$i dart=$dart c=$c');
+          }
+        }
+      }
+    }
+  }
+  return {'checked': checked, 'mismatched': mismatched, 'examples': examples};
+}
+
+Future<void> _nativeTiming(WidthModel md, NativeBreaker nb, Map<String, Object?> out, int reps) async {
+  Future<void> runOn(String label, List<String> paras, double size, double w) async {
+    final scale = scaleFor(md, size);
+    final units = paras.fold<int>(0, (a, p) => a + p.length);
+    double time(void Function() f) {
+      f(); // warm-up
+      final ms = <double>[];
+      for (var k = 0; k < reps; k++) {
+        final sw = Stopwatch()..start();
+        f();
+        ms.add(sw.elapsedMicroseconds / 1000);
+      }
+      return _median(ms);
+    }
+
+    var sink = 0;
+    final dartMs = time(() {
+      for (final p in paras) {
+        sink += buildRecords(md, p)?.lineCount(w, scale) ?? -1;
+      }
+    });
+    final copyMs = time(() => nb.load(paras));
+    final batchMs = time(() {
+      nb.load(paras);
+      final o = nb.lineCounts(paras.length, w, scale);
+      sink += o[0];
+    });
+    final perCallMs = time(() {
+      for (final p in paras) {
+        sink += nb.lineCount(p, w, scale);
+      }
+    });
+    // Re-wrap at a new width from kept records.
+    final recs = [for (final p in paras) buildRecords(md, p)];
+    nb.load(paras);
+    nb.prepare(paras.length);
+    final w2 = w * 1.25;
+    final rewrapDartMs = time(() {
+      for (final r in recs) {
+        sink += r?.lineCount(w2, scale) ?? -1;
+      }
+    });
+    final rewrapCMs = time(() => sink += nb.rewrap(w2, scale)[0]);
+    // The same answers both ways at this width (counts).
+    nb.load(paras);
+    final cCounts = Int32List.fromList(nb.lineCounts(paras.length, w, scale).sublist(0, paras.length));
+    var agree = 0;
+    for (var i = 0; i < paras.length; i++) {
+      if ((buildRecords(md, paras[i])?.lineCount(w, scale) ?? -1) == cCounts[i]) agree++;
+    }
+    // End to end, as a list computing item heights: paragraphs the breaker does not
+    // decide go to Flutter in both cases.
+    final style = TextStyle(fontFamily: family, fontSize: size);
+    final lh = lineHeightPx(md, size);
+    double flutterHeight(String p) {
+      final para = paragraph(p, w, size);
+      final h = para.height;
+      para.dispose();
+      return h;
+    }
+
+    final e2eDartMs = time(() {
+      var h = 0.0;
+      for (final p in paras) {
+        final c = buildRecords(md, p)?.lineCount(w, scale) ?? -1;
+        h += c >= 0 ? c * lh : flutterHeight(p);
+      }
+      sink += h.toInt();
+    });
+    final e2eCMs = time(() {
+      nb.load(paras);
+      final o = nb.lineCounts(paras.length, w, scale);
+      var h = 0.0;
+      for (var i = 0; i < paras.length; i++) {
+        h += o[i] >= 0 ? o[i] * lh : flutterHeight(paras[i]);
+      }
+      sink += h.toInt();
+    });
+    final tpMs = time(() {
+      var h = 0.0;
+      for (final p in paras) {
+        final tp = TextPainter(text: TextSpan(text: p, style: style), textDirection: TextDirection.ltr)..layout(maxWidth: w);
+        h += tp.height;
+        tp.dispose();
+      }
+      sink += h.toInt();
+    });
+    if (sink == 42) stdout.writeln(sink);
+    out[label] = {
+      'paragraphs': paras.length, 'codeUnits': units, 'size': size, 'width': w, 'countsAgree': agree,
+      'dartMs': dartMs, 'cCopyMs': copyMs, 'cBatchMs': batchMs, 'cPerCallMs': perCallMs,
+      'rewrapDartMs': rewrapDartMs, 'rewrapCMs': rewrapCMs,
+      'endToEndDartMs': e2eDartMs, 'endToEndCMs': e2eCMs, 'textPainterMs': tpMs,
+      'dartNsPerCodeUnit': 1e6 * dartMs / units, 'cBatchNsPerCodeUnit': 1e6 * batchMs / units,
+    };
+  }
+
+  await runOn('docs', await loadCorpus('en_docs'), 16.0, 400.0);
+  final chat = <String>[for (final c in chatCorpora) ...await loadCorpus(c)];
+  if (chat.isNotEmpty) await runOn('chat', chat, 16.0, 280.0);
+}
+
 Future<Map<String, Object?>> runApp({String mode = 'all', int sample = 100000}) async {
   final result = <String, Object?>{'platform': Platform.operatingSystem, 'mode': mode};
   await loadFont();
@@ -454,6 +602,12 @@ Future<Map<String, Object?>> runApp({String mode = 'all', int sample = 100000}) 
   if (mode == 'sizes') result['sizes'] = await sizeProbe(md);
   if (mode == 'all' || mode == 'validate') result['validate'] = await validate(md, sample: sample);
   if (mode == 'all' || mode == 'timing') result['timing'] = await timing(md);
+  if (mode == 'native') {
+    // On Android the library ships in the APK (jniLibs) and opens by name.
+    final lib = Platform.environment['BF_NATIVE_LIB'] ?? (Platform.isAndroid ? 'libbreak_first.so' : null);
+    if (lib == null) throw StateError('BF_NATIVE_LIB: path to the compiled native/break_first.c');
+    result['native'] = await nativeBench(md, bytes, lib, sample: sample);
+  }
   return result;
 }
 

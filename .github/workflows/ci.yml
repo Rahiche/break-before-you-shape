@@ -45,6 +45,12 @@ jobs:
         run: |
           flutter pub get
           flutter analyze --no-fatal-infos
+      - name: C port gives the Dart answers
+        working-directory: flutter_bench
+        run: |
+          cc -O3 -std=c11 -ffp-contract=off -shared -fPIC -o "$RUNNER_TEMP/libbreak_first" ../native/break_first.c -lm
+          tool/prepare_assets.sh
+          BF_NATIVE_LIB="$RUNNER_TEMP/libbreak_first" flutter test test/native_exact_test.dart
       - name: Summary
         if: always()
         run: python3 flutter_bench/tool/ci_summary.py packages/break_first/build combined.json
