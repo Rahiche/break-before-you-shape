@@ -73,7 +73,9 @@ Future<(WidthModel, Map<String, Object?>)> buildSidecar() async {
   final cert = await rootBundle.loadString('assets/roboto.cert');
   final sw = Stopwatch()..start();
   var calls = 0, nonIntegral = 0;
-  final model = pkg.buildSidecar(fontFamily: family, font: font, certificate: cert, measured: (_, w) {
+  final noLiga = await rootBundle.loadString('assets/roboto.nolig.cert');
+  final model = pkg.buildSidecar(fontFamily: family, font: font, certificate: cert, noLigaCertificate: noLiga,
+      measured: (_, w) {
     calls++;
     if ((w - w.roundToDouble()).abs() > 1e-3) nonIntegral++;
   });
@@ -175,6 +177,90 @@ Future<Map<String, Object?>> validate(WidthModel md, {int sample = 100000, List<
   out['widthSteps'] = widthSteps;
   out['lineStartMethodCheck'] = {'checked': startsChecked, 'disagree': startsDisagree};
   out['mismatchExamples'] = examples;
+  return out;
+}
+
+/// Style options validated by [validateStyles].
+const styleConfigs = {
+  'hard breaks': LineOptions(),
+  'letterSpacing 0.5': LineOptions(letterSpacing: 0.5),
+  'letterSpacing -0.3': LineOptions(letterSpacing: -0.3),
+  'wordSpacing 2': LineOptions(wordSpacing: 2),
+  'height 1.3': LineOptions(height: 1.3),
+  'maxLines 3': LineOptions(maxLines: 3),
+  'combined': LineOptions(letterSpacing: 0.7, wordSpacing: 1.5, height: 1.2, maxLines: 4),
+};
+
+/// Exactness with style options and hard line breaks: every corpus, its
+/// paragraphs joined 1 to 4 at a time with \n (multi-line messages), at 6 sizes
+/// and 8 widths, against Flutter laid out with the same options.
+Future<Map<String, Object?>> validateStyles(WidthModel md, {int sample = 2000}) async {
+  const sizes = [12.0, 13.0, 15.0, 16.0, 18.4, 24.0];
+  final out = <String, Object?>{};
+  final examples = <String>[];
+  final texts = <String, List<String>>{};
+  for (final name in corpora) {
+    final all = await loadCorpus(name);
+    if (all.isEmpty) continue;
+    final joined = <String>[];
+    for (var i = 0, k = 0; i < all.length; k++) {
+      final n = 1 + k % 4;
+      joined.add(all.sublist(i, (i + n).clamp(0, all.length)).join('\n'));
+      i += n;
+    }
+    texts[name] = joined.length > sample ? [for (var i = 0; i < sample; i++) joined[(i * joined.length) ~/ sample]] : joined;
+  }
+  for (final c in styleConfigs.entries) {
+    final o = c.value;
+    var same = 0, diff = 0, deferred = 0, heightSame = 0, checked = 0, lines = 0;
+    for (final e in texts.entries) {
+      final records = [for (final t in e.value) buildRecords(md, t, letterSpacing: o.letterSpacing)];
+      for (final size in sizes) {
+        final scale = scaleFor(md, size);
+        final lh = lineHeightPx(md, size, height: o.height);
+        for (var k = 0; k < 8; k++) {
+          final w = size * (9.0 + k * 36.0 / 7);
+          for (var i = 0; i < e.value.length; i++) {
+            final t = e.value[i];
+            var ours = records[i]?.lineStarts(w, scale, letterSpacing: o.letterSpacing, wordSpacing: o.wordSpacing);
+            if (ours == null) {
+              deferred++;
+              continue;
+            }
+            if (o.maxLines != null && ours.length > o.maxLines!) ours = ours.sublist(0, o.maxLines!);
+            final p = layoutParagraph(t, fontFamily: family, fontSize: size, width: w, letterSpacing: o.letterSpacing,
+                wordSpacing: o.wordSpacing, height: o.height, maxLines: o.maxLines);
+            final theirs = flutterLineStarts(p, t);
+            lines += theirs.length;
+            var eq = ours.length == theirs.length;
+            for (var j = 0; eq && j < ours.length; j++) {
+              eq = ours[j] == theirs[j];
+            }
+            if (eq) {
+              same++;
+              checked++;
+              if ((ours.length * lh - p.height).abs() < 1e-3) {
+                heightSame++;
+              } else if (examples.where((x) => x.startsWith(c.key)).length < 3) {
+                examples.add('${c.key} ${e.key} height size=$size ours=${ours.length * lh} flutter=${p.height}');
+              }
+            } else {
+              diff++;
+              if (examples.where((x) => x.startsWith(c.key)).length < 3) {
+                examples.add('${c.key} ${e.key} size=$size w=${w.toStringAsFixed(1)} ours=$ours flutter=$theirs | '
+                    '${t.substring(0, t.length.clamp(0, 160))}');
+              }
+            }
+            p.dispose();
+          }
+        }
+      }
+    }
+    out[c.key] = {'identical': same, 'different': diff, 'deferred': deferred, 'lines': lines,
+        'heightIdentical': heightSame, 'heightChecked': checked};
+  }
+  out['texts'] = {for (final e in texts.entries) e.key: e.value.length};
+  out['examples'] = examples;
   return out;
 }
 
@@ -602,6 +688,7 @@ Future<Map<String, Object?>> runApp({String mode = 'all', int sample = 100000}) 
   if (mode == 'sizes') result['sizes'] = await sizeProbe(md);
   if (mode == 'all' || mode == 'validate') result['validate'] = await validate(md, sample: sample);
   if (mode == 'all' || mode == 'timing') result['timing'] = await timing(md);
+  if (mode == 'styles') result['styles'] = await validateStyles(md, sample: sample);
   if (mode == 'native') {
     // On Android the library ships in the APK (jniLibs) and opens by name.
     final lib = Platform.environment['BF_NATIVE_LIB'] ?? (Platform.isAndroid ? 'libbreak_first.so' : null);

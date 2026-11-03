@@ -55,13 +55,29 @@ if "greek" in os.environ.get("CERTIFY_SCRIPTS", ""):
     RANGES.append((0x370, 0x3FF))
 if "cyrillic" in os.environ.get("CERTIFY_SCRIPTS", ""):
     RANGES.append((0x400, 0x4FF))
+if "hebrew" in os.environ.get("CERTIFY_SCRIPTS", ""):
+    RANGES.append((0x590, 0x5FF))
+# OpenType scripts HarfBuzz shapes these characters with: the lookups of all of them
+# count (Common characters take the script of the run they are in).
+SCRIPT_TAGS = ["latn"] + [tag for name, tag in (("greek", "grek"), ("cyrillic", "cyrl"), ("hebrew", "hebr"))
+                          if name in os.environ.get("CERTIFY_SCRIPTS", "")]
 # Every feature HarfBuzz turns on for all of a horizontal Latin buffer. frac/numr/dnom
 # are applied only around U+2044 FRACTION SLASH, which is classified U below.
 FEATURES = {"rvrn", "ltra", "ltrm", "rand", "ccmp", "locl", "rlig", "calt", "clig", "liga", "rclt", "abvm",
             "blwm", "mark", "mkmk", "curs", "dist", "kern", "trak"}
+# Features the engine switches off, e.g. CERTIFY_FEATURES_OFF=liga,clig,calt for
+# Flutter text with letter spacing (measured: it disables ligatures).
+FEATURES -= set(f for f in os.environ.get("CERTIFY_FEATURES_OFF", "").split(",") if f)
+# Right-to-left paragraphs (CERTIFY_DIRECTION=rtl): HarfBuzz applies rtla/rtlm instead
+# of ltra/ltrm.
+if os.environ.get("CERTIFY_DIRECTION") == "rtl":
+    FEATURES = (FEATURES - {"ltra", "ltrm"}) | {"rtla", "rtlm"}
 # AAT selectors HarfBuzz switches on for its default features (rlig, liga, clig, calt):
 # (feature type, selector). In "all" mode, every selector of these two types.
 AAT_DEFAULT_SELECTORS = {(1, 0), (1, 2), (1, 18), (36, 0)}
+# The same switch for AAT: HarfBuzz maps rlig, liga, clig, calt to these selectors.
+AAT_DEFAULT_SELECTORS -= {sel for tag, sel in {"rlig": (1, 0), "liga": (1, 2), "clig": (1, 18), "calt": (36, 0)}.items()
+                          if tag not in FEATURES}
 AAT_FEATURE_TYPES = {1, 36}
 EOT, DELETED = 0, 2          # AAT classes
 LETTER_FREQ = dict(zip("etaoinshrdlcumwfgypbvkjxqz",
@@ -125,9 +141,10 @@ make_unsafe([cp for cp in chars if gdef_class.get(nominal[cp]) == 3], "GDEF mark
 
 
 def active_lookups(tag):
-    """Lookups HarfBuzz applies for script latn, language en, default variation
-    coordinates. With SELECT == "all", every script, language system and feature
-    variation instead (a strict over-approximation)."""
+    """Lookups HarfBuzz applies for the scripts in SCRIPT_TAGS (each falling back to
+    DFLT), language en, default variation coordinates. With SELECT == "all", every
+    script, language system and feature variation instead (a strict
+    over-approximation)."""
     t = font[tag].table
     if not t.FeatureList:
         return t, []
@@ -152,10 +169,11 @@ def active_lookups(tag):
         for sc in scripts.values():
             langsys += [sc.DefaultLangSys] + [r.LangSys for r in sc.LangSysRecord]
     else:
-        sc = scripts.get("latn") or scripts.get("DFLT") or scripts.get("dflt")
-        if sc:
-            eng = [r.LangSys for r in sc.LangSysRecord if r.LangSysTag == "ENG "]
-            langsys = eng[:1] or [sc.DefaultLangSys]
+        for tag in SCRIPT_TAGS:
+            sc = scripts.get(tag) or scripts.get("DFLT") or scripts.get("dflt")
+            if sc:
+                eng = [r.LangSys for r in sc.LangSysRecord if r.LangSysTag == "ENG "]
+                langsys += eng[:1] or [sc.DefaultLangSys]
     idx = set()
     for ls in langsys:
         if ls is None:

@@ -1,0 +1,85 @@
+{
+ "platform": "macos",
+ "mode": "styles",
+ "sidecar": {
+  "bytes": 590712,
+  "loadMs": 2.943,
+  "describe": "Roboto: 699 characters, pair classes 114x121, 90 islands up to m=4"
+ },
+ "fontSizeQuantized": false,
+ "canary": {
+  "probes": 5,
+  "maxErrPx": 0.0,
+  "pass": true
+ },
+ "styles": {
+  "hard breaks": {
+   "identical": 657974,
+   "different": 0,
+   "deferred": 19546,
+   "lines": 4582662,
+   "heightIdentical": 657974,
+   "heightChecked": 657974
+  },
+  "letterSpacing 0.5": {
+   "identical": 655457,
+   "different": 0,
+   "deferred": 22063,
+   "lines": 4797964,
+   "heightIdentical": 655457,
+   "heightChecked": 655457
+  },
+  "letterSpacing -0.3": {
+   "identical": 646691,
+   "different": 0,
+   "deferred": 30829,
+   "lines": 4106840,
+   "heightIdentical": 646691,
+   "heightChecked": 646691
+  },
+  "wordSpacing 2": {
+   "identical": 657789,
+   "different": 0,
+   "deferred": 19731,
+   "lines": 4721885,
+   "heightIdentical": 657789,
+   "heightChecked": 657789
+  },
+  "height 1.3": {
+   "identical": 657974,
+   "different": 0,
+   "deferred": 19546,
+   "lines": 4582662,
+   "heightIdentical": 657974,
+   "heightChecked": 657974
+  },
+  "maxLines 3": {
+   "identical": 657974,
+   "different": 0,
+   "deferred": 19546,
+   "lines": 1740942,
+   "heightIdentical": 657974,
+   "heightChecked": 657974
+  },
+  "combined": {
+   "identical": 641769,
+   "different": 0,
+   "deferred": 35751,
+   "lines": 2124217,
+   "heightIdentical": 641769,
+   "heightChecked": 641769
+  },
+  "texts": {
+   "en_docs": 2000,
+   "en_man": 2000,
+   "en_legal": 515,
+   "ui_en": 1600,
+   "ui_de": 1600,
+   "ui_fr": 1600,
+   "ui_ru": 1600,
+   "ui_uk": 1600,
+   "ui_el": 1600
+  },
+  "examples": []
+ }
+}

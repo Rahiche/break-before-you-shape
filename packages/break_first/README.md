@@ -34,9 +34,14 @@ final starts = bf.lineStarts(text, fontSize: 16, maxWidth: 280);  // null when F
 // Re-wrapping one paragraph at many widths or sizes: prepare once.
 final p = bf.prepare(text);
 p?.lineCount(fontSize: 16, maxWidth: 320);
+
+// Style options, each measured against Flutter.
+const o = LineOptions(letterSpacing: 0.5, wordSpacing: 2, height: 1.3, maxLines: 3);
+bf.height(text, fontSize: 16, maxWidth: 280, options: o);
 ```
 
-Lay the text out with `bf.style(fontSize)` (plus a colour) and `TextScaler.noScaling`; pass the scaled size yourself.
+Lay the text out with `bf.style(fontSize, options)` (plus a colour) and `TextScaler.noScaling`; pass the scaled size
+yourself. Hard line breaks (`\n`, U+2028, U+2029) are handled.
 `BreakFirst.load` checks the sidecar against this device's text engine: it calibrates how the engine rounds font sizes
 (Android truncates them to 1/64 px) and measures five canary strings. It returns null if any width is off.
 
@@ -69,8 +74,23 @@ font size. The package tests rebuild Roboto's sidecar on the machine running the
 
 On macOS: 0 different, 1,190 sent to Flutter, all heights equal. CI runs them on Linux and macOS.
 
+## What Flutter does, and the breaker models
+
+Each rule below was measured in Flutter (3.47), and is checked by the tests:
+
+- **Hard breaks.** `\n`, U+2028 and U+2029 end a line (a lone `\r` does not). A hard break kerns with the character
+  before it as a space does.
+- **Letter spacing** is added to every glyph's advance, with half of it before the first glyph; the fit test counts
+  advance plus spacing. Positive spacing switches ligatures off. Negative spacing keeps them and spaces glyph
+  clusters. The sidecar carries a second certificate (ligature features off) and the measured widths for both cases.
+- **Word spacing** goes on the last space of each run of spaces that is a line-break opportunity. That includes spaces
+  that start a line after a hard break, but not spaces that start the paragraph.
+- **Height multiplier.** Every line is round(size × height), with both in float32 and the product in double, so 15 × 1.3
+  gives 19.
+- **`maxLines`.** Flutter shows min(lines, maxLines) lines.
+
 ## Scope
 
-Single-style, left-to-right paragraphs in Latin, Greek and Cyrillic, with the default style: no letter or word spacing,
-no height multiplier, no font features and no `maxLines`. Anything else goes to Flutter. See the
+Single-style, left-to-right paragraphs in Latin, Greek and Cyrillic, with the options above. Font features and
+`strutStyle` are not modelled, and anything else goes to Flutter. See the
 [paper](../../paper/paper.pdf) for the method and its proofs.

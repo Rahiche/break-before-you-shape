@@ -62,16 +62,37 @@ void calibrateFontSize(WidthModel md, double Function(String, double) measure) {
   quantizeFontSize = (effective - (size * 64).floorToDouble() / 64).abs() < (effective - size).abs();
 }
 
-/// Flutter's height of one line at [size] for a default style: the font's line
-/// height in pixels, rounded to a whole pixel (measured at 12, 14, 16, 18.4, 24 px).
-double lineHeightPx(WidthModel md, double size) => (md.lineHeight * effectiveFontSize(size) / md.upem).roundToDouble();
+/// Flutter's height of one line at [size]. Default style: the font's line height
+/// in pixels, rounded to a whole pixel (measured at 12, 14, 16, 18.4, 24 px). With a
+/// height multiplier: size × height, rounded, with both in float32 and the product
+/// in double (measured: 15 × 1.3 gives 19, 13 × 1.5 gives 20, 10 × 1.15 gives 11).
+double lineHeightPx(WidthModel md, double size, {double? height}) => height == null
+    ? (md.lineHeight * effectiveFontSize(size) / md.upem).roundToDouble()
+    : (_toF32(size) * _toF32(height)).roundToDouble();
 
 /// Pixels per font unit at [size].
 double scaleFor(WidthModel md, double size) => effectiveFontSize(size) / md.upem;
 
 class WidthModel {
-  WidthModel._(this.name, this.upem, this.m, this.lineHeight, this.cps, this.cert, this.adv, this.fc, this.sc, this.nS,
-      this.cls, this.islandChars, this.islandOfKey, this.islandW, this.islandL, this.islandR, this.probes) {
+  WidthModel._(
+    this.name,
+    this.upem,
+    this.m,
+    this.lineHeight,
+    this.cps,
+    this.cert,
+    this.adv,
+    this.fc,
+    this.sc,
+    this.nS,
+    this.cls,
+    this.islandChars,
+    this.islandOfKey,
+    this.islandW,
+    this.islandL,
+    this.islandR,
+    this.probes,
+  ) {
     n1 = cps.length;
     idOf = Uint16List(0x10000);
     islandDigit = Int8List(n1)..fillRange(0, n1, -1);
@@ -86,28 +107,148 @@ class WidthModel {
   }
 
   final String name;
+
+  /// Paragraph direction the sidecar was distilled in. A right-to-left sidecar
+  /// describes right-to-left paragraphs whose strong characters are all
+  /// right-to-left; a left-to-right one, paragraphs with no right-to-left
+  /// characters. Mixed-direction paragraphs go to Flutter.
+  bool rtl = false;
   final int upem, m;
-  final double lineHeight;     // one line's height, in units
-  final Int32List cps;         // id -> codepoint (id 0 = not in the model)
-  final Uint8List cert;        // id -> certificate class
-  final Float64List adv;       // id -> advance alone (units)
-  final Int32List fc, sc;      // id -> first-position row offset (class * nS), second-position class
+  final double lineHeight; // one line's height, in units
+  final Int32List cps; // id -> codepoint (id 0 = not in the model)
+  final Uint8List cert; // id -> certificate class
+  final Float64List adv; // id -> advance alone (units)
+  final Int32List fc, sc; // id -> first-position row offset (class * nS), second-position class
   final int nS;
-  final Float64List cls;       // pair class matrix: width(ab) - adv(a) - adv(b)
+  final Float64List cls; // pair class matrix: width(ab) - adv(a) - adv(b)
   final Int32List islandChars; // island digit -> id (P/K characters)
   final Int32List islandOfKey; // island key -> island index, or -1
-  final Float64List islandW;   // island -> width alone
-  final Float64List islandL;   // island * n1 + x -> width(xI) - adv(x) - width(I)
-  final Float64List islandR;   // island * n1 + y -> width(Iy) - width(I) - adv(y)
+  final Float64List islandW; // island -> width alone
+  final Float64List islandL; // island * n1 + x -> width(xI) - adv(x) - width(I)
+  final Float64List islandR; // island * n1 + y -> width(Iy) - width(I) - adv(y)
   final Map<String, double> probes; // canary strings -> expected width (units)
   late final int n1, keyBase, islandCount;
   late final Uint16List idOf;
   late final Int8List islandDigit;
 
+  // Text the engine shapes without ligatures (letter spacing switches them off):
+  // each character's class under a certificate computed with liga, clig and calt
+  // off, and pair values involving the default P/K characters, measured that way.
+  // Null when the sidecar has none, or when such text would still need islands.
+  Uint8List? noLigaCert;
+  Float64List? noLigaRow; // digit * n1 + b -> width(ab) - adv(a) - adv(b), a = islandChars[digit]
+  Float64List? noLigaCol; // digit * n1 + a -> width(ab) - adv(a) - adv(b), b = islandChars[digit]
+  // Glyph clusters each island shapes to (negative letter spacing keeps ligatures
+  // and spaces glyphs, not characters: measured).
+  Uint8List? islandClusters;
+
+  // Kerning from a legacy kern or kerx table is split between the two glyphs
+  // (HarfBuzz's kern machine puts half on each advance; measured: Times New
+  // Roman's space-A kern), so a line that starts at the right glyph carries its
+  // share. These are the right glyph's shares, laid out like cls, islandL and
+  // islandR; null when every share is on the left glyph (GPOS pair positioning).
+  Float64List? clsRight, islandLRight, islandRRight;
+  // The same for text without ligatures, for the pairs noLigaRow and noLigaCol hold.
+  Float64List? noLigaRowRight, noLigaColRight;
+
+  /// Right glyph's share of pair (a, b) without ligatures (split kerning only).
+  double rightNoLiga(int a, int b) {
+    final da = islandDigit[a];
+    if (da >= 0) return noLigaRowRight![da * n1 + b];
+    final db = islandDigit[b];
+    if (db >= 0) return noLigaColRight![db * n1 + a];
+    return clsRight![fc[a] + sc[b]];
+  }
+
   double pair(int a, int b) => cls[fc[a] + sc[b]];
 
+  double pairNoLiga(int a, int b) {
+    final da = islandDigit[a];
+    if (da >= 0) return noLigaRow![da * n1 + b];
+    final db = islandDigit[b];
+    if (db >= 0) return noLigaCol![db * n1 + a];
+    return cls[fc[a] + sc[b]];
+  }
+
+  static Map<int, int> _classes(String certText) => {
+    for (final line in certText.split('\n'))
+      if (!line.startsWith('#') && line.trim().split(RegExp(r'\s+')).length == 3)
+        int.parse(line.trim().split(RegExp(r'\s+'))[0], radix: 16): const {
+          'S': certS,
+          'K': certK,
+          'P': certP,
+          'U': certU,
+        }[line.trim().split(RegExp(r'\s+'))[2]]!,
+  };
+
+  void _distillNoLiga(
+    String certText,
+    Measure measure,
+    int Function(String) clusters,
+    double Function(String text, int k)? measurePrefix,
+  ) {
+    final classes = _classes(certText);
+    final c = Uint8List(n1)..[0] = certU;
+    for (var id = 1; id < n1; id++) {
+      c[id] = classes[cps[id]] ?? certU;
+    }
+    // Characters that still need islands without ligatures (some other feature
+    // substitutes them) are not modelled for letter-spaced text.
+    for (var id = 1; id < n1; id++) {
+      if (c[id] == certP || c[id] == certK) c[id] = certU;
+    }
+    final str = [for (final cp in cps) String.fromCharCode(cp)];
+    final nI = islandChars.length;
+    final row = Float64List(nI * n1), col = Float64List(nI * n1);
+    final split = clsRight != null && measurePrefix != null;
+    final rowR = split ? Float64List(nI * n1) : null, colR = split ? Float64List(nI * n1) : null;
+    for (var d = 0; d < nI; d++) {
+      final a = islandChars[d];
+      if (measure(str[a]) != adv[a]) c[a] = certU; // its advance alone must not change
+      for (var b = 1; b < n1; b++) {
+        final ab = str[a] + str[b], ba = str[b] + str[a];
+        row[d * n1 + b] = measure(ab) - adv[a] - adv[b];
+        col[d * n1 + b] = measure(ba) - adv[b] - adv[a];
+        if (split && lbClass(cps[a]) != lbXX && lbClass(cps[b]) != lbXX) {
+          if (row[d * n1 + b] != 0) rowR![d * n1 + b] = row[d * n1 + b] - (measurePrefix(ab, 1) - adv[a]);
+          if (col[d * n1 + b] != 0) colR![d * n1 + b] = col[d * n1 + b] - (measurePrefix(ba, 1) - adv[b]);
+        }
+      }
+    }
+    noLigaRowRight = rowR;
+    noLigaColRight = colR;
+    noLigaCert = c;
+    noLigaRow = row;
+    noLigaCol = col;
+    final ic = Uint8List(islandCount);
+    void visit(String s, int key, int len) {
+      if (key > 0 && islandOfKey[key] >= 0) ic[islandOfKey[key]] = clusters(s);
+      if (len == m) return;
+      for (var d = 0; d < islandChars.length; d++) {
+        visit(s + str[islandChars[d]], key * keyBase + d + 1, len + 1);
+      }
+    }
+
+    visit('', 0, 0);
+    islandClusters = ic;
+  }
+
   /// Builds the tables by measuring with [measure] at font size = units per em.
-  static WidthModel distill(String certText, Measure measure, int upem, double lineHeight) {
+  /// With [noLigaCertText] (certify.py with CERTIFY_FEATURES_OFF=liga,clig,calt)
+  /// and [measureNoLiga] (the engine's widths without ligatures), also the tables
+  /// for letter-spaced text.
+  static WidthModel distill(
+    String certText,
+    Measure measure,
+    int upem,
+    double lineHeight, {
+    String? noLigaCertText,
+    Measure? measureNoLiga,
+    int Function(String)? clustersOf,
+    bool rtl = false,
+    double Function(String text, int k)? measurePrefix,
+    double Function(String text, int k)? measurePrefixNoLiga,
+  }) {
     var name = 'font', m = 0;
     final cps = <int>[0], cl = <int>[certU];
     for (final line in certText.split('\n')) {
@@ -132,53 +273,83 @@ class WidthModel {
       adv[id] = measure(str[id]);
     }
     final dense = Float64List(n1 * n1);
+    // Right-glyph shares of kerned pairs: the pair minus the first glyph's cluster
+    // growth ([measurePrefix] gives the width of the first k code units' clusters).
+    Float64List? right;
     for (var a = 1; a < n1; a++) {
       for (var b = 1; b < n1; b++) {
-        dense[a * n1 + b] = measure(str[a] + str[b]) - adv[a] - adv[b];
+        final ab = str[a] + str[b];
+        final v = dense[a * n1 + b] = measure(ab) - adv[a] - adv[b];
+        // A pair with a primer may ligate, and a combining mark joins the cluster
+        // before it: their boxes then split a ligature or a cluster, not a kern.
+        // Characters outside the line-break table never reach the breaker.
+        final ligates = cl[a] != certS && cl[b] != certS && (cl[a] == certP || cl[b] == certP);
+        final used = lbClass(cps[a]) != lbXX && lbClass(cps[b]) != lbXX;
+        if (v != 0 && measurePrefix != null && !ligates && used) {
+          final rs = v - (measurePrefix(ab, 1) - adv[a]);
+          if (rs != 0) (right ??= Float64List(n1 * n1))[a * n1 + b] = rs;
+        }
       }
     }
     // Compress: identical rows share a first-position class, identical columns a
     // second-position class.
     final rowClass = Int32List(n1), colClass = Int32List(n1);
     final rowKeys = <String, int>{}, colKeys = <String, int>{};
+    String key(Iterable<int> cells) => String.fromCharCodes([
+      for (final c in cells) ...[(dense[c] * 4).round() + 0x8000, if (right != null) (right[c] * 4).round() + 0x8000],
+    ]);
     for (var a = 0; a < n1; a++) {
-      final k = String.fromCharCodes([for (var b = 0; b < n1; b++) (dense[a * n1 + b] * 4).round() + 0x8000]);
-      rowClass[a] = rowKeys.putIfAbsent(k, () => rowKeys.length);
+      rowClass[a] = rowKeys.putIfAbsent(key([for (var b = 0; b < n1; b++) a * n1 + b]), () => rowKeys.length);
     }
     for (var b = 0; b < n1; b++) {
-      final k = String.fromCharCodes([for (var a = 0; a < n1; a++) (dense[a * n1 + b] * 4).round() + 0x8000]);
-      colClass[b] = colKeys.putIfAbsent(k, () => colKeys.length);
+      colClass[b] = colKeys.putIfAbsent(key([for (var a = 0; a < n1; a++) a * n1 + b]), () => colKeys.length);
     }
     final nF = rowKeys.length, nS = colKeys.length;
     final cls = Float64List(nF * nS);
+    final clsRight = right == null ? null : Float64List(nF * nS);
     for (var a = 0; a < n1; a++) {
       for (var b = 0; b < n1; b++) {
         cls[rowClass[a] * nS + colClass[b]] = dense[a * n1 + b];
+        if (clsRight != null) clsRight[rowClass[a] * nS + colClass[b]] = right![a * n1 + b];
       }
     }
     final fc = Int32List.fromList([for (var a = 0; a < n1; a++) rowClass[a] * nS]);
     // Islands: every P/K string of length <= m that contains a primer.
-    final ik = [for (var id = 1; id < n1; id++) if (cl[id] != certS) id];
-    final safe = [for (var id = 1; id < n1; id++) if (cl[id] == certS) id];
+    final ik = [
+      for (var id = 1; id < n1; id++)
+        if (cl[id] != certS) id,
+    ];
+    final safe = [
+      for (var id = 1; id < n1; id++)
+        if (cl[id] == certS) id,
+    ];
     final base = ik.length + 1;
     var keys = 1;
     for (var i = 0; i <= m; i++) {
       keys *= base;
     }
     final islandOfKey = Int32List(keys)..fillRange(0, keys, -1);
-    final w = <double>[], l = <double>[], r = <double>[];
+    final w = <double>[], l = <double>[], r = <double>[], lRight = <double>[], rRight = <double>[];
+    var splitIslands = false;
     void visit(String s, int key, int len, bool primer) {
       if (len > 0 && primer) {
         islandOfKey[key] = w.length;
         final wi = measure(s);
         w.add(wi);
         final lrow = List<double>.filled(n1, double.nan), rrow = List<double>.filled(n1, double.nan);
+        final lr = List<double>.filled(n1, 0), rr = List<double>.filled(n1, 0);
         for (final x in safe) {
-          lrow[x] = measure(str[x] + s) - adv[x] - wi;
-          rrow[x] = measure(s + str[x]) - wi - adv[x];
+          final xs = str[x] + s, sx = s + str[x];
+          lrow[x] = measure(xs) - adv[x] - wi;
+          rrow[x] = measure(sx) - wi - adv[x];
+          if (measurePrefix != null && lrow[x] != 0) lr[x] = lrow[x] - (measurePrefix(xs, 1) - adv[x]);
+          if (measurePrefix != null && rrow[x] != 0) rr[x] = rrow[x] - (measurePrefix(sx, s.length) - wi);
+          splitIslands = splitIslands || lr[x] != 0 || rr[x] != 0;
         }
         l.addAll(lrow);
         r.addAll(rrow);
+        lRight.addAll(lr);
+        rRight.addAll(rr);
       }
       if (len == m) return;
       for (var d = 0; d < ik.length; d++) {
@@ -188,28 +359,76 @@ class WidthModel {
 
     visit('', 0, 0, false);
     // Canary probes: ordinary text whose width must match after shipping.
-    const probeTexts = [
-      'The quick brown fox jumps over the lazy dog.', 'AVAWATAY To Te Wa fi fl ffi office', 'Hello, world! 12,345.67',
-      'Съешь же ещё этих мягких французских булок', 'Ξεσκεπάζω την ψυχοφθόρα βδελυγμία',
-    ];
+    final probeTexts = rtl
+        ? const ['שלום עולם, מה שלומך היום?', 'אבגדהוזחטיכלמנסעפצקרשת ךםןףץ', 'ספר, עט ומחברת.']
+        : const [
+            'The quick brown fox jumps over the lazy dog.',
+            'AVAWATAY To Te Wa fi fl ffi office',
+            'Hello, world! 12,345.67',
+            'Съешь же ещё этих мягких французских булок',
+            'Ξεσκεπάζω την ψυχοφθόρα βδελυγμία',
+          ];
     final probes = <String, double>{for (final p in probeTexts) p: measure(p)};
-    return WidthModel._(name, upem, m, lineHeight, Int32List.fromList(cps), Uint8List.fromList(cl), adv, fc,
-        colClass, nS, cls, Int32List.fromList(ik), islandOfKey, Float64List.fromList(w), Float64List.fromList(l),
-        Float64List.fromList(r), probes);
+    final md = WidthModel._(
+      name,
+      upem,
+      m,
+      lineHeight,
+      Int32List.fromList(cps),
+      Uint8List.fromList(cl),
+      adv,
+      fc,
+      colClass,
+      nS,
+      cls,
+      Int32List.fromList(ik),
+      islandOfKey,
+      Float64List.fromList(w),
+      Float64List.fromList(l),
+      Float64List.fromList(r),
+      probes,
+    );
+    md.rtl = rtl;
+    if (clsRight != null || splitIslands) {
+      md.clsRight = clsRight ?? Float64List(nF * nS);
+      md.islandLRight = Float64List.fromList(lRight);
+      md.islandRRight = Float64List.fromList(rRight);
+    }
+    if (noLigaCertText != null && measureNoLiga != null && clustersOf != null) {
+      md._distillNoLiga(noLigaCertText, measureNoLiga, clustersOf, measurePrefixNoLiga);
+    }
+    return md;
   }
 
   /// The sidecar file. Values are font units (stored as float32).
   Uint8List encode() {
-    final meta = utf8.encode(jsonEncode({
-      'name': name, 'upem': upem, 'm': m, 'lineHeight': lineHeight, 'n1': n1, 'nS': nS, 'nF': cls.length ~/ nS,
-      'islands': islandCount, 'islandChars': islandChars.length, 'keys': islandOfKey.length, 'probes': probes,
-    }));
+    final meta = utf8.encode(
+      jsonEncode({
+        'name': name,
+        'upem': upem,
+        'm': m,
+        'lineHeight': lineHeight,
+        'n1': n1,
+        'nS': nS,
+        'nF': cls.length ~/ nS,
+        'islands': islandCount,
+        'islandChars': islandChars.length,
+        'keys': islandOfKey.length,
+        'probes': probes,
+        if (rtl) 'direction': 'rtl',
+        if (clsRight != null) 'split': true,
+        if (noLigaRowRight != null) 'splitNoLiga': true,
+        if (noLigaCert != null) 'noLiga': true,
+      }),
+    );
     final b = BytesBuilder()
-      ..add((ByteData(8)
-            ..setUint32(0, 0x42465732) // "BFW2"
-            ..setUint32(4, meta.length))
-          .buffer
-          .asUint8List())
+      ..add(
+        (ByteData(8)
+              ..setUint32(0, 0x42465732) // "BFW2"
+              ..setUint32(4, meta.length))
+            .buffer
+            .asUint8List(),
+      )
       ..add(meta);
     void pad() {
       while (b.length % 4 != 0) {
@@ -229,7 +448,10 @@ class WidthModel {
     b.add(islandOfKey.buffer.asUint8List());
     b.add(Float32List.fromList(islandW).buffer.asUint8List());
     // Only S neighbours have island terms; store them densely by safe index.
-    final safe = [for (var id = 1; id < n1; id++) if (cert[id] == certS) id];
+    final safe = [
+      for (var id = 1; id < n1; id++)
+        if (cert[id] == certS) id,
+    ];
     final lr = Float32List(islandCount * safe.length * 2);
     var o = 0;
     for (var i = 0; i < islandCount; i++) {
@@ -239,6 +461,30 @@ class WidthModel {
       }
     }
     b.add(lr.buffer.asUint8List());
+    if (noLigaCert != null) {
+      b.add(noLigaCert!);
+      pad();
+      b.add(Float32List.fromList(noLigaRow!).buffer.asUint8List());
+      b.add(Float32List.fromList(noLigaCol!).buffer.asUint8List());
+      b.add(islandClusters!);
+      pad();
+    }
+    if (clsRight != null) {
+      b.add(Float32List.fromList(clsRight!).buffer.asUint8List());
+      final rs = Float32List(islandCount * safe.length * 2);
+      var o2 = 0;
+      for (var i = 0; i < islandCount; i++) {
+        for (final x in safe) {
+          rs[o2++] = islandLRight![i * n1 + x];
+          rs[o2++] = islandRRight![i * n1 + x];
+        }
+      }
+      b.add(rs.buffer.asUint8List());
+    }
+    if (noLigaRowRight != null) {
+      b.add(Float32List.fromList(noLigaRowRight!).buffer.asUint8List());
+      b.add(Float32List.fromList(noLigaColRight!).buffer.asUint8List());
+    }
     return b.toBytes();
   }
 
@@ -271,7 +517,10 @@ class WidthModel {
     final fcls = i32(n1), sc = i32(n1);
     final cls = f32(nF * nS);
     final islandChars = i32(nI), islandOfKey = i32(keys), islandW = f32(islands);
-    final safe = [for (var id = 1; id < n1; id++) if (cert[id] == certS) id];
+    final safe = [
+      for (var id = 1; id < n1; id++)
+        if (cert[id] == certS) id,
+    ];
     final lr = f32(islands * safe.length * 2);
     final islandL = Float64List(islands * n1)..fillRange(0, islands * n1, double.nan);
     final islandR = Float64List(islands * n1)..fillRange(0, islands * n1, double.nan);
@@ -282,10 +531,53 @@ class WidthModel {
         islandR[i * n1 + x] = lr[o++];
       }
     }
-    return WidthModel._(meta['name'] as String, meta['upem'] as int, meta['m'] as int,
-        (meta['lineHeight'] as num).toDouble(), cps, cert, adv, Int32List.fromList([for (final v in fcls) v * nS]), sc,
-        nS, cls, islandChars, islandOfKey, islandW, islandL, islandR,
-        (meta['probes'] as Map).map((k, v) => MapEntry(k as String, (v as num).toDouble())));
+    final md = WidthModel._(
+      meta['name'] as String,
+      meta['upem'] as int,
+      meta['m'] as int,
+      (meta['lineHeight'] as num).toDouble(),
+      cps,
+      cert,
+      adv,
+      Int32List.fromList([for (final v in fcls) v * nS]),
+      sc,
+      nS,
+      cls,
+      islandChars,
+      islandOfKey,
+      islandW,
+      islandL,
+      islandR,
+      (meta['probes'] as Map).map((k, v) => MapEntry(k as String, (v as num).toDouble())),
+    );
+    md.rtl = meta['direction'] == 'rtl';
+    if (meta['noLiga'] == true) {
+      md.noLigaCert = Uint8List.fromList(copy.sublist(off, off + n1));
+      off = (off + n1 + 3) & ~3;
+      md.noLigaRow = f32(nI * n1);
+      md.noLigaCol = f32(nI * n1);
+      md.islandClusters = Uint8List.fromList(copy.sublist(off, off + islands));
+      off = (off + islands + 3) & ~3;
+    }
+    if (meta['split'] == true) {
+      md.clsRight = f32(nF * nS);
+      final rs = f32(islands * safe.length * 2);
+      final lr = Float64List(islands * n1), rr = Float64List(islands * n1);
+      var o2 = 0;
+      for (var i = 0; i < islands; i++) {
+        for (final x in safe) {
+          lr[i * n1 + x] = rs[o2++];
+          rr[i * n1 + x] = rs[o2++];
+        }
+      }
+      md.islandLRight = lr;
+      md.islandRRight = rr;
+    }
+    if (meta['splitNoLiga'] == true) {
+      md.noLigaRowRight = f32(nI * n1);
+      md.noLigaColRight = f32(nI * n1);
+    }
+    return md;
   }
 
   /// Model width of [text] on one line, in units (for canaries and checks).
@@ -294,15 +586,33 @@ class WidthModel {
     return r == null ? double.nan : r.prefix[text.length];
   }
 
-  String describe() => '$name: ${n1 - 1} characters, pair classes ${cls.length ~/ nS}x$nS, '
+  String describe() =>
+      '$name: ${n1 - 1} characters, pair classes ${cls.length ~/ nS}x$nS, '
       '$islandCount islands up to m=$m';
 }
 
 // ---------------------------------------------------------------------------
 // Line-break classes (UAX #14) for the characters this breaker handles. Anything
 // else sends its paragraph to Flutter.
-const int lbAL = 0, lbNU = 1, lbSP = 2, lbBA = 3, lbHY = 4, lbIS = 5, lbEX = 6, lbOP = 7, lbCL = 8, lbCP = 9,
-    lbQU = 10, lbSY = 11, lbPR = 12, lbPO = 13, lbIN = 14, lbB2 = 15, lbGL = 16, lbBB = 17, lbXX = 18;
+const int lbAL = 0,
+    lbNU = 1,
+    lbSP = 2,
+    lbBA = 3,
+    lbHY = 4,
+    lbIS = 5,
+    lbEX = 6,
+    lbOP = 7,
+    lbCL = 8,
+    lbCP = 9,
+    lbQU = 10,
+    lbSY = 11,
+    lbPR = 12,
+    lbPO = 13,
+    lbIN = 14,
+    lbB2 = 15,
+    lbGL = 16,
+    lbBB = 17,
+    lbXX = 18;
 const int nLB = 19;
 const int _lbMax = 0x2200;
 final Uint8List _lb = () {
@@ -339,8 +649,14 @@ final Uint8List _lb = () {
   for (var c = 0x400; c < 0x500; c++) {
     if (c < 0x483 || c > 0x489) t[c] = lbAL; // Cyrillic letters
   }
+  for (var c = 0x5D0; c <= 0x5F4; c++) {
+    if (c <= 0x5EA || c >= 0x5EF) t[c] = lbAL; // Hebrew letters (HL), geresh, gershayim
+  }
+  t[0x5BE] = lbBA; // maqaf
   return t;
 }();
+
+bool _isHL(int cu) => (cu >= 0x5D0 && cu <= 0x5EA) || (cu >= 0x5EF && cu <= 0x5F2);
 
 int lbClass(int codeUnit) => codeUnit < _lbMax ? _lb[codeUnit] : lbXX;
 
@@ -348,7 +664,7 @@ int lbClass(int codeUnit) => codeUnit < _lbMax ? _lb[codeUnit] : lbXX;
 // pair adjustment crosses a change of script. Spaces, digits and punctuation are
 // Common: they join the run of the preceding letter (or the first letter of the
 // paragraph when none precedes them).
-const int scCommon = 0, scLatin = 1, scGreek = 2, scCyrillic = 3;
+const int scCommon = 0, scLatin = 1, scGreek = 2, scCyrillic = 3, scHebrew = 4;
 int scriptOf(int cu) {
   if ((cu | 0x20) >= 0x61 && (cu | 0x20) <= 0x7A) return scLatin;
   if (cu < 0xC0) return cu == 0xAA || cu == 0xBA ? scLatin : scCommon;
@@ -357,8 +673,163 @@ int scriptOf(int cu) {
     return cu == 0x374 || cu == 0x37E || cu == 0x385 || cu == 0x387 ? scCommon : scGreek;
   }
   if (cu >= 0x400 && cu < 0x500) return scCyrillic;
+  if (cu >= 0x590 && cu < 0x600) return scHebrew;
   return scCommon;
 }
+
+// Bidi classes, coarsely, for the characters this breaker handles: strong
+// right-to-left (Hebrew, Arabic), strong left-to-right (the letters of Latin,
+// Greek and Cyrillic, spacing modifier letters) and numbers. Everything else it
+// handles is neutral (spaces, punctuation, symbols).
+bool _strongR(int cu) => (cu >= 0x590 && cu < 0x900) || (cu >= 0xFB1D && cu < 0xFE00) || (cu >= 0xFE70 && cu < 0xFF00);
+// UAX #9 classes for [bidiLevels].
+const int _bL = 0, _bR = 1, _bEN = 2, _bES = 3, _bET = 4, _bCS = 5, _bWS = 6, _bON = 7, _bB = 8;
+
+/// The bidi class of [cu], or -1 where the implicit algorithm here does not
+/// apply: combining marks (NSM), explicit formatting characters, Arabic letters
+/// and digits, and characters this breaker does not handle anyway.
+int _bidiClass(int cu) {
+  if (cu == 0x0A || cu == 0x2029) return _bB;
+  if (cu == 0x20 || cu == 0x2028 || (cu >= 0x2000 && cu <= 0x200A)) return _bWS;
+  if (cu >= 0x30 && cu <= 0x39) return _bEN;
+  if ((cu | 0x20) >= 0x61 && (cu | 0x20) <= 0x7A) return _bL;
+  if (cu < 0x80) {
+    if (cu == 0x2B || cu == 0x2D) return _bES;
+    if (cu >= 0x23 && cu <= 0x25) return _bET;
+    if (cu == 0x2C || cu == 0x2E || cu == 0x2F || cu == 0x3A) return _bCS;
+    return cu >= 0x21 ? _bON : -1;
+  }
+  if (cu < 0xC0) {
+    if (cu == 0xA0) return _bCS;
+    if ((cu >= 0xA2 && cu <= 0xA5) || cu == 0xB0 || cu == 0xB1) return _bET;
+    if (cu == 0xB2 || cu == 0xB3 || cu == 0xB9) return _bEN;
+    if (cu == 0xAA || cu == 0xB5 || cu == 0xBA) return _bL;
+    return _bON;
+  }
+  if (cu < 0x250) return cu == 0xD7 || cu == 0xF7 ? _bON : _bL;
+  if (cu >= 0x2B0 && cu < 0x300) {
+    final l =
+        cu <= 0x2B8 ||
+        (cu >= 0x2BB && cu <= 0x2C1) ||
+        cu == 0x2D0 ||
+        cu == 0x2D1 ||
+        (cu >= 0x2E0 && cu <= 0x2E4) ||
+        cu == 0x2EE;
+    return l ? _bL : _bON;
+  }
+  if (cu >= 0x370 && cu < 0x400) {
+    return cu == 0x374 || cu == 0x375 || cu == 0x37E || cu == 0x384 || cu == 0x385 || cu == 0x387 || cu == 0x3F6
+        ? _bON
+        : _bL;
+  }
+  if (cu >= 0x400 && cu < 0x500) return cu >= 0x483 && cu <= 0x489 ? -1 : _bL;
+  if (cu == 0x5BE ||
+      cu == 0x5C0 ||
+      cu == 0x5C3 ||
+      cu == 0x5C6 ||
+      (cu >= 0x5D0 && cu <= 0x5EA) ||
+      (cu >= 0x5EF && cu <= 0x5F4)) {
+    return _bR;
+  }
+  if (cu >= 0x590 && cu < 0x900) return -1; // Hebrew marks, Arabic
+  if (cu == 0x202F || cu == 0x2044) return _bCS;
+  if ((cu >= 0x2030 && cu <= 0x2034) || (cu >= 0x20A0 && cu <= 0x20CF)) return _bET;
+  if (cu == 0x200E || cu == 0x200F || (cu >= 0x202A && cu <= 0x202E) || (cu >= 0x2066 && cu <= 0x2069)) return -1;
+  if (cu >= 0x2010 && cu < 0x2200) return _bON;
+  return -1;
+}
+
+/// Embedding levels of [t] by the Unicode bidi algorithm's implicit rules (W1-W7,
+/// N1-N2, I1-I2), each paragraph (split at \n and U+2029) at level 1 when
+/// [rtlParagraph], else 0. Null when a character has no class here (see
+/// [_bidiClass]): those paragraphs go to Flutter.
+Uint8List? bidiLevels(String t, {required bool rtlParagraph}) {
+  final len = t.length;
+  final types = Uint8List(len), levels = Uint8List(len);
+  for (var i = 0; i < len; i++) {
+    final c = _bidiClass(t.codeUnitAt(i));
+    if (c < 0) return null;
+    types[i] = c;
+  }
+  final e = rtlParagraph ? 1 : 0, eDir = rtlParagraph ? _bR : _bL;
+  var s = 0;
+  while (s < len) {
+    var end = s;
+    while (end < len && types[end] != _bB) {
+      end++;
+    }
+    // W4: a single separator between two numbers joins them.
+    for (var i = s + 1; i + 1 < end; i++) {
+      if ((types[i] == _bES || types[i] == _bCS) && types[i - 1] == _bEN && types[i + 1] == _bEN) types[i] = _bEN;
+    }
+    // W5: terminators next to a number are part of it.
+    for (var i = s; i < end; i++) {
+      if (types[i] != _bET) continue;
+      var j = i;
+      while (j < end && types[j] == _bET) {
+        j++;
+      }
+      final num = (i > s && types[i - 1] == _bEN) || (j < end && types[j] == _bEN);
+      for (var k = i; k < j; k++) {
+        types[k] = num ? _bEN : _bON;
+      }
+      i = j - 1;
+    }
+    // W6: remaining separators and terminators are neutral.
+    for (var i = s; i < end; i++) {
+      if (types[i] == _bES || types[i] == _bCS || types[i] == _bET) types[i] = _bON;
+    }
+    // W7: a number after left-to-right text (or at the start of a left-to-right
+    // paragraph) is left-to-right.
+    var strong = eDir;
+    for (var i = s; i < end; i++) {
+      if (types[i] == _bL || types[i] == _bR) {
+        strong = types[i];
+      } else if (types[i] == _bEN && strong == _bL) {
+        types[i] = _bL;
+      }
+    }
+    // N1, N2: neutrals between two of the same direction (numbers count as
+    // right-to-left) take it; others take the paragraph's.
+    for (var i = s; i < end; i++) {
+      if (types[i] != _bWS && types[i] != _bON) continue;
+      var j = i;
+      while (j < end && (types[j] == _bWS || types[j] == _bON)) {
+        j++;
+      }
+      final before = i == s ? eDir : (types[i - 1] == _bL ? _bL : _bR);
+      final after = j == end ? eDir : (types[j] == _bL ? _bL : _bR);
+      final dir = before == after ? before : eDir;
+      for (var k = i; k < j; k++) {
+        types[k] = dir;
+      }
+      i = j - 1;
+    }
+    // I1, I2.
+    for (var i = s; i < end; i++) {
+      final c = types[i];
+      levels[i] = e == 0
+          ? (c == _bR
+                ? 1
+                : c == _bEN
+                ? 2
+                : 0)
+          : (c == _bR ? 1 : 2);
+    }
+    if (end < len) levels[end] = e; // the paragraph separator
+    s = end + 1;
+  }
+  return levels;
+}
+
+bool _strongLOrNumber(int cu) =>
+    (scriptOf(cu) != scCommon && scriptOf(cu) != scHebrew) ||
+    (cu >= 0x2B0 && cu < 0x300) ||
+    (cu >= 0x30 && cu <= 0x39) ||
+    cu == 0xB2 ||
+    cu == 0xB3 ||
+    cu == 0xB9;
+
 bool _isPi(int cu) => cu == 0xAB || cu == 0x2018 || cu == 0x201C;
 bool _isPf(int cu) => cu == 0xBB || cu == 0x2019 || cu == 0x201D;
 
@@ -427,10 +898,12 @@ final List<bool> permissiveSpaceRules = List<bool>.filled(nLB * nLB, true);
 /// breaker then refuses any decision this margin could flip.
 const double driftPerPx = 2.5e-5;
 
-bool exactPositions(double scale, double paragraphPx) {
+bool exactPositions(double scale, double paragraphPx, [double letterSpacing = 0, double wordSpacing = 0]) {
   for (var bits = 0; bits <= 16; bits++) {
-    final v = scale * (1 << bits);
-    if (v == v.roundToDouble()) return paragraphPx * (1 << bits) < (1 << 24);
+    final v = scale * (1 << bits), l = letterSpacing * (1 << bits), w = wordSpacing * (1 << bits);
+    if (v == v.roundToDouble() && l == l.roundToDouble() && w == w.roundToDouble()) {
+      return paragraphPx * (1 << bits) < (1 << 24);
+    }
   }
   return false;
 }
@@ -438,7 +911,21 @@ bool exactPositions(double scale, double paragraphPx) {
 /// Width-independent records for one paragraph: the width prefix (units) and the
 /// break opportunities. Built once; re-wrapping at any width uses [lineStarts].
 class Records {
-  Records(this.prefix, this.ends, this.nexts, this.count, this.riskyEnds, this.riskyNexts);
+  Records(
+    this.prefix,
+    this.ends,
+    this.nexts,
+    this.count,
+    this.riskyEnds,
+    this.riskyNexts,
+    this.mandatory,
+    this.spaceCount,
+    this.clusterLoss,
+  );
+
+  /// Word spacing is unknown for this paragraph: it has a space on a bidi run
+  /// boundary (measured: Flutter spaces some of those and not others).
+  bool wordSpacingUnsure = false;
   final Float64List prefix;
   final Int32List ends, nexts; // line would end at ends[j]; next line starts at nexts[j]
   final int count; // the last record is the end of the paragraph
@@ -446,45 +933,87 @@ class Records {
   // (inside an unbreakable segment). When one could end the line, the breaker
   // does not guess.
   final Int32List riskyEnds, riskyNexts;
+  // Nonzero where the record is a hard line break (\n, U+2028, U+2029): the line
+  // ends there. Bit 2: the next line starts with word-spaced spaces.
+  final Uint8List mandatory;
+  // Word spacing goes on the last space of every run of spaces that is a break
+  // opportunity (measured): spaceCount[j] counts those among records 0..j-1.
+  final Int32List spaceCount;
+  // Characters before position i that share a glyph cluster with an earlier one
+  // (ligatures): letter spacing counts clusters. Null when there are none.
+  final Int32List? clusterLoss;
+
+  int _clusters(int s, int e) => clusterLoss == null ? e - s : e - s - (clusterLoss![e] - clusterLoss![s]);
 
   /// Greedy first-fit line starts for a box [maxWidth] px wide at [scale] px per
   /// unit, or null when Flutter must decide: a word wider than the line, an
   /// ambiguous space that could end it, or a fit decision within float drift.
-  Int32List? lineStarts(double maxWidth, double scale) {
+  /// [letterSpacing] is added to every glyph cluster of a line (measured:
+  /// SkParagraph adds it to each glyph's advance; build the records with the same
+  /// spacing's sign), [wordSpacing] at every space break inside it.
+  Int32List? lineStarts(double maxWidth, double scale, {double letterSpacing = 0, double wordSpacing = 0}) {
+    if (wordSpacing != 0 && wordSpacingUnsure) return null;
     final maxF = _toF32(maxWidth);
-    final rel = exactPositions(scale, prefix[prefix.length - 1] * scale) ? 0.0 : driftPerPx;
+    final ls = letterSpacing, ws = wordSpacing;
+    final len = prefix.length - 1;
+    final rel = exactPositions(scale, prefix[len] * scale + ls.abs() * len + ws.abs() * spaceCount[count], ls, ws)
+        ? 0.0
+        : driftPerPx;
     var unsure = false;
-    // 1 = fits, 0 = does not. Far from the edge: compare in units.
-    bool fits(double startUnits, double endUnits) {
-      final w = (endUnits - startUnits) * scale;
-      final margin = 0.02 + rel * 2 * endUnits * scale;
+    // Far from the edge: decide in doubles. Near it: SkParagraph's float32 test,
+    // and with drift, refuse decisions the margin could flip. [extraW] is the
+    // spacing in the line, [extraX] the spacing before its end (for the margin).
+    bool fits(double startUnits, double endUnits, double extraW, double extraX) {
+      final w = (endUnits - startUnits) * scale + extraW;
+      final margin = 0.02 + rel * 2 * endUnits * scale + rel * 2 * extraX;
       if (w <= maxWidth - margin) return true;
       if (w >= maxWidth + margin) return false;
       final f = fitsLine(w, maxF);
       if (rel > 0) {
-        final d = rel * 2 * endUnits * scale + 1e-4;
+        final d = rel * 2 * endUnits * scale + rel * 2 * extraX + 1e-4;
         if (fitsLine(w - d, maxF) != fitsLine(w + d, maxF)) unsure = true;
       }
       return f;
     }
 
+    final spaced = ls != 0 || ws != 0;
     final out = <int>[0];
     var s = 0, k = 0;
     for (;;) {
       var best = -1;
       final p0 = prefix[s];
+      final lead = k > 0 && mandatory[k - 1] & 2 != 0 ? ws : 0.0;
       for (var j = k; j < count; j++) {
-        if (fits(p0, prefix[ends[j]])) {
-          best = j;
-        } else {
-          break;
-        }
+        final e = ends[j];
+        final ok = spaced
+            ? fits(
+                p0,
+                prefix[e],
+                ls * _clusters(s, e) + ws * (spaceCount[j] - spaceCount[k]) + lead,
+                ls.abs() * e + ws.abs() * spaceCount[j],
+              )
+            : fits(p0, prefix[e], 0, 0);
+        if (!ok) break;
+        best = j;
+        if (mandatory[j] != 0) break;
       }
       if (best < 0 || unsure) return null;
-      if (riskyEnds.isNotEmpty) {
+      if (riskyEnds.isNotEmpty && mandatory[best] == 0) {
         final from = nexts[best], to = best + 1 < count ? nexts[best + 1] : 1 << 30;
         for (var q = 0; q < riskyEnds.length; q++) {
-          if (riskyNexts[q] > from && riskyNexts[q] < to && fits(p0, prefix[riskyEnds[q]])) return null;
+          final e = riskyEnds[q];
+          if (riskyNexts[q] > from &&
+              riskyNexts[q] < to &&
+              (spaced
+                  ? fits(
+                      p0,
+                      prefix[e],
+                      ls * _clusters(s, e) + ws * (spaceCount[best + 1] - spaceCount[k]) + lead,
+                      ls.abs() * e + ws.abs() * spaceCount[best + 1],
+                    )
+                  : fits(p0, prefix[e], 0, 0))) {
+            return null;
+          }
         }
         if (unsure) return null;
       }
@@ -495,28 +1024,59 @@ class Records {
     }
   }
 
-  int lineCount(double maxWidth, double scale) => lineStarts(maxWidth, scale)?.length ?? -1;
+  int lineCount(double maxWidth, double scale, {double letterSpacing = 0, double wordSpacing = 0}) =>
+      lineStarts(maxWidth, scale, letterSpacing: letterSpacing, wordSpacing: wordSpacing)?.length ?? -1;
 }
 
 // Scratch buffers shared by all calls (the breaker runs on one isolate).
 Int32List _ends = Int32List(1024), _nexts = Int32List(1024), _rEnds = Int32List(256), _rNexts = Int32List(256);
+Uint8List _mand = Uint8List(1024);
+
+/// Hard line breaks (measured: \n, U+2028 and U+2029 end a line; a lone \r does not).
+bool isHardBreak(int cu) => cu == 0x0A || cu == 0x2028 || cu == 0x2029;
 
 /// Break opportunities only (pass B), into the scratch buffers. Returns
 /// (count, riskyCount), or null when a character is outside the line-break table.
+/// The text splits at hard breaks into segments (UAX #14 LB4, LB6: always break
+/// after one, never before); each segment's last record ends its line there.
 (int, int)? _opportunities(String t) {
   final len = t.length;
   if (_ends.length < len + 2) {
     _ends = Int32List(len * 2 + 2);
     _nexts = Int32List(len * 2 + 2);
+    _mand = Uint8List(len * 2 + 2);
   }
-  var n = 0, nr = 0;
+  var n = 0, nr = 0, start = 0;
+  for (;;) {
+    var end = start;
+    while (end < len && !isHardBreak(t.codeUnitAt(end))) {
+      end++;
+    }
+    final r = _segment(t, start, end, n, nr);
+    if (r == null) return null;
+    (n, nr) = r;
+    if (end == len) return (n, nr);
+    _nexts[n - 1] = end + 1;
+    // Bit 2: the next segment starts with spaces before a word. Measured: word
+    // spacing goes there too (but not on spaces that start the paragraph).
+    var q = end + 1;
+    while (q < len && t.codeUnitAt(q) == 0x20) {
+      q++;
+    }
+    _mand[n - 1] = q > end + 1 && q < len && !isHardBreak(t.codeUnitAt(q)) ? 3 : 1;
+    start = end + 1;
+  }
+}
+
+/// The records of t[start, end), a text without hard breaks, appended at n.
+(int, int)? _segment(String t, int start, int len, int n, int nr) {
   var spaceStart = -1, lastNonSpace = -1;
   // LB25 context: is t[i-1] inside NU (NU|SY|IS)*, and was the character before a
   // closing bracket inside one?
   var inNumber = false, closedNumber = false;
-  var ca = len > 0 ? lbClass(t.codeUnitAt(0)) : lbSP;
+  var ca = start < len ? lbClass(t.codeUnitAt(start)) : lbSP;
   if (ca == lbXX) return null;
-  for (var i = 1; i < len; i++) {
+  for (var i = start + 1; i < len; i++) {
     final x = t.codeUnitAt(i);
     final cx = lbClass(x);
     if (cx == lbXX) return null;
@@ -530,13 +1090,16 @@ Int32List _ends = Int32List(1024), _nexts = Int32List(1024), _rEnds = Int32List(
       continue; // LB7
     }
     if (ca == lbSP) {
-      if (lastNonSpace >= 0) {
+      if (lastNonSpace >= start) {
         final b = t.codeUnitAt(lastNonSpace);
         var ok = defaultSpaceRules[lbClass(b) * nLB + cx];
+        // LB15c (Unicode 15.1): SP ÷ IS NU, as in "e.g., .1" (measured: Flutter puts
+        // word spacing there, so it is a break). LB14 (OP SP* ×) comes first.
+        if (cx == lbIS && i + 1 < len && lbClass(t.codeUnitAt(i + 1)) == lbNU && lbClass(b) != lbOP) ok = true;
         // LB15a: an opening quote in opening position (start, space, OP, QU, GL
         // before it), then spaces.
         if (_isPi(b)) {
-          final pb = lastNonSpace > 0 ? lbClass(t.codeUnitAt(lastNonSpace - 1)) : lbSP;
+          final pb = lastNonSpace > start ? lbClass(t.codeUnitAt(lastNonSpace - 1)) : lbSP;
           if (pb == lbSP || pb == lbOP || pb == lbQU || pb == lbGL) ok = false;
         }
         if (_isPf(x)) {
@@ -547,6 +1110,7 @@ Int32List _ends = Int32List(1024), _nexts = Int32List(1024), _rEnds = Int32List(
         }
         if (ok) {
           _ends[n] = spaceStart;
+          _mand[n] = 0;
           _nexts[n++] = i;
         } else {
           if (nr == _rEnds.length) {
@@ -561,9 +1125,16 @@ Int32List _ends = Int32List(1024), _nexts = Int32List(1024), _rEnds = Int32List(
       continue;
     }
     var allowed = !_noBreak[ca * nLB + cx];
-    // LB20a: no break after a word-initial hyphen or dash (measured: Flutter treats
-    // the en dash like the hyphen here).
-    if (allowed && (ca == lbHY || ca == lbBA) && cx == lbAL && (i < 2 || t.codeUnitAt(i - 2) == 0x20)) {
+    // LB20a: no break after a word-initial hyphen (HY, U+2010) or en dash (measured:
+    // Flutter treats the en dash like the hyphen here, but not other BA, e.g. "|").
+    final dash = ca == lbHY || t.codeUnitAt(i - 1) == 0x2010 || t.codeUnitAt(i - 1) == 0x2013;
+    // LB21b: SY × HL (measured: Flutter keeps "ולהסתיר/להציג" together).
+    if (allowed && ca == lbSY && _isHL(x)) allowed = false;
+    // LB21a: HL (HY | BA) × [^HL].
+    if (allowed && (ca == lbHY || ca == lbBA) && i - start >= 2 && _isHL(t.codeUnitAt(i - 2)) && !_isHL(x)) {
+      allowed = false;
+    }
+    if (allowed && dash && cx == lbAL && (i - start < 2 || t.codeUnitAt(i - 2) == 0x20)) {
       allowed = false;
     }
     if (allowed) {
@@ -576,15 +1147,17 @@ Int32List _ends = Int32List(1024), _nexts = Int32List(1024), _rEnds = Int32List(
     }
     if (allowed) {
       _ends[n] = i;
+      _mand[n] = 0;
       _nexts[n++] = i;
     }
     ca = cx;
   }
   var end = len;
-  while (end > 0 && t.codeUnitAt(end - 1) == 0x20) {
+  while (end > start && t.codeUnitAt(end - 1) == 0x20) {
     end--;
   }
   _ends[n] = end;
+  _mand[n] = 0;
   _nexts[n++] = len;
   return (n, nr);
 }
@@ -596,27 +1169,59 @@ Int32List _ends = Int32List(1024), _nexts = Int32List(1024), _rEnds = Int32List(
   return (Int32List.sublistView(_ends, 0, r.$1), Int32List.sublistView(_nexts, 0, r.$1));
 }
 
-/// Passes A and B: width prefix and break opportunities. Null when the paragraph
-/// has a character the model, the certificate or the line-break table does not
-/// cover, or an island longer than m: such paragraphs are laid out by Flutter.
-Records? buildRecords(WidthModel md, String t) {
-  final len = t.length;
-  final prefix = Float64List(len + 1);
-  final idOf = md.idOf, cert = md.cert, adv = md.adv, fc = md.fc, sc = md.sc, cls = md.cls, n1 = md.n1;
+/// State of pass A across the ranges it runs over.
+class _Pass {
+  _Pass(this.prefix, this.ligatures, this.clusters);
+  final Float64List prefix;
+  final bool ligatures, clusters;
+  double p = 0;
+  int run = scCommon; // script of the current run
+  List<int>? lossEnds, lossDelta;
+}
+
+/// Pass A over t[start, end) with [md], continuing [pass]: the width prefix. False
+/// when a character is not covered. Pair adjustments start fresh at [start]. With
+/// [gate], a character of the other direction than [md]'s fails the paragraph.
+bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate = true}) {
+  final ligatures = pass.ligatures, clusters = pass.clusters, prefix = pass.prefix;
+  final cert = ligatures ? md.cert : md.noLigaCert;
+  if (cert == null) return false;
+  final idOf = md.idOf, adv = md.adv, fc = md.fc, sc = md.sc, cls = md.cls, n1 = md.n1;
   final digit = md.islandDigit, base = md.keyBase, ofKey = md.islandOfKey, m = md.m;
-  var p = 0.0;
+  var p = pass.p, run = pass.run;
+  var lossEnds = pass.lossEnds, lossDelta = pass.lossDelta;
+  // Split kerning: the right glyph's share of a pair starts its cluster, so the
+  // boundary before it (prefix) excludes that share.
+  final cr = md.clsRight, lr = md.islandLRight, rr = md.islandRRight;
+  if (cr != null && !ligatures && md.noLigaRowRight == null) return false; // no split tables without ligatures
   var prevId = 0, prevIsland = -1;
-  var run = scCommon; // script of the current run
-  for (var q = 0; q < len && run == scCommon; q++) {
-    run = scriptOf(t.codeUnitAt(q));
-  }
-  var i = 0;
-  while (i < len) {
+  var i = start;
+  while (i < end) {
     final cu = t.codeUnitAt(i);
+    if (isHardBreak(cu)) {
+      // Takes no width in either line, but kerns with the character before it as
+      // a space does (measured: T before \n loses Roboto's T-space kern). The
+      // script run continues (itemization is over the whole text).
+      final sp = idOf[0x20];
+      var rs = 0.0;
+      if (prevId != 0) {
+        p += ligatures ? cls[fc[prevId] + sc[sp]] : md.pairNoLiga(prevId, sp);
+        if (cr != null) rs = ligatures ? cr[fc[prevId] + sc[sp]] : md.rightNoLiga(prevId, sp);
+      } else if (prevIsland >= 0) {
+        p += md.islandR[prevIsland * n1 + sp];
+        if (rr != null) rs = rr[prevIsland * n1 + sp];
+      }
+      prefix[i] = p - rs;
+      prevId = 0;
+      prevIsland = -1;
+      i++;
+      continue;
+    }
+    if (gate && (md.rtl ? _strongLOrNumber(cu) : _strongR(cu))) return false; // a mixed-direction paragraph
     final id = idOf[cu];
-    if (id == 0) return null;
+    if (id == 0) return false;
     final c = cert[id];
-    if (c == certU) return null;
+    if (c == certU) return false;
     final s = scriptOf(cu);
     if (s != scCommon && s != run) {
       run = s; // a new script run: no pair adjustment across it
@@ -626,7 +1231,7 @@ Records? buildRecords(WidthModel md, String t) {
     if (c != certS) {
       // A P/K run: find its end, and whether it has a primer.
       var j = i, key = 0, primer = false;
-      while (j < len) {
+      while (j < end) {
         final q = idOf[t.codeUnitAt(j)];
         final dj = digit[q];
         if (q == 0 || dj < 0) break;
@@ -635,15 +1240,25 @@ Records? buildRecords(WidthModel md, String t) {
         j++;
       }
       if (primer) {
-        if (j - i > m) return null;
+        if (j - i > m) return false;
         final isl = ofKey[key];
-        if (isl < 0) return null;
-        if (prevId != 0) p += md.islandL[isl * n1 + prevId];
-        prefix[i] = p;
+        if (isl < 0) return false;
+        var rs = 0.0;
+        if (prevId != 0) {
+          p += md.islandL[isl * n1 + prevId];
+          if (lr != null) rs = lr[isl * n1 + prevId];
+        }
+        prefix[i] = p - rs;
         for (var q = i + 1; q < j; q++) {
           prefix[q] = double.nan; // never a break position
         }
         p += md.islandW[isl];
+        if (clusters) {
+          final ic = md.islandClusters;
+          if (ic == null) return false;
+          (lossEnds ??= []).add(j);
+          (lossDelta ??= []).add(j - i - ic[isl]);
+        }
         prevId = 0;
         prevIsland = isl;
         i = j;
@@ -652,30 +1267,110 @@ Records? buildRecords(WidthModel md, String t) {
       // No primer: substitution leaves these characters alone.
       for (; i < j; i++) {
         final q = idOf[t.codeUnitAt(i)];
+        var rs = 0.0;
         if (prevId != 0) {
           p += cls[fc[prevId] + sc[q]];
+          if (cr != null) rs = cr[fc[prevId] + sc[q]];
         } else if (prevIsland >= 0) {
           p += md.islandR[prevIsland * n1 + q];
+          if (rr != null) rs = rr[prevIsland * n1 + q];
         }
-        prefix[i] = p;
+        prefix[i] = p - rs;
         p += adv[q];
         prevId = q;
         prevIsland = -1;
       }
       continue;
     }
+    var rs = 0.0;
     if (prevId != 0) {
-      p += cls[fc[prevId] + sc[id]];
+      p += ligatures ? cls[fc[prevId] + sc[id]] : md.pairNoLiga(prevId, id);
+      if (cr != null) rs = ligatures ? cr[fc[prevId] + sc[id]] : md.rightNoLiga(prevId, id);
     } else if (prevIsland >= 0) {
       p += md.islandR[prevIsland * n1 + id];
+      if (rr != null) rs = rr[prevIsland * n1 + id];
     }
-    prefix[i] = p;
+    prefix[i] = p - rs;
     p += adv[id];
     prevId = id;
     prevIsland = -1;
     i++;
   }
-  prefix[len] = p;
+  pass.p = p;
+  pass.run = run;
+  pass.lossEnds = lossEnds;
+  pass.lossDelta = lossDelta;
+  return true;
+}
+
+_Pass _start(String t, double letterSpacing) {
+  final pass = _Pass(Float64List(t.length + 1), letterSpacing <= 0, letterSpacing < 0);
+  for (var q = 0; q < t.length && pass.run == scCommon; q++) {
+    pass.run = scriptOf(t.codeUnitAt(q));
+  }
+  return pass;
+}
+
+/// Passes A and B: width prefix and break opportunities. Null when the paragraph
+/// has a character the model, the certificate or the line-break table does not
+/// cover, or an island longer than m: such paragraphs are laid out by Flutter.
+///
+/// Only the sign of [letterSpacing] matters here (measured): positive spacing
+/// makes the engine shape without ligatures; negative spacing keeps them and
+/// spaces glyph clusters. Null when the sidecar has no tables for the case.
+Records? buildRecords(WidthModel md, String t, {double letterSpacing = 0}) {
+  final pass = _start(t, letterSpacing);
+  if (!_widths(md, t, 0, t.length, pass)) return null;
+  return _finish(t, pass);
+}
+
+/// Mixed-direction paragraphs. [ltr] and [rtl] are sidecars of one font distilled
+/// in left-to-right and right-to-left paragraphs (either may be null). Each
+/// character's bidi level ([bidiLevels]) picks the sidecar measured in its
+/// direction, and a change of level ends a shaping run, so no pair adjustment
+/// crosses it. Null where [bidiLevels] is, or when a needed sidecar is missing.
+Records? buildBidiRecords(
+  WidthModel? ltr,
+  WidthModel? rtl,
+  String t, {
+  required bool rtlParagraph,
+  double letterSpacing = 0,
+}) {
+  final levels = bidiLevels(t, rtlParagraph: rtlParagraph);
+  if (levels == null) return null;
+  final pass = _start(t, letterSpacing);
+  var a = 0;
+  while (a < t.length) {
+    var b = a + 1;
+    while (b < t.length && levels[b] == levels[a]) {
+      b++;
+    }
+    final md = levels[a].isOdd ? rtl : ltr;
+    // Measured: Flutter itemizes scripts within each bidi run, so neutrals at the
+    // start of a run take the script of its first letter.
+    pass.run = scCommon;
+    for (var q = a; q < b && pass.run == scCommon; q++) {
+      pass.run = scriptOf(t.codeUnitAt(q));
+    }
+    if (md == null || !_widths(md, t, a, b, pass, gate: false)) return null;
+    a = b;
+  }
+  final r = _finish(t, pass);
+  if (r != null) {
+    for (var i = 0; i < t.length; i++) {
+      if (t.codeUnitAt(i) == 0x20 &&
+          ((i > 0 && levels[i - 1] != levels[i]) || (i + 1 < t.length && levels[i + 1] != levels[i]))) {
+        r.wordSpacingUnsure = true;
+        break;
+      }
+    }
+  }
+  return r;
+}
+
+Records? _finish(String t, _Pass pass) {
+  final len = t.length, prefix = pass.prefix, lossEnds = pass.lossEnds, lossDelta = pass.lossDelta;
+  prefix[len] = pass.p;
 
   final o = _opportunities(t);
   if (o == null) return null;
@@ -683,7 +1378,30 @@ Records? buildRecords(WidthModel md, String t) {
   for (var j = 0; j < n; j++) {
     if (prefix[_ends[j]].isNaN || prefix[_nexts[j]].isNaN) return null; // a break inside an island
   }
-  return Records(prefix, Int32List.fromList(Int32List.sublistView(_ends, 0, n)),
-      Int32List.fromList(Int32List.sublistView(_nexts, 0, n)), n, Int32List.fromList(Int32List.sublistView(_rEnds, 0, nr)),
-      Int32List.fromList(Int32List.sublistView(_rNexts, 0, nr)));
+  Int32List? clusterLoss;
+  if (lossEnds != null) {
+    clusterLoss = Int32List(len + 1);
+    var q = 0, loss = 0;
+    for (var x = 0; x <= len; x++) {
+      while (q < lossEnds.length && lossEnds[q] <= x) {
+        loss += lossDelta![q++];
+      }
+      clusterLoss[x] = loss;
+    }
+  }
+  final spaceCount = Int32List(n + 1);
+  for (var j = 0; j < n; j++) {
+    spaceCount[j + 1] = spaceCount[j] + (_ends[j] < _nexts[j] && _mand[j] == 0 && j < n - 1 ? 1 : 0);
+  }
+  return Records(
+    prefix,
+    Int32List.fromList(Int32List.sublistView(_ends, 0, n)),
+    Int32List.fromList(Int32List.sublistView(_nexts, 0, n)),
+    n,
+    Int32List.fromList(Int32List.sublistView(_rEnds, 0, nr)),
+    Int32List.fromList(Int32List.sublistView(_rNexts, 0, nr)),
+    Uint8List.fromList(Uint8List.sublistView(_mand, 0, n)),
+    spaceCount,
+    clusterLoss,
+  );
 }

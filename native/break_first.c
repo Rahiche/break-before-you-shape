@@ -197,6 +197,8 @@ static int opportunities(const Model *md, const uint16_t *t, int32_t len, Record
       if (last_non_space >= 0) {
         uint16_t b = t[last_non_space];
         int ok = md->space_ok[lb_class(md, b) * NLB + cx];
+        // LB15c (Unicode 15.1): SP ÷ IS NU; LB14 (OP SP* ×) comes first.
+        if (cx == IS && i + 1 < len && lb_class(md, t[i + 1]) == NU && lb_class(md, b) != OP) ok = 1;
         if (is_pi(b)) {
           uint8_t pb = last_non_space > 0 ? lb_class(md, t[last_non_space - 1]) : SP;
           if (pb == SP || pb == OP || pb == QU || pb == GL) ok = 0;
@@ -216,7 +218,8 @@ static int opportunities(const Model *md, const uint16_t *t, int32_t len, Record
       continue;
     }
     int allowed = !md->no_break[ca * NLB + cx];
-    if (allowed && (ca == HY || ca == BA) && cx == AL && (i < 2 || t[i - 2] == 0x20)) allowed = 0;
+    int dash = ca == HY || t[i - 1] == 0x2010 || t[i - 1] == 0x2013;  // LB20a: not other BA, e.g. "|"
+    if (allowed && dash && cx == AL && (i < 2 || t[i - 2] == 0x20)) allowed = 0;
     if (allowed) {
       uint8_t nx = i + 1 < len ? lb_class(md, t[i + 1]) : XX;
       if ((ca == PR || ca == PO) && (cx == OP || cx == HY) && nx == NU) allowed = 0;

@@ -79,7 +79,7 @@ def gettext_strings(lang):
     """Messages from gettext catalogues (Linux): translations, or for English the
     source strings of every catalogue."""
     roots = ["/usr/share/locale", "/usr/share/locale-langpack"]
-    langs = ["de", "fr", "ru", "uk", "el"] if lang == "en" else [lang]
+    langs = ["de", "fr", "ru", "uk", "el", "he", "ar"] if lang == "en" else [lang]
     out = []
     for root in roots:
         for l in langs:
@@ -97,7 +97,7 @@ def gettext_strings(lang):
 
 
 # UI strings from macOS localizations.
-for lang in ["en", "de", "fr", "ru", "uk", "el"]:
+for lang in ["en", "de", "fr", "ru", "uk", "el", "he", "ar"]:
     dirs = [f"{lang}.lproj"] + (["English.lproj", "Base.lproj"] if lang == "en" else [])
     files = []
     for d in dirs:

@@ -9,9 +9,9 @@
  "islands": 90,
  "m": 4,
  "layouts": 614675,
- "buildMs": 8472,
+ "buildMs": 8838,
  "nonIntegralMeasurements": 0,
- "bytes": 573104,
- "gzipBytes": 10357,
+ "bytes": 590712,
+ "gzipBytes": 10553,
  "lineHeightUnits": 2400.0
 }

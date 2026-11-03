@@ -1,0 +1,460 @@
+{
+ "newline \"ab\\ncd\"": {
+  "lines": 2,
+  "height": 38.0,
+  "starts": [
+   0,
+   3
+  ]
+ },
+ "newline \"ab\\n\"": {
+  "lines": 2,
+  "height": 38.0,
+  "starts": [
+   0,
+   3
+  ]
+ },
+ "newline \"\\nab\"": {
+  "lines": 2,
+  "height": 38.0,
+  "starts": [
+   0,
+   1
+  ]
+ },
+ "newline \"ab\\n\\ncd\"": {
+  "lines": 3,
+  "height": 57.0,
+  "starts": [
+   0,
+   3,
+   4
+  ]
+ },
+ "newline \"ab\\r\\ncd\"": {
+  "lines": 2,
+  "height": 38.0,
+  "starts": [
+   0,
+   4
+  ]
+ },
+ "newline \"ab\\rcd\"": {
+  "lines": 1,
+  "height": 19.0,
+  "starts": [
+   0
+  ]
+ },
+ "newline \"ab cd\"": {
+  "lines": 2,
+  "height": 38.0,
+  "starts": [
+   0,
+   3
+  ]
+ },
+ "newline \"ab cd\"": {
+  "lines": 2,
+  "height": 38.0,
+  "starts": [
+   0,
+   3
+  ]
+ },
+ "newline \"abcd\"": {
+  "lines": 1,
+  "height": 19.0,
+  "starts": [
+   0
+  ]
+ },
+ "letterSpacing \"abc\"": {
+  "base": 26.0546875,
+  "spaced": 31.3046875,
+  "perUnit": 3.5,
+  "model": 26.0546875
+ },
+ "letterSpacing \"office\"": {
+  "base": 39.6328125,
+  "spaced": 50.71875,
+  "perUnit": 7.390625,
+  "model": 39.6328125
+ },
+ "letterSpacing \"fi\"": {
+  "base": 8.859375,
+  "spaced": 13.1875,
+  "perUnit": 2.8854166666666665,
+  "model": 8.859375
+ },
+ "letterSpacing \"To\"": {
+  "base": 17.8984375,
+  "spaced": 21.6484375,
+  "perUnit": 2.5,
+  "model": 17.8984375
+ },
+ "letterSpacing \"a b\"": {
+  "base": 21.640625,
+  "spaced": 26.890625,
+  "perUnit": 3.5,
+  "model": 21.640625
+ },
+ "letterSpacing \"AV\"": {
+  "base": 19.9375,
+  "spaced": 23.6875,
+  "perUnit": 2.5,
+  "model": 19.9375
+ },
+ "letterSpacing \"ab \"": {
+  "base": 21.640625,
+  "spaced": 26.890625,
+  "perUnit": 3.5,
+  "model": 21.640625
+ },
+ "letterSpacing \"x\"": {
+  "base": 7.9296875,
+  "spaced": 10.1796875,
+  "perUnit": 1.5,
+  "model": 7.9296875
+ },
+ "letterSpacing fit": {
+  "w4": 43.8125,
+  "linesAt w4-0.5": 2,
+  "linesAt w4-0.01": 2,
+  "linesAt w4+0.0": 2,
+  "linesAt w4+0.01": 2,
+  "linesAt w4+0.5": 2,
+  "linesAt w4-2+0.01": 4
+ },
+ "wordSpacing \"a b\"": {
+  "base": 21.640625,
+  "spaced": 24.640625,
+  "perUnit": 1.0
+ },
+ "wordSpacing \"a  b\"": {
+  "base": 25.6015625,
+  "spaced": 28.6015625,
+  "perUnit": 1.0
+ },
+ "wordSpacing \"a b\"": {
+  "base": 21.640625,
+  "spaced": 21.640625,
+  "perUnit": 0.0
+ },
+ "wordSpacing \"ab \"": {
+  "base": 21.640625,
+  "spaced": 21.640625,
+  "perUnit": 0.0
+ },
+ "wordSpacing \"a b c\"": {
+  "base": 33.9765625,
+  "spaced": 39.9765625,
+  "perUnit": 2.0
+ },
+ "height": {
+  "12.0 x 0.8": {
+   "lines": 3,
+   "height": 30.0,
+   "lineHeights": [
+    10.0
+   ],
+   "sizeTimesH": 9.600000000000001
+  },
+  "12.0 x 1.0": {
+   "lines": 3,
+   "height": 36.0,
+   "lineHeights": [
+    12.0
+   ],
+   "sizeTimesH": 12.0
+  },
+  "12.0 x 1.2": {
+   "lines": 3,
+   "height": 42.0,
+   "lineHeights": [
+    14.0
+   ],
+   "sizeTimesH": 14.399999999999999
+  },
+  "12.0 x 1.43": {
+   "lines": 3,
+   "height": 51.0,
+   "lineHeights": [
+    17.0
+   ],
+   "sizeTimesH": 17.16
+  },
+  "12.0 x 1.5": {
+   "lines": 3,
+   "height": 54.0,
+   "lineHeights": [
+    18.0
+   ],
+   "sizeTimesH": 18.0
+  },
+  "12.0 x 2.0": {
+   "lines": 3,
+   "height": 72.0,
+   "lineHeights": [
+    24.0
+   ],
+   "sizeTimesH": 24.0
+  },
+  "13.0 x 0.8": {
+   "lines": 3,
+   "height": 30.0,
+   "lineHeights": [
+    10.0
+   ],
+   "sizeTimesH": 10.4
+  },
+  "13.0 x 1.0": {
+   "lines": 3,
+   "height": 39.0,
+   "lineHeights": [
+    13.0
+   ],
+   "sizeTimesH": 13.0
+  },
+  "13.0 x 1.2": {
+   "lines": 3,
+   "height": 48.0,
+   "lineHeights": [
+    16.0
+   ],
+   "sizeTimesH": 15.6
+  },
+  "13.0 x 1.43": {
+   "lines": 3,
+   "height": 57.0,
+   "lineHeights": [
+    19.0
+   ],
+   "sizeTimesH": 18.59
+  },
+  "13.0 x 1.5": {
+   "lines": 3,
+   "height": 60.0,
+   "lineHeights": [
+    20.0
+   ],
+   "sizeTimesH": 19.5
+  },
+  "13.0 x 2.0": {
+   "lines": 3,
+   "height": 78.0,
+   "lineHeights": [
+    26.0
+   ],
+   "sizeTimesH": 26.0
+  },
+  "16.0 x 0.8": {
+   "lines": 3,
+   "height": 39.0,
+   "lineHeights": [
+    13.0
+   ],
+   "sizeTimesH": 12.8
+  },
+  "16.0 x 1.0": {
+   "lines": 3,
+   "height": 48.0,
+   "lineHeights": [
+    16.0
+   ],
+   "sizeTimesH": 16.0
+  },
+  "16.0 x 1.2": {
+   "lines": 3,
+   "height": 57.0,
+   "lineHeights": [
+    19.0
+   ],
+   "sizeTimesH": 19.2
+  },
+  "16.0 x 1.43": {
+   "lines": 3,
+   "height": 69.0,
+   "lineHeights": [
+    23.0
+   ],
+   "sizeTimesH": 22.88
+  },
+  "16.0 x 1.5": {
+   "lines": 3,
+   "height": 72.0,
+   "lineHeights": [
+    24.0
+   ],
+   "sizeTimesH": 24.0
+  },
+  "16.0 x 2.0": {
+   "lines": 3,
+   "height": 96.0,
+   "lineHeights": [
+    32.0
+   ],
+   "sizeTimesH": 32.0
+  },
+  "18.4 x 0.8": {
+   "lines": 3,
+   "height": 45.0,
+   "lineHeights": [
+    15.0
+   ],
+   "sizeTimesH": 14.719999999999999
+  },
+  "18.4 x 1.0": {
+   "lines": 3,
+   "height": 54.0,
+   "lineHeights": [
+    18.0
+   ],
+   "sizeTimesH": 18.4
+  },
+  "18.4 x 1.2": {
+   "lines": 3,
+   "height": 66.0,
+   "lineHeights": [
+    22.0
+   ],
+   "sizeTimesH": 22.08
+  },
+  "18.4 x 1.43": {
+   "lines": 3,
+   "height": 78.0,
+   "lineHeights": [
+    26.0
+   ],
+   "sizeTimesH": 26.311999999999998
+  },
+  "18.4 x 1.5": {
+   "lines": 3,
+   "height": 84.0,
+   "lineHeights": [
+    28.0
+   ],
+   "sizeTimesH": 27.599999999999998
+  },
+  "18.4 x 2.0": {
+   "lines": 3,
+   "height": 111.0,
+   "lineHeights": [
+    37.0
+   ],
+   "sizeTimesH": 36.8
+  },
+  "21.3 x 0.8": {
+   "lines": 3,
+   "height": 51.0,
+   "lineHeights": [
+    17.0
+   ],
+   "sizeTimesH": 17.040000000000003
+  },
+  "21.3 x 1.0": {
+   "lines": 3,
+   "height": 63.0,
+   "lineHeights": [
+    21.0
+   ],
+   "sizeTimesH": 21.3
+  },
+  "21.3 x 1.2": {
+   "lines": 3,
+   "height": 78.0,
+   "lineHeights": [
+    26.0
+   ],
+   "sizeTimesH": 25.56
+  },
+  "21.3 x 1.43": {
+   "lines": 3,
+   "height": 90.0,
+   "lineHeights": [
+    30.0
+   ],
+   "sizeTimesH": 30.459
+  },
+  "21.3 x 1.5": {
+   "lines": 3,
+   "height": 96.0,
+   "lineHeights": [
+    32.0
+   ],
+   "sizeTimesH": 31.950000000000003
+  },
+  "21.3 x 2.0": {
+   "lines": 3,
+   "height": 129.0,
+   "lineHeights": [
+    43.0
+   ],
+   "sizeTimesH": 42.6
+  },
+  "24.0 x 0.8": {
+   "lines": 3,
+   "height": 57.0,
+   "lineHeights": [
+    19.0
+   ],
+   "sizeTimesH": 19.200000000000003
+  },
+  "24.0 x 1.0": {
+   "lines": 3,
+   "height": 72.0,
+   "lineHeights": [
+    24.0
+   ],
+   "sizeTimesH": 24.0
+  },
+  "24.0 x 1.2": {
+   "lines": 3,
+   "height": 87.0,
+   "lineHeights": [
+    29.0
+   ],
+   "sizeTimesH": 28.799999999999997
+  },
+  "24.0 x 1.43": {
+   "lines": 3,
+   "height": 102.0,
+   "lineHeights": [
+    34.0
+   ],
+   "sizeTimesH": 34.32
+  },
+  "24.0 x 1.5": {
+   "lines": 3,
+   "height": 108.0,
+   "lineHeights": [
+    36.0
+   ],
+   "sizeTimesH": 36.0
+  },
+  "24.0 x 2.0": {
+   "lines": 3,
+   "height": 144.0,
+   "lineHeights": [
+    48.0
+   ],
+   "sizeTimesH": 48.0
+  }
+ },
+ "maxLines 1": {
+  "lines": 1,
+  "height": 19.0,
+  "exceeded": true
+ },
+ "maxLines 2": {
+  "lines": 2,
+  "height": 38.0,
+  "exceeded": true
+ },
+ "maxLines 3": {
+  "lines": 3,
+  "height": 57.0,
+  "exceeded": true
+ }
+}

@@ -1,6 +1,6 @@
 name: break_first
 description: Exact line breaks and paragraph heights before shaping, from a precompiled, certified per-font width model.
-version: 0.1.0
+version: 0.2.0
 repository: https://github.com/Rahiche/break-before-you-shape
 publish_to: none
 

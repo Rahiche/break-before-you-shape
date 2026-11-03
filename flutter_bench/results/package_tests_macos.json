@@ -1,0 +1,91 @@
+{
+ "os": "macos",
+ "canaryErrorPx": 0.0,
+ "fontSizeQuantized": false,
+ "build": {
+  "layouts": 614675,
+  "ms": 8667,
+  "identicalToShipped": true
+ },
+ "generated": {
+  "layouts": 43200,
+  "identical": 42010,
+  "different": 0,
+  "deferred": 1190,
+  "heightsEqual": 43200,
+  "examples": []
+ },
+ "styles": {
+  "hard breaks": {
+   "identical": 8318,
+   "different": 0,
+   "deferred": 82,
+   "heightsEqual": 8400,
+   "layouts": 8400
+  },
+  "letterSpacing 0.5": {
+   "identical": 8287,
+   "different": 0,
+   "deferred": 113,
+   "heightsEqual": 8400,
+   "layouts": 8400
+  },
+  "letterSpacing 1.25": {
+   "identical": 8276,
+   "different": 0,
+   "deferred": 124,
+   "heightsEqual": 8400,
+   "layouts": 8400
+  },
+  "letterSpacing -0.3": {
+   "identical": 8277,
+   "different": 0,
+   "deferred": 123,
+   "heightsEqual": 8400,
+   "layouts": 8400
+  },
+  "wordSpacing 2": {
+   "identical": 8317,
+   "different": 0,
+   "deferred": 83,
+   "heightsEqual": 8400,
+   "layouts": 8400
+  },
+  "wordSpacing 3.7": {
+   "identical": 8247,
+   "different": 0,
+   "deferred": 153,
+   "heightsEqual": 8400,
+   "layouts": 8400
+  },
+  "height 1.3": {
+   "identical": 8318,
+   "different": 0,
+   "deferred": 82,
+   "heightsEqual": 8400,
+   "layouts": 8400
+  },
+  "height 1.43": {
+   "identical": 8318,
+   "different": 0,
+   "deferred": 82,
+   "heightsEqual": 8400,
+   "layouts": 8400
+  },
+  "maxLines 2": {
+   "identical": 8318,
+   "different": 0,
+   "deferred": 82,
+   "heightsEqual": 8400,
+   "layouts": 8400
+  },
+  "all at once": {
+   "identical": 8242,
+   "different": 0,
+   "deferred": 158,
+   "heightsEqual": 8400,
+   "layouts": 8400
+  },
+  "examples": []
+ }
+}

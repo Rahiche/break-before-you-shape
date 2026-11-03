@@ -22,6 +22,9 @@ on:
       timing_runs:
         description: Separate timing runs per desktop platform (median reported)
         default: "3"
+      styles_sample:
+        description: Texts per corpus for the style-option validation (letter/word spacing, height, maxLines, hard breaks)
+        default: "2000"
 
 concurrency:
   group: bench
@@ -48,6 +51,11 @@ jobs:
       - name: Exactness under flutter_tester
         working-directory: flutter_bench
         run: BF_SAMPLE=120 flutter test test/validate_host_test.dart && mkdir -p ../out && cp results/host_validate.json ../out/macos_host.json
+      - name: Right-to-left and mixed-direction Hebrew (Arial)
+        working-directory: flutter_bench
+        run: |
+          python3 -m pip install --quiet --break-system-packages fonttools || python3 -m pip install --quiet fonttools
+          tool/rtl_check.sh /System/Library/Fonts/Supplemental/Arial.ttf $PWD/../out/macos_rtl_arial.json
       - name: Exactness, release build
         working-directory: flutter_bench
         run: |
@@ -61,6 +69,11 @@ jobs:
             BF_OUT=$PWD/../out/macos_timing_run$i.json build/macos/Build/Products/Release/bf_bench.app/Contents/MacOS/bf_bench
           done
           { sysctl -n machdep.cpu.brand_string; sysctl -n hw.ncpu; sw_vers; } > ../out/macos_machine.txt
+      - name: Style options, release build
+        working-directory: flutter_bench
+        run: |
+          flutter build macos --release --dart-define=BF_MODE=styles --dart-define=BF_SAMPLE=${{ inputs.styles_sample }}
+          BF_OUT=$PWD/../out/macos_styles.json build/macos/Build/Products/Release/bf_bench.app/Contents/MacOS/bf_bench
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -87,6 +100,11 @@ jobs:
           flutter build ios --simulator --debug --dart-define=BF_MODE=validate --dart-define=BF_SAMPLE=${{ inputs.mobile_sample }}
           mkdir -p ../out
           tool/run_ios_sim.sh build/ios/iphonesimulator/Runner.app ../out/ios_sim.json
+      - name: Style options on the simulator
+        working-directory: flutter_bench
+        run: |
+          flutter build ios --simulator --debug --dart-define=BF_MODE=styles --dart-define=BF_SAMPLE=${{ inputs.mobile_sample }}
+          tool/run_ios_sim.sh build/ios/iphonesimulator/Runner.app ../out/ios_styles.json
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -103,7 +121,8 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo apt-get install -y -q mandoc language-pack-de-base language-pack-fr-base language-pack-ru-base \
-            language-pack-uk-base language-pack-el-base clang cmake ninja-build pkg-config libgtk-3-dev xvfb
+            language-pack-uk-base language-pack-el-base language-pack-he-base language-pack-ar-base fonts-noto-core \
+            python3-fonttools clang cmake ninja-build pkg-config libgtk-3-dev xvfb
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -115,6 +134,9 @@ jobs:
       - name: Exactness under flutter_tester
         working-directory: flutter_bench
         run: BF_SAMPLE=120 flutter test test/validate_host_test.dart && mkdir -p ../out && cp results/host_validate.json ../out/linux_host.json
+      - name: Right-to-left and mixed-direction Hebrew (Noto Sans Hebrew)
+        working-directory: flutter_bench
+        run: tool/rtl_check.sh /usr/share/fonts/truetype/noto/NotoSansHebrew-Regular.ttf $PWD/../out/linux_rtl_noto_sans_hebrew.json
       - name: Linux desktop target
         working-directory: flutter_bench
         run: flutter create --platforms=linux . >/dev/null && rm -f test/widget_test.dart
@@ -131,6 +153,11 @@ jobs:
             BF_OUT=$PWD/../out/linux_timing_run$i.json xvfb-run -a build/linux/x64/release/bundle/bf_bench
           done
           { lscpu | grep -E 'Model name|^CPU\(s\)'; lsb_release -ds; } > ../out/linux_machine.txt
+      - name: Style options, release build
+        working-directory: flutter_bench
+        run: |
+          flutter build linux --release --dart-define=BF_MODE=styles --dart-define=BF_SAMPLE=${{ inputs.styles_sample }}
+          BF_OUT=$PWD/../out/linux_styles.json xvfb-run -a build/linux/x64/release/bundle/bf_bench
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -167,6 +194,10 @@ jobs:
         run: flutter pub get && tool/prepare_assets.sh
       - name: Build the bench app and the demo
         run: |
+          mkdir -p out/video
+          (cd flutter_bench && flutter build apk --release --target-platform android-x64 \
+            --dart-define=BF_MODE=styles --dart-define=BF_SAMPLE=${{ inputs.mobile_sample }} &&
+            cp build/app/outputs/flutter-apk/app-release.apk ../out/bench_styles.apk)
           (cd flutter_bench && flutter build apk --release --target-platform android-x64 \
             --dart-define=BF_MODE=all --dart-define=BF_SAMPLE=${{ inputs.mobile_sample }})
           (cd packages/break_first/example && flutter build apk --release --target-platform android-x64 \
@@ -183,12 +214,15 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           script: |
             flutter_bench/tool/run_android.sh flutter_bench/build/app/outputs/flutter-apk/app-release.apk out/android_emu.json 3000
+            flutter_bench/tool/run_android.sh out/bench_styles.apk out/android_styles.json 3000
             packages/break_first/example/tool/record_android.sh packages/break_first/example/build/app/outputs/flutter-apk/app-release.apk out/video 45
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: bench-android
-          path: out/
+          path: |
+            out/
+            !out/*.apk
 
   summary:
     name: Summary

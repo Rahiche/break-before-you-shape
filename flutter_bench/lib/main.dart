@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 
 import 'bench.dart' as bench;
 
-// BF_MODE: all | validate | timing | sizes | native (BF_NATIVE_LIB: the compiled native/break_first.c).
+// BF_MODE: all | validate | timing | styles | sizes | native (BF_NATIVE_LIB: the compiled native/break_first.c).
 // BF_SAMPLE: paragraphs per corpus for validation.
 const mode = String.fromEnvironment('BF_MODE', defaultValue: 'all');
 const sample = int.fromEnvironment('BF_SAMPLE', defaultValue: 100000);
