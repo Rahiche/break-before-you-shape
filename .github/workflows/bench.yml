@@ -140,12 +140,6 @@ jobs:
       - name: Exactness under flutter_tester
         working-directory: flutter_bench
         run: BF_SAMPLE=120 flutter test test/validate_host_test.dart && mkdir -p ../out && cp results/host_validate.json ../out/linux_host.json
-      - name: Right-to-left and mixed-direction Hebrew (Noto Sans Hebrew)
-        working-directory: flutter_bench
-        run: tool/rtl_check.sh /usr/share/fonts/truetype/noto/NotoSansHebrew-Regular.ttf $PWD/../out/linux_rtl_noto_sans_hebrew.json
-      - name: Japanese, Chinese and Korean (Noto Sans CJK)
-        working-directory: flutter_bench
-        run: tool/script_check.sh /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc 0 $PWD/../out/linux_cjk_noto_sans_cjk.json
       - name: Linux desktop target
         working-directory: flutter_bench
         run: flutter create --platforms=linux . >/dev/null && rm -f test/widget_test.dart
@@ -167,6 +161,15 @@ jobs:
         run: |
           flutter build linux --release --dart-define=BF_MODE=styles --dart-define=BF_SAMPLE=${{ inputs.styles_sample }}
           BF_OUT=$PWD/../out/linux_styles.json xvfb-run -a build/linux/x64/release/bundle/bf_bench
+      # Script checks last, each with its own time limit, so they cannot hold up the release results.
+      - name: Right-to-left and mixed-direction Hebrew (Noto Sans Hebrew)
+        working-directory: flutter_bench
+        timeout-minutes: 30
+        run: tool/rtl_check.sh /usr/share/fonts/truetype/noto/NotoSansHebrew-Regular.ttf $PWD/../out/linux_rtl_noto_sans_hebrew.json
+      - name: Japanese, Chinese and Korean (Noto Sans CJK)
+        working-directory: flutter_bench
+        timeout-minutes: 30
+        run: tool/script_check.sh /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc 0 $PWD/../out/linux_cjk_noto_sans_cjk.json
       - uses: actions/upload-artifact@v7
         if: always()
         with:

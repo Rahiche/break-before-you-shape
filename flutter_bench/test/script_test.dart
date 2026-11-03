@@ -6,6 +6,8 @@
 // CERTIFY_SCRIPTS=latin+cjk), SCRIPT_NOLIG optionally the same with
 // CERTIFY_FEATURES_OFF=liga,clig,calt. SCRIPT_CORPUS: corpus files, one message
 // per line, separated by ':'. SCRIPT_OUT: results JSON. Skipped without them.
+// SCRIPT_PAIR_BUDGET: the most pair layouts the sidecar build may take (default
+// 5,000,000, about ten times Roboto's); a font over it is recorded as skipped.
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -35,11 +37,22 @@ void main() {
       const family = 'BFScript';
       final font = File(env['SCRIPT_FONT']!).readAsBytesSync();
       await (FontLoader(family)..addFont(Future.value(ByteData.sublistView(font)))).load();
+      final outPath = env['SCRIPT_OUT'] ?? 'results/script.json';
+      final cert = File(env['SCRIPT_CERT']!).readAsStringSync();
+      final size = certificateSize(cert), budget = int.parse(env['SCRIPT_PAIR_BUDGET'] ?? '5000000');
+      print('SCRIPT ${env['SCRIPT_FONT']?.split('/').last}: ${size.characters} characters, ${size.pairs} pairs to measure');
+      if (size.pairs > budget) {
+        File(outPath).writeAsStringSync(const JsonEncoder.withIndent(' ').convert({
+          'font': env['SCRIPT_FONT']?.split('/').last, 'characters': size.characters, 'pairsToMeasure': size.pairs,
+          'skipped': 'pair table over the build budget (${size.pairs} pairs to measure, budget $budget)'}));
+        return;
+      }
       final sw = Stopwatch()..start();
-      final md = buildSidecar(fontFamily: family, font: font, certificate: File(env['SCRIPT_CERT']!).readAsStringSync(),
+      final md = buildSidecar(fontFamily: family, font: font, certificate: cert,
           noLigaCertificate: env['SCRIPT_NOLIG'] == null ? null : File(env['SCRIPT_NOLIG']!).readAsStringSync());
       final out = <String, Object?>{'font': env['SCRIPT_FONT']?.split('/').last, 'characters': md.n1 - 1,
-          'buildMs': sw.elapsedMilliseconds, 'sidecarBytes': md.encode().length, 'pairClasses': [md.cls.length ~/ md.nS, md.nS]};
+          'pairsToMeasure': size.pairs, 'buildMs': sw.elapsedMilliseconds, 'sidecarBytes': md.encode().length,
+          'pairClasses': [md.cls.length ~/ md.nS, md.nS]};
       calibrateEngine(md, family);
       out['canaryErrPx'] = canaryError(md, family);
       out['quantized'] = quantizeFontSize;
@@ -96,7 +109,7 @@ void main() {
         }
       }
       out['examples'] = examples;
-      File(env['SCRIPT_OUT'] ?? 'results/script.json').writeAsStringSync(const JsonEncoder.withIndent(' ').convert(out));
+      File(outPath).writeAsStringSync(const JsonEncoder.withIndent(' ').convert(out));
     });
   }, skip: !ready, timeout: const Timeout(Duration(minutes: 60)));
 }

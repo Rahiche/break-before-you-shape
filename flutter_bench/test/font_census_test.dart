@@ -5,6 +5,8 @@
 //
 // FONT_MANIFEST: manifest.json from font_census.py. FONT_SAMPLE: paragraphs per
 // corpus (default 60). FONT_OUT: results (default results/font_census.jsonl).
+// FONT_PAIR_BUDGET: the most pair layouts one sidecar build may take (default
+// 5,000,000); a face over it is recorded as skipped.
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -52,10 +54,11 @@ void main() {
           continue;
         }
         final cert = File(row['cert'] as String).readAsStringSync();
-        final n1 = cert.split('\n').where((l) => RegExp(r'^[0-9A-F]+ \d+ [SPK]$').hasMatch(l)).length;
-        result['characters'] = n1;
-        if (n1 * n1 > 6000000) {
-          result['error'] = 'skipped: $n1 characters (pair table over the build budget)';
+        final size = certificateSize(cert);
+        result['characters'] = size.characters;
+        result['pairsToMeasure'] = size.pairs;
+        if (size.pairs > int.parse(Platform.environment['FONT_PAIR_BUDGET'] ?? '5000000')) {
+          result['error'] = 'skipped: ${size.pairs} pairs to measure (pair table over the build budget)';
           out.writeln(jsonEncode(result));
           continue;
         }

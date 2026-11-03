@@ -164,6 +164,51 @@ double lineHeightPx(WidthModel md, double size, {double? height}) => height == n
 /// Pixels per font unit at [size].
 double scaleFor(WidthModel md, double size) => effectiveFontSize(size) / md.upem;
 
+/// A certificate's rows as [WidthModel.distill] reads them: the characters it
+/// models (U and unsupported code points left out), with id 0 for "none".
+class _CertRows {
+  String name = 'font';
+  int m = 0;
+  // The certificate proves that no positioning depends on a neighbour: every
+  // pair term is zero and none is measured (CJK fonts).
+  bool pairsNone = false;
+  final cps = <int>[0], cl = <int>[certU];
+  // Fourth column: whether the character can be the first (f) or second (s)
+  // glyph of a pair adjustment. Without it, both.
+  final canFirst = <bool>[false], canSecond = <bool>[false];
+
+  _CertRows(String certText) {
+    for (final line in certText.split('\n')) {
+      if (line.startsWith('#')) {
+        final mm = RegExp(r'm=(\d+)').firstMatch(line);
+        if (mm != null) m = int.parse(mm.group(1)!);
+        pairsNone = line.contains(' pairs=none');
+        name = line.substring(1).split(' m=').first.trim();
+        continue;
+      }
+      final parts = line.trim().split(RegExp(r'\s+'));
+      if (parts.length != 3 && parts.length != 4) continue;
+      final cp = int.parse(parts[0], radix: 16);
+      final c = const {'S': certS, 'K': certK, 'P': certP, 'U': certU}[parts[2]]!;
+      if (c == certU || (cp >= 0x10000 && cp < _vBase) || (cp >= 0xD800 && cp < 0xE000)) continue;
+      cps.add(cp);
+      cl.add(c);
+      final roles = parts.length == 4 ? parts[3] : 'fs';
+      canFirst.add(roles.contains('f'));
+      canSecond.add(roles.contains('s'));
+    }
+  }
+}
+
+/// What distilling [certText] costs: the characters it models, and the pairs
+/// measured (first-capable × second-capable characters; none with pairs=none),
+/// one layout each. A build step can refuse a font over its budget up front.
+({int characters, int pairs}) certificateSize(String certText) {
+  final r = _CertRows(certText);
+  final firsts = r.canFirst.where((x) => x).length, seconds = r.canSecond.where((x) => x).length;
+  return (characters: r.cps.length - 1, pairs: r.pairsNone ? 0 : firsts * seconds);
+}
+
 class WidthModel {
   WidthModel._(
     this.name,
@@ -348,33 +393,9 @@ class WidthModel {
     double Function(String text, int k)? measurePrefix,
     double Function(String text, int k)? measurePrefixNoLiga,
   }) {
-    var name = 'font', m = 0;
-    // The certificate proves that no positioning depends on a neighbour: every
-    // pair term is zero and none is measured (CJK fonts).
-    var pairsNone = false;
-    final cps = <int>[0], cl = <int>[certU];
-    // Fourth column: whether the character can be the first (f) or second (s)
-    // glyph of a pair adjustment. Without it, both.
-    final canFirst = <bool>[false], canSecond = <bool>[false];
-    for (final line in certText.split('\n')) {
-      if (line.startsWith('#')) {
-        final mm = RegExp(r'm=(\d+)').firstMatch(line);
-        if (mm != null) m = int.parse(mm.group(1)!);
-        pairsNone = line.contains(' pairs=none');
-        name = line.substring(1).split(' m=').first.trim();
-        continue;
-      }
-      final parts = line.trim().split(RegExp(r'\s+'));
-      if (parts.length != 3 && parts.length != 4) continue;
-      final cp = int.parse(parts[0], radix: 16);
-      final c = const {'S': certS, 'K': certK, 'P': certP, 'U': certU}[parts[2]]!;
-      if (c == certU || (cp >= 0x10000 && cp < _vBase) || (cp >= 0xD800 && cp < 0xE000)) continue;
-      cps.add(cp);
-      cl.add(c);
-      final roles = parts.length == 4 ? parts[3] : 'fs';
-      canFirst.add(roles.contains('f'));
-      canSecond.add(roles.contains('s'));
-    }
+    final rows = _CertRows(certText);
+    final name = rows.name, m = rows.m, pairsNone = rows.pairsNone;
+    final cps = rows.cps, cl = rows.cl, canFirst = rows.canFirst, canSecond = rows.canSecond;
     final n1 = cps.length;
     // A joining form is measured in its context: a zero-width joiner before a
     // form that joins the previous letter, and after one that joins the next.

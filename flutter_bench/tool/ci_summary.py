@@ -56,11 +56,14 @@ if styles:
                 out.append(f"| {name} | {opt} | {n(r['identical'])} | **{n(r['different'])}** | {n(r['deferred'])} | "
                            f"{n(heights)} of {n(checked)} |")
 
-rtl = [(n, d) for n, d in combined.items() if "font" in d and "pairClasses" in d or "font" in d and any(k.startswith("mixed") for k in d)]
+rtl = [(n, d) for n, d in combined.items()
+       if "font" in d and ("pairClasses" in d or "skipped" in d or any(k.startswith("mixed") for k in d))]
 if rtl:
     out += ["", "## Right-to-left, mixed-direction and CJK paragraphs (UI strings)", "",
             "| Run | Case | Identical | Different | Deferred | Heights equal |", "|---|---|---|---|---|---|"]
     for name, d in sorted(rtl):
+        if "skipped" in d:
+            out.append(f"| {name} | skipped: {d['skipped']} | | | | |")
         for case, r in d.items():
             if isinstance(r, dict) and "identical" in r:
                 out.append(f"| {name} | {case} | {n(r['identical'])} | **{n(r['different'])}** | {n(r['deferred'])} | "
