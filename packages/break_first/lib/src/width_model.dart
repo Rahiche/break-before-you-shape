@@ -19,6 +19,76 @@ import 'dart:typed_data';
 
 typedef Measure = double Function(String text);
 
+// Virtual characters of certify.py: _vBase + 4 * letter + joining form (0 isolated,
+// 1 initial, 2 medial, 3 final) for Arabic letters.
+const int _vBase = 0x100000;
+
+/// Unicode joining type of the Arabic letters certify.py models by their forms:
+/// 2 dual-joining, 1 right-joining, 0 anything else.
+int _joining(int cu) {
+  if (cu < 0x622 || cu > 0x6FF) return 0;
+  const r = [
+    0x622,
+    0x623,
+    0x624,
+    0x625,
+    0x627,
+    0x629,
+    0x62F,
+    0x630,
+    0x631,
+    0x632,
+    0x648,
+    0x671,
+    0x672,
+    0x673,
+    0x675,
+    0x676,
+    0x677,
+    0x6C0,
+    0x6CD,
+    0x6CF,
+    0x6D2,
+    0x6D3,
+    0x6D5,
+    0x6EE,
+    0x6EF,
+  ];
+  if (r.contains(cu) || (cu >= 0x688 && cu <= 0x699) || (cu >= 0x6C3 && cu <= 0x6CB)) return 1;
+  final d =
+      cu == 0x626 ||
+      cu == 0x628 ||
+      (cu >= 0x62A && cu <= 0x62E) ||
+      (cu >= 0x633 && cu <= 0x63F) ||
+      (cu >= 0x641 && cu <= 0x647) ||
+      cu == 0x649 ||
+      cu == 0x64A ||
+      cu == 0x66E ||
+      cu == 0x66F ||
+      cu == 0x678 ||
+      (cu >= 0x679 && cu <= 0x687) ||
+      (cu >= 0x69A && cu <= 0x6BF) ||
+      cu == 0x6C1 ||
+      cu == 0x6C2 ||
+      cu == 0x6CC ||
+      cu == 0x6CE ||
+      cu == 0x6D0 ||
+      cu == 0x6D1 ||
+      (cu >= 0x6FA && cu <= 0x6FC) ||
+      cu == 0x6FF ||
+      cu == 0x640; // tatweel is join-causing: HarfBuzz joins it like a dual-joining letter
+  return d ? 2 : 0;
+}
+
+/// Id of the joining letter at [i] in the form HarfBuzz's Arabic shaper gives it
+/// from its neighbours' joining types, or 0 when the sidecar has no such form.
+int _formId(WidthModel md, String t, int i) {
+  final cu = t.codeUnitAt(i);
+  final jp = i > 0 && _joining(t.codeUnitAt(i - 1)) == 2;
+  final jn = _joining(cu) == 2 && i + 1 < t.length && _joining(t.codeUnitAt(i + 1)) > 0;
+  return md.formIdOf[(cu - 0x600) * 4 + (jp ? (jn ? 2 : 3) : (jn ? 1 : 0))];
+}
+
 // Certificate classes from certify.py.
 const int certS = 0, certK = 1, certP = 2, certU = 3;
 
@@ -116,9 +186,15 @@ class WidthModel {
   ) {
     n1 = cps.length;
     idOf = Uint16List(0x10000);
+    formIdOf = Uint16List(0x400);
     islandDigit = Int8List(n1)..fillRange(0, n1, -1);
     for (var id = 1; id < n1; id++) {
-      idOf[cps[id]] = id;
+      final v = cps[id] - _vBase;
+      if (v < 0) {
+        idOf[cps[id]] = id;
+      } else if (v >> 2 >= 0x600 && v >> 2 < 0x700) {
+        formIdOf[((v >> 2) - 0x600) * 4 + (v & 3)] = id;
+      }
     }
     for (var d = 0; d < islandChars.length; d++) {
       islandDigit[islandChars[d]] = d;
@@ -150,6 +226,8 @@ class WidthModel {
   final Map<String, double> probes; // canary strings -> expected width (units)
   late final int n1, keyBase, islandCount;
   late final Uint16List idOf;
+  // (Arabic letter - 0x600) * 4 + joining form -> id (certify.py's virtual characters).
+  late final Uint16List formIdOf;
   late final Int8List islandDigit;
 
   // Text the engine shapes without ligatures (letter spacing switches them off):
@@ -211,7 +289,7 @@ class WidthModel {
     final classes = _classes(certText);
     final c = Uint8List(n1)..[0] = certU;
     for (var id = 1; id < n1; id++) {
-      c[id] = classes[cps[id]] ?? certU;
+      c[id] = cps[id] >= _vBase ? certU : classes[cps[id]] ?? certU;
     }
     // Characters that still need islands without ligatures (some other feature
     // substitutes them) are not modelled for letter-spaced text.
@@ -290,7 +368,7 @@ class WidthModel {
       if (parts.length != 3 && parts.length != 4) continue;
       final cp = int.parse(parts[0], radix: 16);
       final c = const {'S': certS, 'K': certK, 'P': certP, 'U': certU}[parts[2]]!;
-      if (c == certU || cp >= 0x10000 || (cp >= 0xD800 && cp < 0xE000)) continue;
+      if (c == certU || (cp >= 0x10000 && cp < _vBase) || (cp >= 0xD800 && cp < 0xE000)) continue;
       cps.add(cp);
       cl.add(c);
       final roles = parts.length == 4 ? parts[3] : 'fs';
@@ -298,10 +376,15 @@ class WidthModel {
       canSecond.add(roles.contains('s'));
     }
     final n1 = cps.length;
-    final str = [for (final cp in cps) String.fromCharCode(cp)];
+    // A joining form is measured in its context: a zero-width joiner before a
+    // form that joins the previous letter, and after one that joins the next.
+    final str = [for (final cp in cps) String.fromCharCode(cp < _vBase ? cp : (cp - _vBase) >> 2)];
+    final jp = [for (final cp in cps) cp >= _vBase && (cp - _vBase) & 3 >= 2];
+    final jn = [for (final cp in cps) cp >= _vBase && ((cp - _vBase) & 3 == 1 || (cp - _vBase) & 3 == 2)];
+    String realize(String core, int first, int last) => '${jp[first] ? '\u200D' : ''}$core${jn[last] ? '\u200D' : ''}';
     final adv = Float64List(n1);
     for (var id = 1; id < n1; id++) {
-      adv[id] = measure(str[id]);
+      adv[id] = measure(realize(str[id], id, id));
     }
     // Pairs measured: first-capable × second-capable characters; every other pair
     // is zero by the certificate (and with pairs=none, every pair).
@@ -326,7 +409,8 @@ class WidthModel {
       final a = k1[x];
       for (var y = 0; y < n2; y++) {
         final b = k2[y];
-        final ab = str[a] + str[b];
+        if (jn[a] != jp[b]) continue; // forms that cannot be neighbours
+        final ab = realize(str[a] + str[b], a, b);
         final v = dense[x * n2 + y] = measure(ab) - adv[a] - adv[b];
         // A pair with a primer may ligate, and a combining mark joins the cluster
         // before it: their boxes then split a ligature or a cluster, not a kern.
@@ -334,7 +418,7 @@ class WidthModel {
         final ligates = cl[a] != certS && cl[b] != certS && (cl[a] == certP || cl[b] == certP);
         final used = lbClass(cps[a]) != lbXX && lbClass(cps[b]) != lbXX;
         if (v != 0 && measurePrefix != null && !ligates && used) {
-          final rs = v - (measurePrefix(ab, 1) - adv[a]);
+          final rs = v - (measurePrefix(ab, jp[a] ? 2 : 1) - adv[a]);
           if (rs != 0) (right ??= Float64List(k1.length * n2))[x * n2 + y] = rs;
         }
       }
@@ -384,19 +468,26 @@ class WidthModel {
     final islandOfKey = Int32List(keys)..fillRange(0, keys, -1);
     final w = <double>[], l = <double>[], r = <double>[], lRight = <double>[], rRight = <double>[];
     var splitIslands = false;
-    void visit(String s, int key, int len, bool primer) {
+    void visit(String s, int key, int len, bool primer, int first, int last) {
       if (len > 0 && primer) {
         islandOfKey[key] = w.length;
-        final wi = measure(s);
+        final wi = measure(realize(s, first, last));
         w.add(wi);
         final lrow = List<double>.filled(n1, double.nan), rrow = List<double>.filled(n1, double.nan);
         final lr = List<double>.filled(n1, 0), rr = List<double>.filled(n1, 0);
         for (final x in safe) {
-          final xs = str[x] + s, sx = s + str[x];
-          lrow[x] = measure(xs) - adv[x] - wi;
-          rrow[x] = measure(sx) - wi - adv[x];
-          if (measurePrefix != null && lrow[x] != 0) lr[x] = lrow[x] - (measurePrefix(xs, 1) - adv[x]);
-          if (measurePrefix != null && rrow[x] != 0) rr[x] = rrow[x] - (measurePrefix(sx, s.length) - wi);
+          if (jn[x] == jp[first]) {
+            final xs = realize(str[x] + s, x, last);
+            lrow[x] = measure(xs) - adv[x] - wi;
+            if (measurePrefix != null && lrow[x] != 0) lr[x] = lrow[x] - (measurePrefix(xs, jp[x] ? 2 : 1) - adv[x]);
+          }
+          if (jn[last] == jp[x]) {
+            final sx = realize(s + str[x], first, x);
+            rrow[x] = measure(sx) - wi - adv[x];
+            if (measurePrefix != null && rrow[x] != 0) {
+              rr[x] = rrow[x] - (measurePrefix(sx, (jp[first] ? 1 : 0) + s.length) - wi);
+            }
+          }
           splitIslands = splitIslands || lr[x] != 0 || rr[x] != 0;
         }
         l.addAll(lrow);
@@ -406,14 +497,36 @@ class WidthModel {
       }
       if (len == m) return;
       for (var d = 0; d < ik.length; d++) {
-        visit(s + str[ik[d]], key * base + d + 1, len + 1, primer || cl[ik[d]] == certP);
+        if (len > 0 && jn[last] != jp[ik[d]]) continue; // forms that cannot be neighbours
+        visit(
+          s + str[ik[d]],
+          key * base + d + 1,
+          len + 1,
+          primer || cl[ik[d]] == certP,
+          len == 0 ? ik[d] : first,
+          ik[d],
+        );
       }
     }
 
-    visit('', 0, 0, false);
+    visit('', 0, 0, false, 0, 0);
     // Canary probes: ordinary text whose width must match after shipping.
     final probeTexts = rtl
-        ? const ['שלום עולם, מה שלומך היום?', 'אבגדהוזחטיכלמנסעפצקרשת ךםןףץ', 'ספר, עט ומחברת.']
+        ? [
+            for (final p in const [
+              'שלום עולם, מה שלומך היום?',
+              'אבגדהוזחטיכלמנסעפצקרשת ךםןףץ',
+              'ספר, עט ומחברת.',
+              'مرحبا بالعالم، كيف حالك اليوم؟',
+              'نص عربي للتجربة',
+            ])
+              // Only text the font covers: other glyphs come from fallback fonts,
+              // which differ between devices.
+              if (p.codeUnits.every(
+                (c) => c == 0x20 || c == 0x60C || c == 0x61F || cps.contains(c) || cps.contains(_vBase + 4 * c),
+              ))
+                p,
+          ]
         : const [
             'The quick brown fox jumps over the lazy dog.',
             'AVAWATAY To Te Wa fi fl ffi office',
@@ -708,6 +821,20 @@ final Uint8List _lb = () {
     if (c <= 0x5EA || c >= 0x5EF) t[c] = lbAL; // Hebrew letters (HL), geresh, gershayim
   }
   t[0x5BE] = lbBA; // maqaf
+  for (var c = 0x620; c < 0x700; c++) {
+    if ((c >= 0x620 && c <= 0x64A) ||
+        (c >= 0x66E && c <= 0x6D3) ||
+        c == 0x6D5 ||
+        c == 0x6EE ||
+        c == 0x6EF ||
+        c >= 0x6FA) {
+      t[c] = lbAL; // Arabic letters
+    } else if ((c >= 0x660 && c <= 0x669) || c == 0x66B || c == 0x66C || (c >= 0x6F0 && c <= 0x6F9)) {
+      t[c] = lbNU;
+    }
+  }
+  t[0x60C] = lbIS; // Arabic comma
+  t[0x61B] = t[0x61F] = t[0x6D4] = lbEX; // semicolon, question mark, full stop
   // CJK: ideographs, kana and Hangul syllables are ID (a break between any two),
   // and so are small kana (CJ); iteration marks are NS; brackets OP and CL; the
   // ideographic space BA.
@@ -870,7 +997,8 @@ const int scCommon = 0,
     scHan = 5,
     scHiragana = 6,
     scHangul = 7,
-    scKatakana = 8;
+    scKatakana = 8,
+    scArabic = 9;
 int scriptOf(int cu) {
   if ((cu | 0x20) >= 0x61 && (cu | 0x20) <= 0x7A) return scLatin;
   if (cu < 0xC0) return cu == 0xAA || cu == 0xBA ? scLatin : scCommon;
@@ -880,6 +1008,7 @@ int scriptOf(int cu) {
   }
   if (cu >= 0x400 && cu < 0x500) return scCyrillic;
   if (cu >= 0x590 && cu < 0x600) return scHebrew;
+  if (cu >= 0x600 && cu < 0x700) return cu == 0x60C || cu == 0x61B || cu == 0x61F || cu == 0x640 ? scCommon : scArabic;
   if (cu >= 0x3041 && cu <= 0x309A) return scHiragana;
   if (cu >= 0x30A1 && cu <= 0x30FA) return scKatakana;
   if (cu == 0x3005 ||
@@ -899,11 +1028,11 @@ int scriptOf(int cu) {
 // handles is neutral (spaces, punctuation, symbols).
 bool _strongR(int cu) => (cu >= 0x590 && cu < 0x900) || (cu >= 0xFB1D && cu < 0xFE00) || (cu >= 0xFE70 && cu < 0xFF00);
 // UAX #9 classes for [bidiLevels].
-const int _bL = 0, _bR = 1, _bEN = 2, _bES = 3, _bET = 4, _bCS = 5, _bWS = 6, _bON = 7, _bB = 8;
+const int _bL = 0, _bR = 1, _bEN = 2, _bES = 3, _bET = 4, _bCS = 5, _bWS = 6, _bON = 7, _bB = 8, _bAL = 9, _bAN = 10;
 
 /// The bidi class of [cu], or -1 where the implicit algorithm here does not
-/// apply: combining marks (NSM), explicit formatting characters, Arabic letters
-/// and digits, and characters this breaker does not handle anyway.
+/// apply: combining marks (NSM), explicit formatting characters, and characters
+/// this breaker does not handle anyway.
 int _bidiClass(int cu) {
   if (cu == 0x0A || cu == 0x2029) return _bB;
   if (cu == 0x20 || cu == 0x2028 || (cu >= 0x2000 && cu <= 0x200A)) return _bWS;
@@ -947,7 +1076,15 @@ int _bidiClass(int cu) {
       (cu >= 0x5EF && cu <= 0x5F4)) {
     return _bR;
   }
-  if (cu >= 0x590 && cu < 0x900) return -1; // Hebrew marks, Arabic
+  if (cu >= 0x600 && cu < 0x700) {
+    if (cu >= 0x660 && cu <= 0x66C && cu != 0x66A) return _bAN; // Arabic-Indic digits and separators
+    if (cu == 0x66A) return _bET;
+    if (cu >= 0x6F0 && cu <= 0x6F9) return _bEN; // extended Arabic-Indic digits
+    if (cu == 0x60C) return _bCS;
+    if (_joining(cu) > 0 || cu == 0x61B || cu == 0x61F || cu == 0x6D4 || cu == 0x621) return _bAL;
+    return -1; // marks and the rest
+  }
+  if (cu >= 0x590 && cu < 0x900) return -1; // Hebrew marks, other scripts
   if (cu == 0x202F || cu == 0x2044) return _bCS;
   if ((cu >= 0x2030 && cu <= 0x2034) || (cu >= 0x20A0 && cu <= 0x20CF)) return _bET;
   if (cu == 0x200E || cu == 0x200F || (cu >= 0x202A && cu <= 0x202E) || (cu >= 0x2066 && cu <= 0x2069)) return -1;
@@ -974,9 +1111,25 @@ Uint8List? bidiLevels(String t, {required bool rtlParagraph}) {
     while (end < len && types[end] != _bB) {
       end++;
     }
-    // W4: a single separator between two numbers joins them.
+    // W2: a European number after Arabic letters is an Arabic number. W3: Arabic
+    // letters are right-to-left.
+    var last = eDir;
+    for (var i = s; i < end; i++) {
+      final c = types[i];
+      if (c == _bL || c == _bR || c == _bAL) {
+        last = c;
+      } else if (c == _bEN && last == _bAL) {
+        types[i] = _bAN;
+      }
+    }
+    for (var i = s; i < end; i++) {
+      if (types[i] == _bAL) types[i] = _bR;
+    }
+    // W4: a single separator between two numbers joins them (only a common
+    // separator between two Arabic numbers).
     for (var i = s + 1; i + 1 < end; i++) {
       if ((types[i] == _bES || types[i] == _bCS) && types[i - 1] == _bEN && types[i + 1] == _bEN) types[i] = _bEN;
+      if (types[i] == _bCS && types[i - 1] == _bAN && types[i + 1] == _bAN) types[i] = _bAN;
     }
     // W5: terminators next to a number are part of it.
     for (var i = s; i < end; i++) {
@@ -1027,7 +1180,7 @@ Uint8List? bidiLevels(String t, {required bool rtlParagraph}) {
       levels[i] = e == 0
           ? (c == _bR
                 ? 1
-                : c == _bEN
+                : c == _bEN || c == _bAN
                 ? 2
                 : 0)
           : (c == _bR ? 1 : 2);
@@ -1039,12 +1192,14 @@ Uint8List? bidiLevels(String t, {required bool rtlParagraph}) {
 }
 
 bool _strongLOrNumber(int cu) =>
-    (scriptOf(cu) != scCommon && scriptOf(cu) != scHebrew) ||
+    (scriptOf(cu) != scCommon && scriptOf(cu) != scHebrew && scriptOf(cu) != scArabic) ||
     (cu >= 0x2B0 && cu < 0x300) ||
     (cu >= 0x30 && cu <= 0x39) ||
     cu == 0xB2 ||
     cu == 0xB3 ||
-    cu == 0xB9;
+    cu == 0xB9 ||
+    (cu >= 0x660 && cu <= 0x669) ||
+    (cu >= 0x6F0 && cu <= 0x6F9);
 
 bool _isPi(int cu) => cu == 0xAB || cu == 0x2018 || cu == 0x201C;
 
@@ -1469,7 +1624,7 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
       continue;
     }
     if (gate && (md.rtl ? _strongLOrNumber(cu) : _strongR(cu))) return false; // a mixed-direction paragraph
-    final id = idOf[cu];
+    final id = _joining(cu) > 0 ? _formId(md, t, i) : idOf[cu];
     if (id == 0) return false;
     final c = cert[id];
     if (c == certU) return false;
@@ -1483,7 +1638,8 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
       // A P/K run: find its end, and whether it has a primer.
       var j = i, key = 0, primer = false;
       while (j < end) {
-        final q = idOf[t.codeUnitAt(j)];
+        final cj = t.codeUnitAt(j);
+        final q = _joining(cj) > 0 ? _formId(md, t, j) : idOf[cj];
         final dj = digit[q];
         if (q == 0 || dj < 0) break;
         primer = primer || cert[q] == certP;
@@ -1517,7 +1673,8 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
       }
       // No primer: substitution leaves these characters alone.
       for (; i < j; i++) {
-        final q = idOf[t.codeUnitAt(i)];
+        final ci = t.codeUnitAt(i);
+        final q = _joining(ci) > 0 ? _formId(md, t, i) : idOf[ci];
         var rs = 0.0;
         if (prevId != 0) {
           p += cls[fc[prevId] + sc[q]];

@@ -58,6 +58,8 @@ if "cyrillic" in os.environ.get("CERTIFY_SCRIPTS", ""):
     RANGES.append((0x400, 0x4FF))
 if "hebrew" in os.environ.get("CERTIFY_SCRIPTS", ""):
     RANGES.append((0x590, 0x5FF))
+if "arabic" in os.environ.get("CERTIFY_SCRIPTS", ""):
+    RANGES.append((0x600, 0x6FF))
 if "cjk" in os.environ.get("CERTIFY_SCRIPTS", ""):
     # CJK punctuation, kana, Han (with extension A and compatibility), Hangul
     # syllables, fullwidth forms.
@@ -66,7 +68,7 @@ if "cjk" in os.environ.get("CERTIFY_SCRIPTS", ""):
 # OpenType scripts HarfBuzz shapes these characters with: the lookups of all of them
 # count (Common characters take the script of the run they are in).
 SCRIPT_TAGS = ["latn"] + [tag for name, tags in (("greek", ["grek"]), ("cyrillic", ["cyrl"]), ("hebrew", ["hebr"]),
-                                                  ("cjk", ["hani", "kana", "hang"]))
+                                                  ("arabic", ["arab"]), ("cjk", ["hani", "kana", "hang"]))
                           if name in os.environ.get("CERTIFY_SCRIPTS", "") for tag in tags]
 # Every feature HarfBuzz turns on for all of a horizontal Latin buffer. frac/numr/dnom
 # are applied only around U+2044 FRACTION SLASH, which is classified U below.
@@ -104,6 +106,8 @@ if os.environ.get("CERTIFY_FREQ_FILES"):
 
 
 def freq(cp):
+    if cp >= 0x100000:
+        cp = (cp - 0x100000) // 4
     if CORPUS_FREQ:
         return CORPUS_FREQ.get(cp, 0.0) + 1e-6
     ch = chr(cp)
@@ -137,6 +141,24 @@ if "GDEF" in font and font["GDEF"].table.GlyphClassDef:
 
 unsafe = {}  # cp -> first reason
 
+# Arabic joining forms. HarfBuzz picks each letter's form (isolated, initial,
+# medial, final) from the Unicode joining types of its neighbours and applies the
+# font's isol/init/medi/fina feature to it. Each (letter, form) becomes a virtual
+# character VBASE + 4 * cp + form whose glyph is that feature's substitute; the
+# letter itself is not used directly. Forms whose feature is not a plain single
+# substitution, or letters an earlier lookup (ccmp, locl) touches, are unsafe.
+VBASE = 0x100000
+FORMS = ("isol", "init", "medi", "fina")
+# Joining types: D (dual-joining) has all four forms, R (right-joining) isol and fina.
+ARABIC_R = set(range(0x622, 0x626)) | {0x627, 0x629} | set(range(0x62F, 0x633)) | {0x648} | set(range(0x671, 0x674)) | \
+    set(range(0x675, 0x678)) | set(range(0x688, 0x69A)) | {0x6C0} | set(range(0x6C3, 0x6CC)) | {0x6CD, 0x6CF, 0x6D2, 0x6D3,
+                                                                                                0x6D5, 0x6EE, 0x6EF}
+ARABIC_D = ({0x626, 0x628} | set(range(0x62A, 0x62F)) | set(range(0x633, 0x640)) | set(range(0x641, 0x648)) | {0x649, 0x64A,
+            0x66E, 0x66F, 0x678} | set(range(0x679, 0x688)) | set(range(0x69A, 0x6C0)) | {0x6C1, 0x6C2, 0x6CC, 0x6CE, 0x6D0,
+                                                                                         0x6D1} | set(range(0x6FA, 0x6FD))
+            | {0x6FF, 0x640})  # tatweel is join-causing: HarfBuzz joins it like a dual-joining letter
+arabic_forms = {}  # virtual cp -> (letter, form index)
+
 
 def make_unsafe(cps, reason):
     for cp in cps:
@@ -145,6 +167,34 @@ def make_unsafe(cps, reason):
 
 make_unsafe([cp for cp in chars if cp == 0x2044], "fraction slash triggers frac/numr/dnom")
 make_unsafe([cp for cp in chars if gdef_class.get(nominal[cp]) == 3], "GDEF mark")
+
+
+def form_substitutes():
+    """For each joining form, the glyph map of its feature in script arab (single
+    substitutions applied in lookup order), and the glyphs a lookup of another type
+    in that feature covers (unsafe)."""
+    maps, blocked = {f: {} for f in FORMS}, set()
+    if "GSUB" not in font or not font["GSUB"].table.ScriptList:
+        return maps, blocked
+    t = font["GSUB"].table
+    scripts = {sr.ScriptTag: sr.Script for sr in t.ScriptList.ScriptRecord}
+    sc = scripts.get("arab")
+    if not sc or not sc.DefaultLangSys:
+        return maps, blocked
+    feats = t.FeatureList.FeatureRecord
+    for i in sc.DefaultLangSys.FeatureIndex:
+        tag = feats[i].FeatureTag
+        if tag not in FORMS:
+            continue
+        for li in sorted(feats[i].Feature.LookupListIndex):
+            lk = t.LookupList.Lookup[li]
+            for typ, st in subtables(lk, 7):
+                if typ == 1:
+                    for g, r in st.mapping.items():
+                        maps[tag].setdefault(g, r)
+                else:
+                    blocked.update(getattr(getattr(st, "Coverage", None), "glyphs", []) or [])
+    return maps, blocked
 
 
 def active_lookups(tag):
@@ -254,6 +304,31 @@ def rule_positions(st, typ):
                   [set(c.glyphs) for c in st.LookAheadCoverage]
         else:
             yield [set(c.glyphs) for c in st.Coverage]
+
+
+if "arabic" in os.environ.get("CERTIFY_SCRIPTS", ""):
+    maps, form_blocked = form_substitutes()
+    # Glyphs any other active GSUB lookup covers: if a letter's own glyph is one of
+    # them, a lookup before the forms (ccmp, locl) may change what the form sees.
+    early = set()
+    if "GSUB" in font:
+        for lk in active_lookups("GSUB")[1]:
+            for typ, st in subtables(lk, 7):
+                early.update(getattr(getattr(st, "Coverage", None), "glyphs", []) or [])
+    for cp in [c for c in chars if c in ARABIC_D or c in ARABIC_R]:
+        g = nominal[cp]
+        make_unsafe([cp], "Arabic letter: modelled by its joining forms")
+        for k, f in enumerate(FORMS):
+            if cp in ARABIC_R and f in ("init", "medi"):
+                continue
+            v = VBASE + 4 * cp + k
+            arabic_forms[v] = (cp, k)
+            chars.append(v)
+            nominal[v] = maps[f].get(g, g)
+            if g in form_blocked:
+                make_unsafe([v], f"{f} is not a single substitution")
+            elif g in early and nominal[v] != g:
+                make_unsafe([v], "a lookup before the joining forms touches the letter")
 
 
 def run_round():
