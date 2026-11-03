@@ -113,6 +113,7 @@ void main() {
     final bf = BreakFirst.load(sidecar, fontFamily: family);
     report['canaryErrorPx'] = bf?.canaryErrorPx;
     report['fontSizeQuantized'] = quantizeFontSize;
+    report['hardBreakKerns'] = hardBreakKerns;
     expect(bf, isNotNull);
   });
 

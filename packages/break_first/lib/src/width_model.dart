@@ -62,6 +62,27 @@ void calibrateFontSize(WidthModel md, double Function(String, double) measure) {
   quantizeFontSize = (effective - (size * 64).floorToDouble() / 64).abs() < (effective - size).abs();
 }
 
+/// Whether a hard line break kerns with the character before it as a space does.
+/// Measured: it does on macOS (Roboto's T loses its T-space kern before \n), not
+/// on Linux, where the engine's font backend does not give \n the space glyph.
+/// Set once at startup by [calibrateHardBreak].
+bool hardBreakKerns = true;
+
+/// One layout tells whether this engine kerns a hard break like a space: line 0
+/// of "a\nb" for a character a that kerns with a space. [lineWidth] gives the
+/// width of a text's first line, in font units.
+void calibrateHardBreak(WidthModel md, double Function(String) lineWidth) {
+  final sp = md.idOf[0x20];
+  if (sp == 0) return;
+  for (var a = 1; a < md.n1; a++) {
+    final v = md.pair(a, sp), rs = md.clsRight?[md.fc[a] + md.sc[sp]] ?? 0;
+    if (v == 0 || md.cert[a] != certS || lbClass(md.cps[a]) == lbXX || md.cps[a] == 0x20) continue;
+    final w = lineWidth('${String.fromCharCode(md.cps[a])}\nx');
+    hardBreakKerns = (w - (md.adv[a] + v - rs)).abs() < (w - md.adv[a]).abs();
+    return;
+  }
+}
+
 /// Flutter's height of one line at [size]. Default style: the font's line height
 /// in pixels, rounded to a whole pixel (measured at 12, 14, 16, 18.4, 24 px). With a
 /// height multiplier: size × height, rounded, with both in float32 and the product
@@ -1204,7 +1225,9 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
       // script run continues (itemization is over the whole text).
       final sp = idOf[0x20];
       var rs = 0.0;
-      if (prevId != 0) {
+      if (!hardBreakKerns) {
+        // No pair adjustment with a hard break on this engine.
+      } else if (prevId != 0) {
         p += ligatures ? cls[fc[prevId] + sc[sp]] : md.pairNoLiga(prevId, sp);
         if (cr != null) rs = ligatures ? cr[fc[prevId] + sc[sp]] : md.rightNoLiga(prevId, sp);
       } else if (prevIsland >= 0) {

@@ -36,13 +36,14 @@ class BreakFirst {
   final double canaryErrorPx;
 
   /// Decodes [sidecar] and checks it against this engine: calibrates the
-  /// engine's font-size rounding and measures the canary strings. Returns null
+  /// engine's conventions (font-size rounding, kerning before a hard break) and
+  /// measures the canary strings. Returns null
   /// when the canary fails, that is when the sidecar does not describe the font
   /// loaded under [fontFamily] on this device; then lay everything out with
   /// Flutter.
   static BreakFirst? load(Uint8List sidecar, {required String fontFamily}) {
     final md = WidthModel.decode(sidecar);
-    calibrateFontSize(md, (s, size) => measureText(s, fontFamily: fontFamily, fontSize: size, rtl: md.rtl));
+    calibrateEngine(md, fontFamily);
     final err = canaryError(md, fontFamily);
     return err < 1e-3 ? BreakFirst._(md, fontFamily, err) : null;
   }

@@ -75,7 +75,7 @@ void main() {
         result['buildMs'] = sw.elapsedMilliseconds;
         result['sidecarBytes'] = md.encode().length;
         result['noLiga'] = md.noLigaCert != null;
-        calibrateFontSize(md, (s, size) => measureText(s, fontFamily: family, fontSize: size));
+        calibrateEngine(md, family);
         final canary = canaryError(md, family);
         result['canaryErrPx'] = canary;
         // Default style.

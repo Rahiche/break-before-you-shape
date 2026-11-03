@@ -682,8 +682,9 @@ Future<Map<String, Object?>> runApp({String mode = 'all', int sample = 100000}) 
   final sw = Stopwatch()..start();
   final md = WidthModel.decode(bytes);
   result['sidecar'] = {'bytes': bytes.length, 'loadMs': sw.elapsedMicroseconds / 1000, 'describe': md.describe()};
-  calibrateFontSize(md, measure);
+  calibrateEngine(md, family);
   result['fontSizeQuantized'] = quantizeFontSize;
+  result['hardBreakKerns'] = hardBreakKerns;
   result['canary'] = canary(md);
   if (mode == 'sizes') result['sizes'] = await sizeProbe(md);
   if (mode == 'all' || mode == 'validate') result['validate'] = await validate(md, sample: sample);

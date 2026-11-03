@@ -51,8 +51,10 @@ if styles:
     for name, d in sorted(styles):
         for opt, r in d["styles"].items():
             if isinstance(r, dict) and "identical" in r:
+                heights = r.get("heightIdentical", r.get("heightsEqual", 0))
+                checked = r.get("heightChecked", r.get("layouts", 0))
                 out.append(f"| {name} | {opt} | {n(r['identical'])} | **{n(r['different'])}** | {n(r['deferred'])} | "
-                           f"{n(r['heightIdentical'])} of {n(r['heightChecked'])} |")
+                           f"{n(heights)} of {n(checked)} |")
 
 rtl = [(n, d) for n, d in combined.items() if "font" in d and any(k.startswith("mixed") for k in d)]
 if rtl:

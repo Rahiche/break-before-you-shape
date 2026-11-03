@@ -159,6 +159,19 @@ WidthModel buildSidecar({
   );
 }
 
+/// Calibrates this engine's conventions that differ between platforms (font
+/// size rounding, kerning before a hard break), for the font loaded under
+/// [fontFamily].
+void calibrateEngine(WidthModel md, String fontFamily) {
+  calibrateFontSize(md, (s, size) => measureText(s, fontFamily: fontFamily, fontSize: size, rtl: md.rtl));
+  calibrateHardBreak(md, (s) {
+    final p = layoutParagraph(s, fontFamily: fontFamily, fontSize: md.upem.toDouble(), rtl: md.rtl, width: 1e5);
+    final w = p.computeLineMetrics().first.width;
+    p.dispose();
+    return w;
+  });
+}
+
 /// Largest difference, in px at 16 px, between the canary widths stored in the
 /// sidecar and this engine's widths for the font loaded under [fontFamily].
 double canaryError(WidthModel md, String fontFamily) {

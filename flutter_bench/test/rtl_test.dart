@@ -46,7 +46,7 @@ void main() {
           ? null
           : buildSidecar(fontFamily: family, font: font, certificate: File(env['RTL_LTR_CERT']!).readAsStringSync(),
               noLigaCertificate: env['RTL_LTR_NOLIG'] == null ? null : File(env['RTL_LTR_NOLIG']!).readAsStringSync());
-      calibrateFontSize(md, (s, size) => measureText(s, fontFamily: family, fontSize: size, rtl: true));
+      calibrateEngine(md, family);
       final canary = canaryError(md, family);
       final all = File(env['RTL_CORPUS']!).readAsStringSync().split('\n').where((p) => p.isNotEmpty).toList();
       final joined = [for (var i = 0; i + 3 <= all.length; i += 3) all.sublist(i, i + 3).join('\n')];

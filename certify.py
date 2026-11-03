@@ -57,10 +57,16 @@ if "cyrillic" in os.environ.get("CERTIFY_SCRIPTS", ""):
     RANGES.append((0x400, 0x4FF))
 if "hebrew" in os.environ.get("CERTIFY_SCRIPTS", ""):
     RANGES.append((0x590, 0x5FF))
+if "cjk" in os.environ.get("CERTIFY_SCRIPTS", ""):
+    # CJK punctuation, kana, Han (with extension A and compatibility), Hangul
+    # syllables, fullwidth forms.
+    RANGES += [(0x3000, 0x30FF), (0x3400, 0x4DBF), (0x4E00, 0x9FFF), (0xAC00, 0xD7A3), (0xF900, 0xFAFF),
+               (0xFF00, 0xFFEF)]
 # OpenType scripts HarfBuzz shapes these characters with: the lookups of all of them
 # count (Common characters take the script of the run they are in).
-SCRIPT_TAGS = ["latn"] + [tag for name, tag in (("greek", "grek"), ("cyrillic", "cyrl"), ("hebrew", "hebr"))
-                          if name in os.environ.get("CERTIFY_SCRIPTS", "")]
+SCRIPT_TAGS = ["latn"] + [tag for name, tags in (("greek", ["grek"]), ("cyrillic", ["cyrl"]), ("hebrew", ["hebr"]),
+                                                  ("cjk", ["hani", "kana", "hang"]))
+                          if name in os.environ.get("CERTIFY_SCRIPTS", "") for tag in tags]
 # Every feature HarfBuzz turns on for all of a horizontal Latin buffer. frac/numr/dnom
 # are applied only around U+2044 FRACTION SLASH, which is classified U below.
 FEATURES = {"rvrn", "ltra", "ltrm", "rand", "ccmp", "locl", "rlig", "calt", "clig", "liga", "rclt", "abvm",
@@ -547,8 +553,24 @@ for rounds in range(1, 50):
         unsafe.setdefault(cp, why)
 
 final = {cp: ("U" if cp in unsafe else status[cp]) for cp in chars}
+
+
+def pair_free():
+    """True when no positioning depends on the neighbouring glyph: no active GPOS
+    pair, cursive or contextual positioning lookup, and no kern or kerx table.
+    Every pair term is then zero, and the distiller need not measure pairs (CJK
+    fonts with tens of thousands of characters)."""
+    if "kern" in font or "kerx" in font:
+        return False
+    if "GPOS" in font:
+        for lk in active_lookups("GPOS")[1]:
+            if any(typ in (2, 3, 7, 8) for typ, _ in subtables(lk, 9)):
+                return False
+    return True
+
+
 with open(out_path, "w") as fp:
-    fp.write(f"# {font['name'].getDebugName(4)} m={M_ISLAND}\n")
+    fp.write(f"# {font['name'].getDebugName(4)} m={M_ISLAND}{' pairs=none' if pair_free() else ''}\n")
     for cp in chars:
         fp.write(f"{cp:04X} {gid[nominal[cp]]} {final[cp]}\n")
 
