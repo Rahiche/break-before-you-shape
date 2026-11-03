@@ -1,0 +1,55 @@
+# On every push and pull request: the package's tests (which rebuild the sidecar
+# and check generated text against Flutter on the runner's engine), the example's
+# tests, and analysis of the bench app. Linux and macOS.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+      - name: Package
+        working-directory: packages/break_first
+        run: |
+          flutter pub get
+          flutter analyze lib test
+          flutter test
+      - name: Example
+        working-directory: packages/break_first/example
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+      - name: Bench app
+        working-directory: flutter_bench
+        run: |
+          flutter pub get
+          flutter analyze --no-fatal-infos
+      - name: Summary
+        if: always()
+        run: python3 flutter_bench/tool/ci_summary.py packages/break_first/build combined.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: package-tests-${{ matrix.os }}
+          path: packages/break_first/build/break_first_test.json

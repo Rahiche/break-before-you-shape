@@ -2,11 +2,13 @@
 
   en_man    paragraphs of rendered man pages (technical prose)
   en_legal  paragraphs of license texts found on disk (legal prose)
-  ui_xx     user-interface strings from macOS localizations: short, chat-like
-            messages in English, German, French, Russian, Ukrainian and Greek
+  ui_xx     user-interface strings from macOS localizations (on Linux, from
+            gettext catalogues): short, chat-like messages in English, German,
+            French, Russian, Ukrainian and Greek
 
 usage: make_corpora.py outdir
 """
+import gettext
 import glob
 import json
 import os
@@ -38,7 +40,7 @@ def write(name, paras, cap):
 
 
 # Man pages, rendered with mandoc to plain text.
-pages = sorted(glob.glob("/usr/share/man/man1/*.1"))
+pages = sorted(glob.glob("/usr/share/man/man1/*.1")) or sorted(glob.glob("/usr/share/man/man1/*.1.gz"))
 paras = []
 for page in pages:
     try:
@@ -59,7 +61,8 @@ write("en_man", paras, 5000)
 # License texts.
 paras = []
 patterns = [os.path.expanduser("~/.pub-cache/hosted/pub.dev/*/LICENSE"), "/opt/homebrew/Cellar/*/*/LICENSE*",
-            "/opt/homebrew/Cellar/*/*/COPYING*", "/usr/share/doc/*/LICENSE*"]
+            "/opt/homebrew/Cellar/*/*/COPYING*", "/usr/share/doc/*/LICENSE*", "/usr/share/common-licenses/*",
+            "/usr/share/doc/*/copyright"]
 for pat in patterns:
     for path in sorted(glob.glob(pat)):
         try:
@@ -71,6 +74,27 @@ for pat in patterns:
             if prose(p, 10):
                 paras.append(p)
 write("en_legal", paras, 3000)
+
+def gettext_strings(lang):
+    """Messages from gettext catalogues (Linux): translations, or for English the
+    source strings of every catalogue."""
+    roots = ["/usr/share/locale", "/usr/share/locale-langpack"]
+    langs = ["de", "fr", "ru", "uk", "el"] if lang == "en" else [lang]
+    out = []
+    for root in roots:
+        for l in langs:
+            for path in sorted(glob.glob(f"{root}/{l}/LC_MESSAGES/*.mo")):
+                try:
+                    with open(path, "rb") as fp:
+                        catalog = gettext.GNUTranslations(fp)._catalog
+                except Exception:
+                    continue
+                for k, v in catalog.items():
+                    if not isinstance(k, str) or not k:
+                        continue
+                    out.append(k.split("\x04")[-1] if lang == "en" else v)
+    return out
+
 
 # UI strings from macOS localizations.
 for lang in ["en", "de", "fr", "ru", "uk", "el"]:
@@ -92,4 +116,6 @@ for lang in ["en", "de", "fr", "ru", "uk", "el"]:
                 paras.append(v)
         if len(paras) > 20000:
             break
+    if not files:
+        paras = [v for v in gettext_strings(lang) if isinstance(v, str) and len(v.split()) >= 4]
     write(f"ui_{lang}", paras, 4000)

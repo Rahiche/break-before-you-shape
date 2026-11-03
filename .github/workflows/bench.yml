@@ -1,0 +1,207 @@
+# The paper's Flutter benchmarks on GitHub's machines instead of a laptop:
+# exactness of line breaks and heights against Flutter's own layout on macOS,
+# Linux, the iOS simulator and the Android emulator, timing against TextPainter
+# on macOS and Linux (desktop release builds), and the list-extents demo video
+# recorded on the Android emulator.
+#
+# Manual only. This repository is public, so GitHub-hosted runners cost no
+# Actions minutes; the jobs still have timeouts. Each job generates its corpora
+# from files on its own runner (tool/prepare_assets.sh), so numbers are per
+# platform and not identical to the paper's.
+name: Benchmarks
+
+on:
+  workflow_dispatch:
+    inputs:
+      desktop_sample:
+        description: Paragraphs per corpus validated on macOS and Linux (100000 = all)
+        default: "100000"
+      mobile_sample:
+        description: Paragraphs per corpus validated on the iOS simulator and the Android emulator
+        default: "300"
+      timing_runs:
+        description: Separate timing runs per desktop platform (median reported)
+        default: "3"
+
+concurrency:
+  group: bench
+  cancel-in-progress: false
+
+env:
+  FLUTTER_VERSION: 3.47.5
+
+jobs:
+  macos:
+    name: macOS (host and release)
+    runs-on: macos-15
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Corpora
+        working-directory: flutter_bench
+        run: flutter pub get && tool/prepare_assets.sh
+      - name: Exactness under flutter_tester
+        working-directory: flutter_bench
+        run: BF_SAMPLE=120 flutter test test/validate_host_test.dart && mkdir -p ../out && cp results/host_validate.json ../out/macos_host.json
+      - name: Exactness, release build
+        working-directory: flutter_bench
+        run: |
+          flutter build macos --release --dart-define=BF_MODE=validate --dart-define=BF_SAMPLE=${{ inputs.desktop_sample }}
+          BF_OUT=$PWD/../out/macos_release.json build/macos/Build/Products/Release/bf_bench.app/Contents/MacOS/bf_bench
+      - name: Timing, release build
+        working-directory: flutter_bench
+        run: |
+          flutter build macos --release --dart-define=BF_MODE=timing
+          for i in $(seq 1 ${{ inputs.timing_runs }}); do
+            BF_OUT=$PWD/../out/macos_timing_run$i.json build/macos/Build/Products/Release/bf_bench.app/Contents/MacOS/bf_bench
+          done
+          { sysctl -n machdep.cpu.brand_string; sysctl -n hw.ncpu; sw_vers; } > ../out/macos_machine.txt
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bench-macos
+          path: out/
+
+  ios:
+    name: iOS simulator
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Corpora
+        working-directory: flutter_bench
+        run: flutter pub get && tool/prepare_assets.sh
+      - name: Exactness on the simulator
+        working-directory: flutter_bench
+        run: |
+          flutter build ios --simulator --debug --dart-define=BF_MODE=validate --dart-define=BF_SAMPLE=${{ inputs.mobile_sample }}
+          mkdir -p ../out
+          tool/run_ios_sim.sh build/ios/iphonesimulator/Runner.app ../out/ios_sim.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bench-ios
+          path: out/
+
+  linux:
+    name: Linux (host and release)
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v7
+      - name: System packages
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q mandoc language-pack-de-base language-pack-fr-base language-pack-ru-base \
+            language-pack-uk-base language-pack-el-base clang cmake ninja-build pkg-config libgtk-3-dev xvfb
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Corpora
+        working-directory: flutter_bench
+        run: flutter pub get && tool/prepare_assets.sh
+      - name: Exactness under flutter_tester
+        working-directory: flutter_bench
+        run: BF_SAMPLE=120 flutter test test/validate_host_test.dart && mkdir -p ../out && cp results/host_validate.json ../out/linux_host.json
+      - name: Linux desktop target
+        working-directory: flutter_bench
+        run: flutter create --platforms=linux . >/dev/null && rm -f test/widget_test.dart
+      - name: Exactness, release build
+        working-directory: flutter_bench
+        run: |
+          flutter build linux --release --dart-define=BF_MODE=validate --dart-define=BF_SAMPLE=${{ inputs.desktop_sample }}
+          BF_OUT=$PWD/../out/linux_release.json xvfb-run -a build/linux/x64/release/bundle/bf_bench
+      - name: Timing, release build
+        working-directory: flutter_bench
+        run: |
+          flutter build linux --release --dart-define=BF_MODE=timing
+          for i in $(seq 1 ${{ inputs.timing_runs }}); do
+            BF_OUT=$PWD/../out/linux_timing_run$i.json xvfb-run -a build/linux/x64/release/bundle/bf_bench
+          done
+          { lscpu | grep -E 'Model name|^CPU\(s\)'; lsb_release -ds; } > ../out/linux_machine.txt
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bench-linux
+          path: out/
+
+  android:
+    name: Android emulator (and demo video)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: System packages
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q mandoc language-pack-de-base language-pack-fr-base language-pack-ru-base \
+            language-pack-uk-base language-pack-el-base
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Corpora
+        working-directory: flutter_bench
+        run: flutter pub get && tool/prepare_assets.sh
+      - name: Build the bench app and the demo
+        run: |
+          (cd flutter_bench && flutter build apk --release --target-platform android-x64 \
+            --dart-define=BF_MODE=all --dart-define=BF_SAMPLE=${{ inputs.mobile_sample }})
+          (cd packages/break_first/example && flutter build apk --release --target-platform android-x64 \
+            --dart-define=AUTOPLAY=true)
+          mkdir -p out/video
+      - name: Run on the emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: |
+            flutter_bench/tool/run_android.sh flutter_bench/build/app/outputs/flutter-apk/app-release.apk out/android_emu.json 3000
+            packages/break_first/example/tool/record_android.sh packages/break_first/example/build/app/outputs/flutter-apk/app-release.apk out/video 45
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: bench-android
+          path: out/
+
+  summary:
+    name: Summary
+    needs: [macos, ios, linux, android]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: results
+      - run: python3 flutter_bench/tool/ci_summary.py results results/combined.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bench-summary
+          path: results/combined.json
