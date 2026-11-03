@@ -11,10 +11,10 @@ from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CATEGORIES = [
-    (r"morx subtable type [05]|unsupported morx subtable type [05]", "AAT insertion / rearrangement"),
-    (r"unsupported morx subtable type 1|island lemma|end-of-text", "AAT contextual (reversed or unprovable)"),
     (r"kerx", "kerx state machine"),
-    (r"kern subtable", "kern state machine"),
+    (r"kern format|kern subtable", "kern state machine"),
+    (r"morx type [05]", "AAT insertion / rearrangement"),
+    (r"morx|mort|island lemma|end of text|DontAdvance", "AAT contextual / ligature (unprovable)"),
     (r"GSUB contextual|GPOS contextual", "contextual lookup on common letters"),
     (r"single/multiple|alternate", "substitution on common letters"),
     (r"PairPos|cursive|mark attachment|ignores", "non-pair positioning"),
