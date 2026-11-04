@@ -12,6 +12,14 @@
 - The sidecar build bounds its island tables: when the islands times the safe characters pass 2.5 million
   measurements (`WidthModel.distill(islandBudget:)`), the island bound drops below the certificate's, and longer runs
   of island characters go to Flutter. Script faces with many ligatures built for hours before.
+- Common characters by script: certify.py lists, per script whose lookups differ from the main script's, the
+  Common characters and pairs those lookups can change (`# script` lines); the breaker hands them to Flutter in a
+  run of that script, and when a run of Common characters alone (DFLT) differs, the build measures them next to a
+  letter of the main script. Euphemia UCAS's space is 1,030 units alone and 608 in Latin text.
+- A hard break kerns like a space with the character after it too: with split kerning (`kern` tables), the next
+  line's first glyph keeps its share (Arial Narrow, Chalkduster, Times New Roman, spaced text after `\n`).
+- Rich text: scripts are itemized within each span of one style (measured: Common characters next to a letter in
+  another size keep script Common), across its fallback fonts.
 - Fixes: the hard-break calibration probes the character with the largest kern against a space; font-size calibration
   works without canary strings.
 

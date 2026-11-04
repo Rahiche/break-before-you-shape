@@ -290,8 +290,19 @@ class RichParagraph {
     BreakFirst? current;
     final device = <(int, int, RichSpan)>[]; // runs from the device's fallback font
     final scriptRuns = <int>{}; // those of letters (not emoji), by start
+    final blockStarts = <int>{}; // spans of another style than the one before
+    RichSpan? before;
     for (final s in spans) {
       if (s.text.isEmpty) continue;
+      if (before != null &&
+          (!identical(before.font, s.font) ||
+              before.fontSize != s.fontSize ||
+              before.height != s.height ||
+              before.fallback.length != s.fallback.length ||
+              [for (var k = 0; k < s.fallback.length; k++) identical(before.fallback[k], s.fallback[k])].contains(false))) {
+        blockStarts.add(at);
+      }
+      before = s;
       final fonts = [s.font, ...s.fallback];
       current = null;
       for (var i = 0; i < s.text.length;) {
@@ -386,7 +397,8 @@ class RichParagraph {
       styleOf.fillRange(a, b, metrics.length);
       metrics.add((ascent, descent));
     }
-    final r = buildRichRecords(text, runs, letterSpacing: letterSpacing, measured: measured, scriptRuns: scriptRuns);
+    final r = buildRichRecords(text, runs,
+        letterSpacing: letterSpacing, measured: measured, scriptRuns: scriptRuns, blockStarts: blockStarts);
     if (r == null) return null;
     return RichParagraph._(text, r, letterSpacing, wordSpacing, styleOf, metrics);
   }

@@ -245,11 +245,13 @@ def form_substitutes():
     return maps, blocked
 
 
-def active_lookups(tag):
-    """Lookups HarfBuzz applies for the scripts in SCRIPT_TAGS (each falling back to
-    DFLT), language en, default variation coordinates. With SELECT == "all", every
-    script, language system and feature variation instead (a strict
-    over-approximation)."""
+def active_lookups(tag, script_tags=None):
+    """Lookups HarfBuzz applies for the scripts in SCRIPT_TAGS (or [script_tags]; each
+    falling back to DFLT, dflt, then latn, as HarfBuzz does; "DFLT" is a run of Common
+    characters alone), language en, default variation coordinates. With SELECT ==
+    "all" and no [script_tags], every script, language system and feature variation
+    instead (a strict over-approximation)."""
+    select = "one" if script_tags else SELECT
     t = font[tag].table
     if not t.FeatureList:
         return t, []
@@ -259,10 +261,10 @@ def active_lookups(tag):
     if fv:
         def holds(rec):
             return all(c.FilterRangeMinValue <= 0 <= c.FilterRangeMaxValue for c in rec.ConditionSet.ConditionTable)
-        recs = fv.FeatureVariationRecord if SELECT == "all" else [r for r in fv.FeatureVariationRecord if holds(r)][:1]
+        recs = fv.FeatureVariationRecord if select == "all" else [r for r in fv.FeatureVariationRecord if holds(r)][:1]
         for rec in recs:
             for sub in rec.FeatureTableSubstitution.SubstitutionRecord:
-                if SELECT == "all":
+                if select == "all":
                     tables.setdefault(("alt", sub.FeatureIndex, id(sub)), sub.Feature)
                     feats.append(type("F", (), {"FeatureTag": feats[sub.FeatureIndex].FeatureTag})())
                     tables[len(feats) - 1] = sub.Feature
@@ -270,12 +272,12 @@ def active_lookups(tag):
                     tables[sub.FeatureIndex] = sub.Feature
     langsys = []
     scripts = {sr.ScriptTag: sr.Script for sr in (t.ScriptList.ScriptRecord if t.ScriptList else [])}
-    if SELECT == "all":
+    if select == "all":
         for sc in scripts.values():
             langsys += [sc.DefaultLangSys] + [r.LangSys for r in sc.LangSysRecord]
     else:
-        for tag in SCRIPT_TAGS:
-            sc = scripts.get(tag) or scripts.get("DFLT") or scripts.get("dflt")
+        for stag in script_tags or SCRIPT_TAGS:
+            sc = scripts.get(stag) or scripts.get("DFLT") or scripts.get("dflt") or scripts.get("latn")
             if sc:
                 eng = [r.LangSys for r in sc.LangSysRecord if r.LangSysTag == "ENG "]
                 langsys += eng[:1] or [sc.DefaultLangSys]
@@ -288,7 +290,7 @@ def active_lookups(tag):
             chosen.append(ls.ReqFeatureIndex)
         for i in chosen:
             idx.update(tables[i].LookupListIndex)
-            if SELECT == "all":
+            if select == "all":
                 for j, fr in enumerate(feats):
                     if j >= len(t.FeatureList.FeatureRecord) and fr.FeatureTag == feats[i].FeatureTag:
                         idx.update(tables[j].LookupListIndex)
@@ -1677,6 +1679,105 @@ def pair_sets():
     return first, (None if every2 else second)
 
 
+# Common characters (spaces, digits, punctuation; the breaker's scriptOf) take the
+# script of the run they are in, and a run of them alone is shaped with DFLT. The
+# sidecar measures them under the main script's lookups (a run of them alone is
+# measured next to a letter of it when DFLT differs). For each other script whose
+# lookups differ, the Common characters and Common pairs a differing lookup can
+# change: the breaker hands those to the engine in a run of that script. Mark
+# attachment never changes an advance, and AAT and kern tables do not depend on
+# the script.
+def is_common(cp):
+    if (cp | 0x20) >= 0x61 and (cp | 0x20) <= 0x7A:
+        return False
+    if cp < 0xC0:
+        return cp not in (0xAA, 0xBA)
+    if cp < 0x250:
+        return cp in (0xD7, 0xF7)
+    if 0x370 <= cp < 0x400:
+        return cp in (0x374, 0x37E, 0x385, 0x387)
+    if 0x400 <= cp < 0x500 or 0x590 <= cp < 0x600:
+        return False
+    if 0x600 <= cp < 0x700:
+        return cp in (0x60C, 0x61B, 0x61F, 0x640)
+    return not (0x3041 <= cp <= 0x309A or 0x30A1 <= cp <= 0x30FA or cp in (0x3005, 0x3007) or 0x3021 <= cp <= 0x3029
+                or 0x3400 <= cp <= 0x9FFF or 0xF900 <= cp <= 0xFAFF or 0xAC00 <= cp <= 0xD7A3)
+
+
+def script_variance():
+    main = "latn" if os.environ.get("CERTIFY_DIRECTION") != "rtl" else ("hebr" if "hebr" in SCRIPT_TAGS else "arab")
+    others = ["DFLT"] if main != "latn" else ["DFLT"] + [t for t in SCRIPT_TAGS if t != "latn"]
+    common = [cp for cp in chars if is_common(cp)]
+    owner = {}
+    for cp in common:
+        for g in reach_of(cp):
+            owner.setdefault(g, set()).add(cp)
+    cg = set(owner)
+
+    def nz(v):
+        return v is not None and any(getattr(v, k, 0) for k in ("XPlacement", "YPlacement", "XAdvance", "YAdvance",
+                                                                  "XPlaDevice", "XAdvDevice"))
+
+    def touched(lk, T):
+        singles, pairs = set(), set()
+        for typ, st in subtables(lk, 7 if T == "GSUB" else 9):
+            cov = set(st.Coverage.glyphs) if getattr(st, "Coverage", None) else set()
+            if T == "GPOS" and typ in (4, 5, 6):
+                continue  # attachment: offsets only
+            if T == "GPOS" and typ == 1:
+                vals = [st.Value] * len(st.Coverage.glyphs) if st.Format == 1 else st.Value
+                singles |= {g for g, v in zip(st.Coverage.glyphs, vals) if g in cg and nz(v)}
+            elif T == "GPOS" and typ == 2:
+                if st.Format == 1:
+                    for g, ps in zip(st.Coverage.glyphs, st.PairSet):
+                        if g in cg:
+                            pairs |= {(g, r.SecondGlyph) for r in ps.PairValueRecord
+                                      if r.SecondGlyph in cg and (nz(r.Value1) or nz(r.Value2))}
+                else:
+                    c1, c2 = st.ClassDef1.classDefs if st.ClassDef1 else {}, st.ClassDef2.classDefs if st.ClassDef2 else {}
+                    for g in cov & cg:
+                        row = st.Class1Record[c1.get(g, 0)].Class2Record
+                        pairs |= {(g, h) for h in cg if nz(row[c2.get(h, 0)].Value1) or nz(row[c2.get(h, 0)].Value2)}
+            elif T == "GSUB" and typ == 1:
+                singles |= {g for g, r in st.mapping.items() if g in cg and r != g}
+            elif T == "GSUB" and typ in (2, 3):
+                singles |= {g for g in (st.mapping if typ == 2 else st.alternates) if g in cg}
+            elif T == "GSUB" and typ == 4:
+                for g, ligs in st.ligatures.items():
+                    for lg in ligs:
+                        if g in cg and all(c in cg for c in lg.Component):
+                            singles |= {g, *lg.Component}
+            else:
+                # Contextual, chaining, reverse, cursive: every Common glyph it covers,
+                # or every Common glyph when its coverage is by class.
+                seen = set(cov)
+                for name in ("InputCoverage", "LookAheadCoverage", "BacktrackCoverage", "EntryExitRecord"):
+                    for c in (getattr(st, name, None) or []):
+                        seen |= set(getattr(c, "glyphs", []))
+                singles |= (seen & cg) if seen else set(cg)
+        return singles, pairs
+
+    out = {}
+    for tag in others:
+        chars_, pairs_ = set(), set()
+        for T in ("GSUB", "GPOS"):
+            if T not in font or not font[T].table.ScriptList:
+                continue
+            t, lm = active_lookups(T, [main])
+            _, lo = active_lookups(T, [tag])
+            ids_m = {id(x) for x in lm}
+            ids_o = {id(x) for x in lo}
+            for lk in [x for x in lm if id(x) not in ids_o] + [x for x in lo if id(x) not in ids_m]:
+                si, pa = touched(lk, T)
+                chars_ |= {cp for g in si for cp in owner[g]}
+                pairs_ |= {(a, b) for g, h in pa for a in owner[g] for b in owner[h]}
+        if chars_ or pairs_:
+            out[tag] = (chars_, pairs_ - {(a, b) for a, b in pairs_ if a in chars_ or b in chars_})
+    return out
+
+
+SCRIPT_VARIANCE = {} if "morx" in font else script_variance()
+
 with open(out_path, "w") as fp:
     free = pair_free()
     fp.write(f"# {font['name'].getDebugName(4)} m={m_final}{' pairs=none' if free else ''}\n")
@@ -1689,6 +1790,9 @@ with open(out_path, "w") as fp:
     # Compositions HarfBuzz makes (base, mark, composite in the font), for the breaker.
     for b, mk, c in COMPOSE:
         fp.write(f"# compose {b:04X} {mk:04X} {c:04X}\n")
+    for tag, (cs, ps) in sorted(SCRIPT_VARIANCE.items()):
+        fp.write(f"# script {tag} chars {' '.join(f'{cp:04X}' for cp in sorted(cs)) or '-'}"
+                 f" pairs {' '.join(f'{a:04X}:{b:04X}' for a, b in sorted(ps)) or '-'}\n")
     for cp in chars:
         g = nominal[cp]
         gs = reach_of(cp)

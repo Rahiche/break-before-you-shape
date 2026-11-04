@@ -8,7 +8,10 @@ import 'width_model.dart';
 final _ps = ui.ParagraphStyle(textDirection: ui.TextDirection.ltr);
 
 /// A laid-out paragraph of [text] in [fontFamily] at [fontSize], [width] wide,
-/// in the style the sidecar describes. The caller disposes it.
+/// in the style the sidecar describes. The caller disposes it. [context] follows
+/// the text in the same style: a letter the font lacks, so a fallback font draws
+/// it (no kerning or ligature with the text), whose script a text of Common
+/// characters then takes (measured: in a run of another size it would not).
 ui.Paragraph layoutParagraph(
   String text, {
   required String fontFamily,
@@ -22,6 +25,7 @@ ui.Paragraph layoutParagraph(
   ui.StrutStyle? strut,
   ui.TextHeightBehavior? textHeightBehavior,
   List<ui.FontFeature>? fontFeatures,
+  String? context,
 }) {
   final b =
       ui.ParagraphBuilder(
@@ -45,6 +49,7 @@ ui.Paragraph layoutParagraph(
           ),
         )
         ..addText(text);
+  if (context != null) b.addText(context);
   return b.build()..layout(ui.ParagraphConstraints(width: width));
 }
 
@@ -105,6 +110,7 @@ double measureText(
   double letterSpacing = 0,
   bool rtl = false,
   List<ui.FontFeature>? fontFeatures,
+  String? context,
 }) {
   final p = layoutParagraph(
     text,
@@ -113,8 +119,9 @@ double measureText(
     letterSpacing: letterSpacing,
     rtl: rtl,
     fontFeatures: fontFeatures,
+    context: context,
     // Just wide enough: float32 coordinates near 1e6 px are only good to 1/16 px.
-    width: rtl ? fontSize * (text.length + 2) * 8 : double.infinity,
+    width: rtl ? fontSize * (text.length + 2 * (context?.length ?? 0) + 2) * 8 : double.infinity,
   );
   var r = 0.0, l = double.infinity;
   for (final b in p.getBoxesForRange(0, text.length)) {
@@ -136,6 +143,7 @@ double measurePrefixText(
   bool rtl = false,
   double letterSpacing = 0,
   List<ui.FontFeature>? fontFeatures,
+  String? context,
 }) {
   final p = layoutParagraph(
     text,
@@ -144,7 +152,8 @@ double measurePrefixText(
     rtl: rtl,
     letterSpacing: letterSpacing,
     fontFeatures: fontFeatures,
-    width: rtl ? fontSize * (text.length + 2) * 8 : double.infinity,
+    context: context,
+    width: rtl ? fontSize * (text.length + 2 * (context?.length ?? 0) + 2) * 8 : double.infinity,
   );
   var r = 0.0, l = double.infinity;
   for (final b in p.getBoxesForRange(0, k)) {
@@ -252,6 +261,24 @@ WidthModel buildSidecar({
   final upem = upemOf(font);
   final size = upem.toDouble();
   final ff = fontFeatures;
+  // When the font's lookups for a run of Common characters alone (DFLT) differ
+  // from the main script's (certify.py's "# script DFLT" line), a string of
+  // Common characters is measured before a letter of the main script, whose run
+  // it then belongs to.
+  final cmap = cmapRanges(font);
+  bool has(int cp) => [for (var i = 0; i + 1 < cmap.length; i += 2) cmap[i] <= cp && cp <= cmap[i + 1]].contains(true);
+  final candidates = !rtl
+      ? const [0x0250, 0x0252, 0x0258, 0x025E, 0xA7B5, 0xA7C1, 0xA7D1, 0xAB30, 0xAB31, 0x1D6B]
+      : RegExp(r'^05[DE][0-9A-F] ', multiLine: true).hasMatch(certificate)
+      ? const [0x05EF, 0xFB1F, 0xFB21]
+      : const [0x08A0, 0x08A1, 0x0870, 0x08B5];
+  final missing = candidates.where((c) => !has(c));
+  final mainLetter = !certificate.contains('\n# script DFLT ')
+      ? null
+      : missing.isEmpty
+      ? throw StateError('the font has every context letter; Common characters cannot be measured in its main script')
+      : String.fromCharCode(missing.first);
+  String? ctx(String s) => mainLetter != null && s.codeUnits.every((c) => scriptOf(c) == scCommon) ? mainLetter : null;
   final hg = layoutParagraph('Hg', fontFamily: fontFamily, fontSize: size, fontFeatures: ff);
   final lineHeight = hg.height;
   hg.dispose();
@@ -259,27 +286,31 @@ WidthModel buildSidecar({
   final md = WidthModel.distill(
     certificate,
     (s) {
-      final w = measureText(s, fontFamily: fontFamily, fontSize: size, rtl: rtl, fontFeatures: ff);
+      final w = measureText(s, fontFamily: fontFamily, fontSize: size, rtl: rtl, fontFeatures: ff, context: ctx(s));
       measured?.call(s, w);
       return w;
     },
     upem,
     lineHeight,
     rtl: rtl,
-    measurePrefix: (s, k) => measurePrefixText(s, k, fontFamily: fontFamily, fontSize: size, rtl: rtl, fontFeatures: ff),
+    measurePrefix: (s, k) =>
+        measurePrefixText(s, k, fontFamily: fontFamily, fontSize: size, rtl: rtl, fontFeatures: ff, context: ctx(s)),
     measurePrefixNoLiga: (s, k) =>
         measurePrefixText(s, k, fontFamily: fontFamily, fontSize: size, rtl: rtl, letterSpacing: spacing,
-            fontFeatures: ff) -
+            fontFeatures: ff, context: ctx(s)) -
         (k + 0.5) * spacing,
     noLigaCertText: noLigaCertificate,
     measureNoLiga: (s) =>
-        measureText(s, fontFamily: fontFamily, fontSize: size, letterSpacing: spacing, rtl: rtl, fontFeatures: ff) -
+        measureText(s, fontFamily: fontFamily, fontSize: size, letterSpacing: spacing, rtl: rtl, fontFeatures: ff,
+            context: ctx(s)) -
         (s.length + 0.5) * spacing,
     // Negative spacing keeps ligatures: each glyph cluster gains it once, plus half
     // of it before the first.
     clustersOf: (s) =>
-        ((measureText(s, fontFamily: fontFamily, fontSize: size, letterSpacing: -spacing, rtl: rtl, fontFeatures: ff) -
-                        measureText(s, fontFamily: fontFamily, fontSize: size, rtl: rtl, fontFeatures: ff)) /
+        ((measureText(s, fontFamily: fontFamily, fontSize: size, letterSpacing: -spacing, rtl: rtl, fontFeatures: ff,
+                            context: ctx(s)) -
+                        measureText(s, fontFamily: fontFamily, fontSize: size, rtl: rtl, fontFeatures: ff,
+                            context: ctx(s))) /
                     -spacing -
                 0.5)
             .round(),

@@ -212,12 +212,29 @@ class _CertRows {
   final marks = <int, (int, bool, Set<int>)>{};
   // HarfBuzz's compositions the font has: (base << 21 | mark) -> composite.
   final compose = <int, int>{};
+  // Scripts whose lookups differ from the main script's on Common characters:
+  // breaker script -> (characters, pairs as a << 21 | b).
+  final scriptVariant = <int, (Set<int>, Set<int>)>{};
 
   _CertRows(String certText) {
     for (final line in certText.split('\n')) {
       if (line.startsWith('# compose ')) {
         final x = line.substring(10).trim().split(' ').map((h) => int.parse(h, radix: 16)).toList();
         compose[x[0] << 21 | x[1]] = x[2];
+        continue;
+      }
+      if (line.startsWith('# script ')) {
+        // # script <tag> chars <cp>... pairs <a:b>... ('-' for none)
+        final w = line.substring(9).trim().split(' ');
+        final at = w.indexOf('pairs');
+        final cs = {for (final h in w.sublist(2, at)) if (h != '-') int.parse(h, radix: 16)};
+        final ps = {
+          for (final h in w.sublist(at + 1))
+            if (h != '-') int.parse(h.split(':')[0], radix: 16) << 21 | int.parse(h.split(':')[1], radix: 16),
+        };
+        for (final sc in _scriptsOfTag[w[0]] ?? const <int>[]) {
+          scriptVariant[sc] = (cs, ps);
+        }
         continue;
       }
       if (line.startsWith('#')) {
@@ -316,6 +333,15 @@ class WidthModel {
   /// HarfBuzz's compositions of a base and a mark that the font has:
   /// (base << 21 | mark) -> composite.
   Map<int, int> compose = const {};
+
+  /// Common characters (spaces, digits, punctuation) take the script of their run,
+  /// and some fonts give a script lookups of its own over them. The sidecar holds
+  /// their widths under the main script (Latin, or Hebrew or Arabic for a
+  /// right-to-left one); for every other script whose lookups can change them
+  /// (certify.py): the characters, and the pairs (a << 21 | b), that the breaker
+  /// hands to Flutter in a run of that script ([scCommon]: a run of Common
+  /// characters alone).
+  Map<int, (Set<int>, Set<int>)> scriptVariant = const {};
 
   /// Every character the font maps (its cmap), as inclusive [first, last] pairs,
   /// certified or not: Flutter's font fallback picks the first font that has a
@@ -700,6 +726,7 @@ class WidthModel {
         if (cl[cps.indexOf(e.key)] == certM) e.key: e.value,
     };
     md.compose = rows.compose;
+    md.scriptVariant = rows.scriptVariant;
     if (clsRight != null || splitIslands) {
       md.clsRight = clsRight ?? Float64List(nF * nS);
       md.islandLRight = Float64List.fromList(lRight);
@@ -736,6 +763,10 @@ class WidthModel {
             for (final e in marks.entries) [e.key, e.value.$1, e.value.$2 ? 1 : 0, e.value.$3.toList()..sort()],
           ],
         if (compose.isNotEmpty) 'compose': [for (final e in compose.entries) ...[e.key >> 21, e.key & 0x1FFFFF, e.value]],
+        if (scriptVariant.isNotEmpty)
+          'scripts': [
+            for (final e in scriptVariant.entries) [e.key, e.value.$1.toList()..sort(), e.value.$2.toList()..sort()],
+          ],
       }),
     );
     final b = BytesBuilder()
@@ -878,6 +909,12 @@ class WidthModel {
     if (meta['compose'] != null) {
       final c = (meta['compose'] as List).cast<int>();
       md.compose = {for (var i = 0; i + 2 < c.length; i += 3) c[i] << 21 | c[i + 1]: c[i + 2]};
+    }
+    if (meta['scripts'] != null) {
+      md.scriptVariant = {
+        for (final e in (meta['scripts'] as List).cast<List>())
+          e[0] as int: ((e[1] as List).cast<int>().toSet(), (e[2] as List).cast<int>().toSet()),
+      };
     }
     if (meta['noLiga'] == true) {
       md.noLigaCert = Uint8List.fromList(copy.sublist(off, off + n1));
@@ -1164,6 +1201,19 @@ const int scCommon = 0,
     scArabic = 9,
     // Any other script (a run measured through Flutter, e.g. Devanagari).
     scOther = 10;
+// OpenType script tags (certify.py's "# script" lines) -> breaker scripts. DFLT is
+// a run of Common characters alone.
+const _scriptsOfTag = {
+  'DFLT': [scCommon],
+  'latn': [scLatin],
+  'grek': [scGreek],
+  'cyrl': [scCyrillic],
+  'hebr': [scHebrew],
+  'arab': [scArabic],
+  'hani': [scHan],
+  'kana': [scHiragana, scKatakana],
+  'hang': [scHangul],
+};
 int scriptOf(int cu) {
   if ((cu | 0x20) >= 0x61 && (cu | 0x20) <= 0x7A) return scLatin;
   if (cu < 0xC0) return cu == 0xAA || cu == 0xBA ? scLatin : scCommon;
@@ -1944,9 +1994,11 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
   while (i < end) {
     final cu = t.codeUnitAt(i);
     if (isHardBreak(cu)) {
-      // Takes no width in either line, but kerns with the character before it as
-      // a space does (measured: T before \n loses Roboto's T-space kern). The
-      // script run continues (itemization is over the whole text).
+      // Takes no width in either line, but kerns with the characters on both sides
+      // as a space does (measured: T before \n loses Roboto's T-space kern, and
+      // with split kerning the next line's first glyph keeps its share of the
+      // space-A kern). The script run continues (itemization is over the whole
+      // text).
       final sp = idOf[0x20];
       var rs = 0.0;
       if (!hardBreakKerns) {
@@ -1959,7 +2011,7 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
         if (rr != null) rs = rr[prevIsland * n1 + sp];
       }
       prefix[i] = p - rs;
-      prevId = 0;
+      prevId = hardBreakKerns ? sp : 0;
       prevIsland = -1;
       i++;
       continue;
@@ -2028,6 +2080,20 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
       run = s; // a new script run: no pair adjustment across it
       prevId = 0;
       prevIsland = -1;
+    }
+    final sv = md.scriptVariant[run];
+    if (sv != null) {
+      // This run's script has lookups of its own over some Common characters.
+      var q = i - 1;
+      while (q >= start && isCombiningMark(t.codeUnitAt(q))) {
+        q--;
+      }
+      var before = q >= start ? t.codeUnitAt(q) : -1;
+      if (before >= 0 && isHardBreak(before)) before = hardBreakKerns ? 0x20 : -1;
+      if (s == scCommon && (sv.$1.contains(cu) || (before >= 0 && sv.$2.contains(before << 21 | cu)))) return false;
+      for (var k = i + 1; k < mEnd; k++) {
+        if (sv.$1.contains(t.codeUnitAt(k))) return false;
+      }
     }
     if (c != certS) {
       // A P/K run: find its end, and whether it has a primer.
@@ -2186,17 +2252,31 @@ Records? buildBidiRecords(
 /// [measured] holds runs measured through Flutter instead (emoji from the
 /// device's fallback font): run start -> px offsets of every code unit from the
 /// run's start (NaN inside a cluster), and the run's width last.
+///
+/// [blockStarts]: where a span of another style begins (font, size or height;
+/// not colour). Flutter itemizes scripts within each such block, across its
+/// fallback fonts (measured: Common characters next to a letter in another
+/// size keep script Common).
 Records? buildRichRecords(
   String t,
   List<(int, int, WidthModel?, double)> runs, {
   double letterSpacing = 0,
   Map<int, Float64List> measured = const {},
   Set<int> scriptRuns = const {},
+  Set<int> blockStarts = const {},
 }) {
   final pass = _start(t, letterSpacing), px = pass.prefix;
-  var offset = 0.0, at = 0, script = pass.run;
+  var offset = 0.0, at = 0, script = scCommon, blockEnd = 0;
   for (final (a, b, md, scale) in runs) {
     if (a != at || b <= a || b > t.length) return null;
+    if (a >= blockEnd) {
+      // A new block: its script is that of its first letter.
+      script = scCommon;
+      blockEnd = t.length;
+      for (final x in blockStarts) {
+        if (x > a && x < blockEnd) blockEnd = x;
+      }
+    }
     if (md == null) {
       final m = measured[a];
       if (m == null || m.length != b - a + 1) return null;
@@ -2211,10 +2291,10 @@ Records? buildRichRecords(
       continue;
     }
     final sub = _start(t, letterSpacing);
-    // Scripts are itemized over the whole paragraph, across font changes: neutrals
-    // at the start of a run continue the script before them (measured: a space
-    // in Roboto after Chinese text does not kern with the Latin letter after it).
-    for (var q = a; q < t.length && script == scCommon; q++) {
+    // Within a block, scripts are itemized across font changes: neutrals at the
+    // start of a run continue the script before them (measured: a space in Roboto
+    // after Chinese text does not kern with the Latin letter after it).
+    for (var q = a; q < blockEnd && script == scCommon; q++) {
       script = scriptOf(t.codeUnitAt(q));
     }
     sub.run = script;
