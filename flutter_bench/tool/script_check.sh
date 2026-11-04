@@ -14,4 +14,4 @@ path, i, dst = sys.argv[1], int(sys.argv[2]), sys.argv[3]
 CERTIFY_SCRIPTS=latin+cjk "$py" ../certify.py "$tmp/face.otf" "$tmp/cjk.cert" 4 | tail -1
 CERTIFY_SCRIPTS=latin+cjk CERTIFY_FEATURES_OFF=liga,clig,calt "$py" ../certify.py "$tmp/face.otf" "$tmp/cjk.nolig" 4 | tail -1
 SCRIPT_FONT="$tmp/face.otf" SCRIPT_CERT="$tmp/cjk.cert" SCRIPT_NOLIG="$tmp/cjk.nolig" \
-  SCRIPT_CORPUS=../corpora/ui_ja.txt:../corpora/ui_zh_CN.txt:../corpora/ui_ko.txt SCRIPT_OUT="$out" flutter test test/script_test.dart
+  SCRIPT_CORPUS=../corpora/ui_ja.txt:../corpora/ui_zh_CN.txt:../corpora/ui_ko.txt SCRIPT_OUT="$out" flutter test --reporter expanded test/script_test.dart

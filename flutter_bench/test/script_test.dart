@@ -6,6 +6,7 @@
 // CERTIFY_SCRIPTS=latin+cjk), SCRIPT_NOLIG optionally the same with
 // CERTIFY_FEATURES_OFF=liga,clig,calt. SCRIPT_CORPUS: corpus files, one message
 // per line, separated by ':'. SCRIPT_OUT: results JSON. Skipped without them.
+// SCRIPT_SAMPLE: at most this many messages per corpus (spread over it).
 // SCRIPT_PAIR_BUDGET: the most pair layouts the sidecar build may take (default
 // 5,000,000, about ten times Roboto's); a font over it is recorded as skipped.
 import 'dart:convert';
@@ -58,7 +59,10 @@ void main() {
       out['quantized'] = quantizeFontSize;
       final examples = <String>[];
       for (final path in env['SCRIPT_CORPUS']!.split(':')) {
-        final all = File(path).readAsStringSync().split('\n').where((p) => p.isNotEmpty).toList();
+        final lines = File(path).readAsStringSync().split('\n').where((p) => p.isNotEmpty).toList();
+        final sample = int.tryParse(env['SCRIPT_SAMPLE'] ?? '') ?? lines.length;
+        final all = lines.length <= sample ? lines : [for (var i = 0; i < sample; i++) lines[(i * lines.length) ~/ sample]];
+        print('SCRIPT ${path.split('/').last}: ${all.length} messages, longest ${all.fold(0, (m, t) => t.length > m ? t.length : m)}');
         final joined = [for (var i = 0; i + 3 <= all.length; i += 3) all.sublist(i, i + 3).join('\n')];
         final name = path.split('/').last.replaceAll('.txt', '');
         for (final (label, texts, o) in [
