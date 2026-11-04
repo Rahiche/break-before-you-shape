@@ -144,7 +144,17 @@ class BreakFirst {
     LineOptions options = LineOptions.plain,
   }) =>
       prepare(text, options)?.height(fontSize: fontSize, maxWidth: maxWidth) ??
+      _richHeight(text, fontSize, maxWidth, options) ??
       flutterHeight(text, fontSize: fontSize, maxWidth: maxWidth, options: options);
+
+  /// Text the plain path leaves to Flutter that the rich path decides: emoji and
+  /// Brahmic letters from the device's fallback font (measured once each).
+  double? _richHeight(String text, double fontSize, double maxWidth, LineOptions o) {
+    if (o.maxLines != null || o._probed || model.rtl) return null;
+    return RichParagraph.prepare([
+      RichSpan(text, this, fontSize, height: o.height),
+    ], letterSpacing: o.letterSpacing, wordSpacing: o.wordSpacing)?.height(maxWidth);
+  }
 
   /// Height of [text] from Flutter's own layout.
   double flutterHeight(
@@ -252,6 +262,12 @@ class RichSpan {
 /// A change of font or size starts a new shaping run (no kerning across it); a
 /// line is as high as round(largest ascent + largest descent) of the styles on it
 /// (measured).
+///
+/// Emoji that no sidecar's font has come from the device's fallback font, which
+/// differs between devices: each run of emoji clusters is measured once through
+/// Flutter on this device (widths and line metrics, cached), which is exact
+/// because the font change makes it a shaping run of its own. Not with letter
+/// spacing.
 class RichParagraph {
   RichParagraph._(this.text, this.records, this.letterSpacing, this.wordSpacing, this._styleOf, this._metrics);
 
@@ -266,17 +282,56 @@ class RichParagraph {
   static RichParagraph? prepare(List<RichSpan> spans, {double letterSpacing = 0, double wordSpacing = 0}) {
     final text = spans.map((s) => s.text).join();
     if (text.isEmpty || spans.any((s) => s.font.model.rtl || s.fallback.any((f) => f.model.rtl))) return null;
-    final runs = <(int, int, WidthModel, double)>[];
+    final runs = <(int, int, WidthModel?, double)>[];
     final styleOf = Int32List(text.length);
     final styles = <(BreakFirst, double, double?)>[];
     var at = 0;
     BreakFirst? current;
+    final device = <(int, int, RichSpan)>[]; // runs from the device's fallback font
+    final scriptRuns = <int>{}; // those of letters (not emoji), by start
     for (final s in spans) {
       if (s.text.isEmpty) continue;
       final fonts = [s.font, ...s.fallback];
       current = null;
       for (var i = 0; i < s.text.length;) {
         final cu = s.text.codeUnitAt(i);
+        // An emoji cluster, or a run of Brahmic letters, no bundled font has: the
+        // device's fallback font.
+        var e = emojiClusterEnd(s.text, i);
+        // The danda (U+0964, U+0965) comes from the same fallback font.
+        bool inRun(int x) => isBrahmic(x) || x == 0x964 || x == 0x965;
+        final brahmic = e == i && inRun(cu);
+        if (brahmic) {
+          e = i + 1;
+          while (e < s.text.length) {
+            final x = s.text.codeUnitAt(e);
+            if (!inRun(x) && x != 0x200C && x != 0x200D) break;
+            // A joiner the bundled font has would split Flutter's fallback run.
+            if ((x == 0x200C || x == 0x200D) && fonts.any((c) => c.model.hasCodePoint(x) != false)) return null;
+            e++;
+          }
+        }
+        if (e > i &&
+            fonts.every((c) => c.model.hasCodePoint(_cp(s.text, i)) == false) &&
+            (!brahmic ||
+                [for (var k = i; k < e; k++) s.text.codeUnitAt(k)]
+                    .where((x) => x != 0x200C && x != 0x200D)
+                    .every((x) => fonts.every((c) => c.model.hasCodePoint(x) == false)))) {
+          if (letterSpacing != 0) return null;
+          final start = at + i, end = at + e;
+          final last = device.isEmpty ? null : device.last;
+          if (last != null && last.$2 == start && identical(last.$3, s) && !brahmic && !scriptRuns.contains(last.$1)) {
+            device[device.length - 1] = (last.$1, end, s);
+            runs[runs.length - 1] = (runs.last.$1, end, null, 0);
+          } else {
+            device.add((start, end, s));
+            runs.add((start, end, null, 0));
+            if (brahmic) scriptRuns.add(start);
+          }
+          current = null;
+          i = e;
+          continue;
+        }
         final pair = cu >= 0xD800 && cu < 0xDC00 && i + 1 < s.text.length;
         final cp = pair ? 0x10000 + ((cu - 0xD800) << 10) + (s.text.codeUnitAt(i + 1) - 0xDC00) : cu;
         final n = pair ? 2 : 1;
@@ -300,7 +355,7 @@ class RichParagraph {
         final start = at + i, end = start + n;
         final scale = scaleFor(f.model, s.fontSize);
         final last = runs.isEmpty ? null : runs.last;
-        if (last != null && last.$2 == start && identical(last.$3, f.model) && last.$4 == scale) {
+        if (last != null && last.$2 == start && last.$3 != null && identical(last.$3, f.model) && last.$4 == scale) {
           runs[runs.length - 1] = (last.$1, end, last.$3, scale); // same font and size: one shaping run
         } else {
           runs.add((start, end, f.model, scale));
@@ -316,13 +371,66 @@ class RichParagraph {
       }
       at += s.text.length;
     }
-    final r = buildRichRecords(text, runs, letterSpacing: letterSpacing);
-    if (r == null) return null;
+    final measured = <int, Float64List>{};
     final metrics = [
       for (final (f, size, h) in styles)
         probeAscentDescent(fontFamily: f.fontFamily, fontSize: size, height: h, fontFeatures: f.fontFeatures),
     ];
+    for (final (a, b, span) in device) {
+      final (offsets, ascent, descent) = _measureDevice(text.substring(a, b), span);
+      measured[a] = offsets;
+      styleOf.fillRange(a, b, metrics.length);
+      metrics.add((ascent, descent));
+    }
+    final r = buildRichRecords(text, runs, letterSpacing: letterSpacing, measured: measured, scriptRuns: scriptRuns);
+    if (r == null) return null;
     return RichParagraph._(text, r, letterSpacing, wordSpacing, styleOf, metrics);
+  }
+
+  static int _cp(String t, int i) {
+    final cu = t.codeUnitAt(i);
+    return cu >= 0xD800 && cu < 0xDC00 && i + 1 < t.length
+        ? 0x10000 + ((cu - 0xD800) << 10) + (t.codeUnitAt(i + 1) - 0xDC00)
+        : cu;
+  }
+
+  static final _device = <String, (Float64List, double, double)>{};
+
+  /// A run of emoji clusters laid out alone by Flutter in [span]'s style: the px
+  /// offset of every code unit (NaN inside a cluster), the run's width last, and
+  /// the line's ascent and descent. Cached per run and style.
+  static (Float64List, double, double) _measureDevice(String run, RichSpan span) {
+    final key = [run, span.font.fontFamily, ...span.fallback.map((f) => f.fontFamily), span.fontSize, span.height]
+        .join('\u0000');
+    final hit = _device[key];
+    if (hit != null) return hit;
+    final b = ui.ParagraphBuilder(ui.ParagraphStyle(textDirection: ui.TextDirection.ltr))
+      ..pushStyle(span.style.getTextStyle())
+      ..addText(run);
+    final p = b.build()..layout(const ui.ParagraphConstraints(width: double.infinity));
+    final offsets = Float64List(run.length + 1)..fillRange(0, run.length, double.nan);
+    offsets[0] = 0;
+    for (var i = 0; i < run.length;) {
+      final e = emojiClusterEnd(run, i);
+      if (e == i) {
+        // Letters: no break inside a run of them (LB28a), only after a danda.
+        for (var k = 1; k < run.length; k++) {
+          final c = run.codeUnitAt(k - 1);
+          if (c == 0x964 || c == 0x965) {
+            final boxes = p.getBoxesForRange(0, k);
+            offsets[k] = boxes.isEmpty ? 0 : boxes.map((x) => x.right).reduce((x, y) => x > y ? x : y);
+          }
+        }
+        offsets[run.length] = p.computeLineMetrics().first.width;
+        break;
+      }
+      final boxes = p.getBoxesForRange(0, e);
+      offsets[e] = boxes.isEmpty ? 0 : boxes.map((x) => x.right).reduce((x, y) => x > y ? x : y);
+      i = e;
+    }
+    final m = p.computeLineMetrics().first;
+    p.dispose();
+    return _device[key] = (offsets, m.ascent, m.descent);
   }
 
   /// Line starts in a box [maxWidth] px wide, or null when Flutter must decide.

@@ -1,0 +1,17 @@
+{
+ "s_hi": {
+  "texts": 400,
+  "identical": 3462,
+  "different": 0,
+  "deferred": 138,
+  "heightsEqual": 3462
+ },
+ "s_hi inside English": {
+  "texts": 400,
+  "identical": 3484,
+  "different": 0,
+  "deferred": 116,
+  "heightsEqual": 3484
+ },
+ "examples": []
+}

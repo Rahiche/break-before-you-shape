@@ -296,6 +296,59 @@ def subtables(lookup, ext_type):
             yield lookup.LookupType, st
 
 
+def rule_records(st, typ):
+    """For every rule of a context / chain context subtable: (glyph sets of its input
+    positions, its (sequence index, lookup index) records). ('not', S) as in
+    rule_positions."""
+    chain = typ == "chain"
+    recs = lambda r: [(x.SequenceIndex, x.LookupListIndex)
+                      for x in (getattr(r, "SubstLookupRecord", None) or getattr(r, "PosLookupRecord", None) or [])]
+    if st.Format == 1:
+        for g, rs in zip(st.Coverage.glyphs, first(st, "ChainSubRuleSet", "ChainPosRuleSet", "SubRuleSet", "PosRuleSet")):
+            for r in (first(rs, "ChainSubRule", "ChainPosRule", "SubRule", "PosRule") if rs else []):
+                yield [{g}] + [{x} for x in r.Input], recs(r)
+    elif st.Format == 2:
+        icd = st.InputClassDef if chain else st.ClassDef
+        d = icd.classDefs if icd else {}
+        members = lambda k: ("not", set(d)) if k == 0 else {g for g, c in d.items() if c == k}
+        sets = first(st, "ChainSubClassSet", "ChainPosClassSet", "SubClassSet", "PosClassSet")
+        for k, cs in enumerate(sets):
+            head = {g for g in st.Coverage.glyphs if d.get(g, 0) == k}
+            for r in (first(cs, "ChainSubClassRule", "ChainPosClassRule", "SubClassRule", "PosClassRule") if cs else []):
+                yield [head] + [members(c) for c in (r.Input if chain else r.Class)], recs(r)
+    else:
+        cov = st.InputCoverage if chain else st.Coverage
+        yield [set(c.glyphs) for c in cov], recs(st)
+
+
+def marks_only(st, typ, tag):
+    """A context subtable whose nested lookups act only at positions that hold GDEF
+    marks, and only on those marks (a mark substituted by a mark, or a mark's
+    position or advance): it cannot change a width, as mark advances are zeroed after
+    positioning (Hebrew points, Arabic harakat)."""
+    if typ == "reverse":
+        return False
+    table = font[tag].table
+    for inputs, recs in rule_records(st, typ):
+        for seq, li in recs:
+            if seq >= len(inputs) or isinstance(inputs[seq], tuple):
+                return False
+            at = inputs[seq]
+            if not at or any(gdef_class.get(g) != 3 for g in at):
+                return False
+            lk = table.LookupList.Lookup[li]
+            for t2, s2 in subtables(lk, 7 if tag == "GSUB" else 9):
+                if tag == "GSUB":
+                    if t2 != 1 or any(gdef_class.get(s2.mapping[g]) != 3 for g in at if g in s2.mapping):
+                        return False
+                elif t2 == 2:
+                    if s2.ValueFormat2:
+                        return False
+                elif t2 not in (1, 4, 5, 6):
+                    return False
+    return True
+
+
 def first(obj, *names):
     for n in names:
         v = getattr(obj, n, None)
@@ -1383,7 +1436,10 @@ def run_round():
             elif typ == 3:
                 block_glyphs(st.alternates, "GSUB alternate substitution")
             elif typ in (5, 6, 8):
-                for pos in rule_positions(st, {5: "context", 6: "chain", 8: "reverse"}[typ]):
+                kind = {5: "context", 6: "chain", 8: "reverse"}[typ]
+                if marks_only(st, kind, "GSUB"):
+                    continue
+                for pos in rule_positions(st, kind):
                     block_rule(pos, f"GSUB contextual rule (type {typ})")
             elif typ != 4:
                 raise SystemExit(f"unknown GSUB lookup type {typ}")
@@ -1429,7 +1485,10 @@ def run_round():
                     cov = [g for g in st.Mark1Coverage.glyphs if gdef_class.get(g) != 3]
                     block_glyphs(cov, "mark attachment")
                 elif typ in (7, 8):
-                    for pos in rule_positions(st, "context" if typ == 7 else "chain"):
+                    kind = "context" if typ == 7 else "chain"
+                    if marks_only(st, kind, "GPOS"):
+                        continue
+                    for pos in rule_positions(st, kind):
                         block_rule(pos, f"GPOS contextual rule (type {typ})")
                 elif typ != 1:
                     raise SystemExit(f"unknown GPOS lookup type {typ}")

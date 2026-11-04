@@ -972,6 +972,7 @@ final Uint8List _lb = () {
     }
   }
   t[0x60C] = lbIS; // Arabic comma
+  t[0x964] = t[0x965] = lbBA; // danda, double danda
   t[0x61B] = t[0x61F] = t[0x6D4] = lbEX; // semicolon, question mark, full stop
   // CJK: ideographs, kana and Hangul syllables are ID (a break between any two),
   // and so are small kana (CJ); iteration marks are NS; brackets OP and CL; the
@@ -1136,7 +1137,9 @@ const int scCommon = 0,
     scHiragana = 6,
     scHangul = 7,
     scKatakana = 8,
-    scArabic = 9;
+    scArabic = 9,
+    // Any other script (a run measured through Flutter, e.g. Devanagari).
+    scOther = 10;
 int scriptOf(int cu) {
   if ((cu | 0x20) >= 0x61 && (cu | 0x20) <= 0x7A) return scLatin;
   if (cu < 0xC0) return cu == 0xAA || cu == 0xBA ? scLatin : scCommon;
@@ -1571,6 +1574,50 @@ bool isHardBreak(int cu) => cu == 0x0A || cu == 0x2028 || cu == 0x2029;
 /// (count, riskyCount), or null when a character is outside the line-break table.
 /// The text splits at hard breaks into segments (UAX #14 LB4, LB6: always break
 /// after one, never before); each segment's last record ends its line there.
+/// Letters, marks and digits of the Brahmic scripts (Devanagari to Sinhala, and
+/// the Vedic extensions), not the danda: UAX #14 never breaks inside a run of
+/// them (LB28a, Unicode 15.1), so the breaker treats a run as one AL character
+/// and measures it through Flutter.
+bool isBrahmic(int cu) =>
+    ((cu >= 0x900 && cu <= 0xDFF) && cu != 0x964 && cu != 0x965) ||
+    (cu >= 0x1CD0 && cu <= 0x1CFF) ||
+    (cu >= 0xA8E0 && cu <= 0xA8FF);
+
+int _cpAt(String t, int i) {
+  final cu = t.codeUnitAt(i);
+  if (cu >= 0xD800 && cu < 0xDC00 && i + 1 < t.length) {
+    final lo = t.codeUnitAt(i + 1);
+    if (lo >= 0xDC00 && lo < 0xE000) return 0x10000 + ((cu - 0xD800) << 10) + (lo - 0xDC00);
+  }
+  return cu;
+}
+
+/// Supplementary-plane emoji the breaker handles: pictographs (UAX #14 class
+/// ID or EB), not modifiers or regional indicators.
+bool _isEmojiPictograph(int cp) =>
+    cp >= 0x1F000 && cp <= 0x1FAFF && !(cp >= 0x1F1E6 && cp <= 0x1F1FF) && !(cp >= 0x1F3FB && cp <= 0x1F3FF);
+
+/// End of the emoji cluster starting at [i] (a pictograph with an optional
+/// VS16 and skin-tone modifier, joined to more by ZWJ; or a pair of regional
+/// indicators), or [i] when none starts there.
+int emojiClusterEnd(String t, int i) {
+  final cp = _cpAt(t, i);
+  if (cp >= 0x1F1E6 && cp <= 0x1F1FF) {
+    return i + 2 < t.length && (_cpAt(t, i + 2) >= 0x1F1E6 && _cpAt(t, i + 2) <= 0x1F1FF) ? i + 4 : i;
+  }
+  if (!_isEmojiPictograph(cp)) return i;
+  var j = i + 2;
+  for (;;) {
+    if (j < t.length && t.codeUnitAt(j) == 0xFE0F) j++;
+    if (j + 1 < t.length && _cpAt(t, j) >= 0x1F3FB && _cpAt(t, j) <= 0x1F3FF) j += 2;
+    if (j + 2 < t.length && t.codeUnitAt(j) == 0x200D && _isEmojiPictograph(_cpAt(t, j + 1))) {
+      j += 3;
+      continue;
+    }
+    return j;
+  }
+}
+
 /// Combining marks (UAX #14 class CM) of the scripts the breaker handles.
 bool isCombiningMark(int cu) =>
     (cu >= 0x300 && cu <= 0x36F) ||
@@ -1601,16 +1648,38 @@ bool isCombiningMark(int cu) =>
 (int, int)? _opportunities(String t) {
   var marks = false;
   for (var i = 0; i < t.length && !marks; i++) {
-    marks = isCombiningMark(t.codeUnitAt(i));
+    final cu = t.codeUnitAt(i);
+    marks = isCombiningMark(cu) || (cu >= 0xD800 && cu < 0xDC00) || cu == 0x200D || cu == 0xFE0F || isBrahmic(cu);
   }
   if (!marks) return _opportunitiesNoMarks(t);
   final b = StringBuffer(), at = <int>[];
   for (var i = 0; i < t.length; i++) {
     final cu = t.codeUnitAt(i);
-    if (isCombiningMark(cu)) {
+    if (isCombiningMark(cu) || cu == 0xFE0F) {
       if (i == 0 || t.codeUnitAt(i - 1) == 0x20 || isHardBreak(t.codeUnitAt(i - 1))) return null;
       continue;
     }
+    // An emoji cluster (UAX #29: pictograph, modifiers, ZWJ sequences; a pair of
+    // regional indicators) is one ID character for UAX #14 (LB8a, LB9, LB30a/b).
+    final e = emojiClusterEnd(t, i);
+    if (e > i) {
+      at.add(i);
+      b.writeCharCode(0x4E00);
+      i = e - 1;
+      continue;
+    }
+    if (isBrahmic(cu)) {
+      var j = i + 1;
+      while (j < t.length && (isBrahmic(t.codeUnitAt(j)) || t.codeUnitAt(j) == 0x200C || t.codeUnitAt(j) == 0x200D)) {
+        j++;
+      }
+      at.add(i);
+      b.writeCharCode(0x61); // one AL character
+      i = j - 1;
+      continue;
+    }
+    if (cu >= 0xD800 && cu < 0xE000) return null; // other supplementary characters
+    if (cu == 0x200D) return null;
     at.add(i);
     b.writeCharCode(cu);
   }
@@ -2042,11 +2111,34 @@ Records? buildBidiRecords(
 /// (measured: no pair adjustment crosses it, and widths add up); spans that
 /// differ only in colour or decoration belong to one run. The prefix is in px,
 /// so lines are broken at scale 1.
-Records? buildRichRecords(String t, List<(int, int, WidthModel, double)> runs, {double letterSpacing = 0}) {
+///
+/// [measured] holds runs measured through Flutter instead (emoji from the
+/// device's fallback font): run start -> px offsets of every code unit from the
+/// run's start (NaN inside a cluster), and the run's width last.
+Records? buildRichRecords(
+  String t,
+  List<(int, int, WidthModel?, double)> runs, {
+  double letterSpacing = 0,
+  Map<int, Float64List> measured = const {},
+  Set<int> scriptRuns = const {},
+}) {
   final pass = _start(t, letterSpacing), px = pass.prefix;
   var offset = 0.0, at = 0, script = pass.run;
   for (final (a, b, md, scale) in runs) {
     if (a != at || b <= a || b > t.length) return null;
+    if (md == null) {
+      final m = measured[a];
+      if (m == null || m.length != b - a + 1) return null;
+      for (var i = a; i < b; i++) {
+        px[i] = offset + m[i - a];
+      }
+      offset += m[b - a];
+      at = b;
+      // Emoji are Common: the script run continues. Letters of another script end
+      // it: no pair adjustment between a space after them and a Latin letter.
+      if (scriptRuns.contains(a)) script = scOther;
+      continue;
+    }
     final sub = _start(t, letterSpacing);
     // Scripts are itemized over the whole paragraph, across font changes: neutrals
     // at the start of a run continue the script before them (measured: a space

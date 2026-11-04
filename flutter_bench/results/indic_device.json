@@ -1,0 +1,45 @@
+{
+ "s_hi": {
+  "texts": 400,
+  "identical": 2119,
+  "different": 0,
+  "deferred": 1481,
+  "heightsEqual": 2119
+ },
+ "s_hi inside English": {
+  "texts": 400,
+  "identical": 3484,
+  "different": 0,
+  "deferred": 116,
+  "heightsEqual": 3484
+ },
+ "s_bn": {
+  "texts": 400,
+  "identical": 3594,
+  "different": 0,
+  "deferred": 6,
+  "heightsEqual": 3594
+ },
+ "s_bn inside English": {
+  "texts": 400,
+  "identical": 3555,
+  "different": 0,
+  "deferred": 45,
+  "heightsEqual": 3555
+ },
+ "s_ta": {
+  "texts": 400,
+  "identical": 3539,
+  "different": 0,
+  "deferred": 61,
+  "heightsEqual": 3539
+ },
+ "s_ta inside English": {
+  "texts": 400,
+  "identical": 3532,
+  "different": 0,
+  "deferred": 68,
+  "heightsEqual": 3532
+ },
+ "examples": []
+}

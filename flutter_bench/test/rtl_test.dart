@@ -5,7 +5,8 @@
 // RTL_FONT: a font file with Hebrew. RTL_CERT: its certificate (certify.py with
 // CERTIFY_SCRIPTS=latin+hebrew CERTIFY_DIRECTION=rtl), and RTL_NOLIG the same with
 // CERTIFY_FEATURES_OFF=liga,clig,calt. RTL_CORPUS: one message per line. RTL_OUT:
-// results JSON (default results/rtl.json). Skipped without them.
+// results JSON (default results/rtl.json). RTL_SAMPLE: at most this many messages
+// (spread over the corpus). Skipped without them.
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -48,7 +49,11 @@ void main() {
               noLigaCertificate: env['RTL_LTR_NOLIG'] == null ? null : File(env['RTL_LTR_NOLIG']!).readAsStringSync());
       calibrateEngine(md, family);
       final canary = canaryError(md, family);
-      final all = File(env['RTL_CORPUS']!).readAsStringSync().split('\n').where((p) => p.isNotEmpty).toList();
+      final lines = File(env['RTL_CORPUS']!).readAsStringSync().split('\n').where((p) => p.isNotEmpty).toList();
+      final sample = int.tryParse(env['RTL_SAMPLE'] ?? '') ?? lines.length;
+      final all = lines.length <= sample
+          ? lines
+          : [for (var i = 0; i < sample; i++) lines[(i * lines.length) ~/ sample]];
       final joined = [for (var i = 0; i + 3 <= all.length; i += 3) all.sublist(i, i + 3).join('\n')];
       final out = <String, Object?>{'font': env['RTL_FONT'], 'characters': md.n1 - 1, 'buildMs': buildMs,
           'canaryErrPx': canary, 'quantized': quantizeFontSize};
