@@ -1,6 +1,5 @@
 // Probes how Flutter (HarfBuzz) treats combining marks, for the breaker's model.
 import 'dart:io';
-import 'dart:ui' as ui;
 
 import 'package:break_first/break_first.dart';
 import 'package:flutter/services.dart';
