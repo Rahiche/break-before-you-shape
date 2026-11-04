@@ -2,8 +2,10 @@
 // inside words too) in several fonts, sizes and height multipliers, some spans
 // differing only in colour, against Flutter's own layout of the same spans.
 //
-// RICH_MANIFEST: font_census.py's manifest; RICH_NAMES: faces from it to use
-// besides the bundled Roboto (default Arial, Times New Roman, Georgia).
+// RICH_FONTS: font:certificate:no-ligature certificate triples, ';' between
+// fonts, used besides the bundled Roboto. Or RICH_MANIFEST (font_census.py's
+// manifest) and RICH_NAMES, faces from it (default Arial, Times New Roman,
+// Georgia).
 // RICH_SAMPLE: paragraphs per corpus (default 200). RICH_OUT: results JSON.
 import 'dart:convert';
 import 'dart:io';
@@ -25,18 +27,26 @@ Future<BreakFirst> _load(String family, Uint8List font, String cert, String? nol
 
 void main() {
   final env = Platform.environment;
-  final manifest = env['RICH_MANIFEST'];
+  final manifest = env['RICH_MANIFEST'], spec = env['RICH_FONTS'];
   testWidgets('rich text', (tester) async {
     await tester.runAsync(() async {
       final fonts = <BreakFirst>[
         await _load('RichRoboto', File('assets/Roboto-Regular.ttf').readAsBytesSync(),
             File('assets/roboto.cert').readAsStringSync(), File('assets/roboto.nolig.cert').readAsStringSync()),
       ];
-      final names = (env['RICH_NAMES'] ?? 'Arial,Times New Roman,Georgia').split(',');
-      for (final row in (jsonDecode(File(manifest!).readAsStringSync()) as List).cast<Map<String, dynamic>>()) {
-        if (!names.contains(row['name']) || row['cert'] == null) continue;
-        fonts.add(await _load('Rich${fonts.length}', File(row['font'] as String).readAsBytesSync(),
-            File(row['cert'] as String).readAsStringSync(), File(row['nolig'] as String).readAsStringSync()));
+      if (spec != null) {
+        for (final triple in spec.split(';')) {
+          final [font, cert, nolig] = triple.split(':');
+          fonts.add(await _load('Rich${fonts.length}', File(font).readAsBytesSync(), File(cert).readAsStringSync(),
+              File(nolig).readAsStringSync()));
+        }
+      } else {
+        final names = (env['RICH_NAMES'] ?? 'Arial,Times New Roman,Georgia').split(',');
+        for (final row in (jsonDecode(File(manifest!).readAsStringSync()) as List).cast<Map<String, dynamic>>()) {
+          if (!names.contains(row['name']) || row['cert'] == null) continue;
+          fonts.add(await _load('Rich${fonts.length}', File(row['font'] as String).readAsBytesSync(),
+              File(row['cert'] as String).readAsStringSync(), File(row['nolig'] as String).readAsStringSync()));
+        }
       }
       // Styles: (font, size, height). Index 0 repeats as a colour-only change.
       final styles = <(BreakFirst, double, double?)>[
@@ -115,5 +125,5 @@ void main() {
       out['examples'] = examples;
       File(env['RICH_OUT'] ?? 'results/rich.json').writeAsStringSync(const JsonEncoder.withIndent(' ').convert(out));
     });
-  }, skip: manifest == null, timeout: const Timeout(Duration(hours: 2)));
+  }, skip: manifest == null && spec == null, timeout: const Timeout(Duration(hours: 2)));
 }

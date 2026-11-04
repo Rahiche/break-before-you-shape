@@ -60,8 +60,9 @@
 
 <h1>Break Before You Shape</h1>
 <p class="subtitle">Exact line breaking from a precompiled, certified width model</p>
-<p class="meta">Draft · {{date}} · every number in this paper is read from result files produced on one Apple M3 machine and
-on GitHub Actions</p>
+<p class="meta">Raouf Rahiche · Version 1.0 · {{date}} ·
+<a href="https://github.com/Rahiche/break-before-you-shape">github.com/Rahiche/break-before-you-shape</a><br>
+Every number in this paper is read from result files produced on one Apple M3 machine and on GitHub Actions.</p>
 
 <div class="abstract"><p><b>Abstract.</b>
 Text engines shape a paragraph before they can break it into lines, because widths depend on kerning, ligatures and
@@ -75,10 +76,14 @@ breaks and paragraph heights in {{mac_identical:,}} of {{=mac_identical+mac_diff
 ({{w_corpora}} corpora in {{w_languages}} languages, {{w_sizes}} font sizes, {{w_widths}} widths), and in all
 {{ci_identical:,}} it decides on Linux, macOS, an iOS simulator and an Android emulator in continuous integration. The
 same holds with letter and word spacing, height multipliers, <code>maxLines</code> and hard line breaks
-({{styles_identical:,}} layouts), and for Hebrew, mixed-direction, Arabic, Japanese, Chinese and Korean text in four more
-fonts ({{scripts_identical:,}} layouts): not one layout differs. The breaker hands {{mac_deferredPct:.2f}}% of Latin-script
-layouts back to the engine and computes paragraph heights
-{{=min(t_docs_speedup_tp,t_chat_speedup_tp):.0f}}–{{=max(t_docs_speedup_tp,t_chat_speedup_tp):.0f}}× faster than <code>TextPainter</code>.</p></div>
+({{styles_identical:,}} layouts), for Hebrew, mixed-direction, Arabic, Japanese, Chinese and Korean text in four more
+fonts ({{scripts_identical:,}} layouts), and in {{beyond_rows}} further checks ({{beyond_identical:,}} layouts) covering
+struts, font features, rich text, bundled fallback fonts, combining marks, pointed Hebrew, vowelled and letter-spaced
+Arabic, emoji, and Indic scripts. Text a sidecar does not cover but the device's own fonts do (emoji, Brahmic scripts) is
+measured once per run through Flutter, which is exact because a change of font is a change of shaping run. Not one layout
+differs. The breaker hands {{mac_deferredPct:.2f}}% of Latin-script layouts back to the engine and computes paragraph
+heights {{=min(t_docs_speedup_tp,t_chat_speedup_tp):.0f}}–{{=max(t_docs_speedup_tp,t_chat_speedup_tp):.0f}}× faster than
+<code>TextPainter</code>.</p></div>
 
 <h2>1 · Introduction</h2>
 <p>Every mainstream text stack (Chrome, WebKit, Android, Skia's SkParagraph, CoreText, DirectWrite) runs the same order:
@@ -122,13 +127,15 @@ line breaks and heights from a precompiled model, so text that is measured but n
   context) and compiled into exact tables. The model matches the target engine by construction.</li>
   <li><b>A certificate.</b> A static analysis of OpenType (GSUB, GPOS, GDEF) and AAT (<code>morx</code>,
   <code>kern</code>, <code>kerx</code>, state machines included) tables proves on which lines the model's width equals
-  the shaped width, including Arabic letters per joining form.</li>
+  the shaped width: Arabic letters per joining form, features the app turns on, and combining marks with the
+  compositions HarfBuzz makes.</li>
   <li><b>Break-first layout.</b> Width-independent records give every candidate line's width in O(1), so a resize costs
-  one greedy pass. The breaker reproduces the host's measured conventions (spacing, line heights, hard breaks,
-  bidirectional runs, split kerning) and defers wherever the host's behaviour is uncertain.</li>
+  one greedy pass. The breaker reproduces the host's measured conventions (spacing, line heights, struts, hard breaks,
+  bidirectional runs, split kerning, shaping runs across fonts) and defers wherever the host's behaviour is
+  uncertain.</li>
   <li><b>Evidence.</b> A census of {{census_faces}} font faces, and a Flutter package checked against Flutter's own
-  layout on four platforms, for Latin, Greek, Cyrillic, Hebrew, Arabic, Chinese, Japanese and Korean text, with five
-  fonts.</li>
+  layout on four platforms, for plain and rich text in Latin, Greek, Cyrillic, Hebrew, Arabic, Chinese, Japanese, Korean
+  and Indic scripts and with emoji.</li>
 </ol>
 
 <h2>2 · Width is local, and can be distilled</h2>
@@ -207,6 +214,14 @@ as every glyph). Only first × second pairs are measured, so a CJK font with {{c
 pair table at all and one with {{cjk_sdgothic_chars:,}} builds in under a second. <i>Joining forms:</i> each Arabic
 (letter, form) is certified as a virtual character whose glyph is the font's isol, init, medi or fina substitute; the
 breaker picks forms from Unicode joining types, as HarfBuzz's Arabic shaper does, so lam-alef is just an island.</p>
+<p><b>Substitutions and marks.</b> A single substitution that a feature applies to every glyph it covers fixes a
+character's glyph wherever it stands, so it is part of the character, not a hazard: the analysis follows each character
+through all of them (small caps, oldstyle figures, stylistic sets). Combining marks get a class of their own, M.
+HarfBuzz composes a base and a following mark into the precomposed character before any lookup runs, when the font has
+it, and zeroes the advance of every GDEF mark after positioning. So the certificate lists the font's compositions and,
+for each mark, its combining class and whether kerning skips it or stops at it (from lookup flags); a rule that can fire
+only on a mark left uncomposed next to certain characters becomes an exclusion the breaker checks, and a context rule
+whose nested lookups only move or swap marks cannot change a width at all.</p>
 
 <h2>4 · Breaking before shaping, the way the host does</h2>
 <p>For each paragraph, one pass builds a width prefix in units, and a second finds break opportunities. Both are
@@ -231,6 +246,11 @@ assuming them (Table 1), and the breaker <b>defers</b> whenever a decision depen
 <tr><td>Kerning from <code>kern</code>/<code>kerx</code> tables is split between the two glyphs</td><td>Times New Roman's space-A kern at a line start</td><td>Each pair's right-glyph share, measured from glyph boxes</td></tr>
 <tr><td>Bidirectional text: UAX #9 levels; shaping runs split at level changes, and scripts are itemized within each run</td><td>Hebrew and Arabic UI strings</td><td>Each run measured with the sidecar distilled in its direction</td></tr>
 <tr><td>UAX #14 rules LB15c, LB20a, LB21a/b, and LB19a's and LB30's East Asian exceptions; small kana break like ideographs</td><td>Validation mismatches, one rule each</td><td>Rule table extended</td></tr>
+<tr><td>A strut or TextHeightBehavior changes line heights, never line breaks; with one font, all lines but the first and last are alike</td><td>Heights in Table 6</td><td>Heights from three probe layouts per style</td></tr>
+<tr><td>Rich text: a change of font or size starts a shaping run (no kerning or ligature across it), a change of colour or decoration does not; a line is round(max ascent + max descent) of its runs</td><td>“AV” and “fi” across a colour change; widths across a size change</td><td>Runs per font and size; per-style metrics</td></tr>
+<tr><td>Font fallback: each character goes to the first font that has it; scripts are itemized over the whole paragraph, across fonts</td><td>A space in Roboto after Chinese text does not kern with the Latin letter after it</td><td>Coverage (cmap) in the sidecar; script carried across runs</td></tr>
+<tr><td>Combining marks: composed when the font has the composite, zero-width otherwise, kerning skips or stops at them; with positive letter spacing an uncomposed mark is spaced like a glyph</td><td>Probes of “e+◌́”, “x+◌́”, “T◌́o”</td><td>Class M, compositions, exclusions; LB9/LB10</td></tr>
+<tr><td>Text from the device's fallback fonts is a shaping run of its own</td><td>Emoji and Devanagari between Roboto words</td><td>Measured once per run through Flutter, cached</td></tr>
 </table>
 <p style="font:8.6pt 'Avenir Next',sans-serif;color:var(--muted)"><b>Table 1.</b> Host conventions the breaker
 reproduces, each measured from Flutter.</p>
@@ -311,7 +331,20 @@ letter-spaced Arabic) go to Flutter. Hiragino Sans GB has no pair positioning ({
 no pair table); Apple SD Gothic Neo's {{cjk_sdgothic_chars:,}} characters need {{cjk_sdgothic_classes}} pair classes, a
 {{=cjk_sdgothic_bytes/1024:.0f}} KB sidecar.</p>
 
-<h3>5.5 · Speed</h3>
+<h3>5.5 · Beyond one plain style</h3>
+<p>Each extension in §3 and Table 1 has its own check against Flutter laid out with the same text, style and fonts
+(<code>flutter_bench/test/</code>, all run by <code>tool/validate_all.sh</code>). The texts are the UI corpora,
+decomposed into NFD for combining marks, with random points or harakat added for Hebrew and Arabic, cut into spans for
+rich text, and mixed with Japanese, Chinese, Korean, emoji or Indic words for fallback. Table 6 sums them:
+{{beyond_identical:,}} layouts decided, {{beyond_different}} different.</p>
+{{beyond_table}}
+<p style="font:8.6pt 'Avenir Next',sans-serif;color:var(--muted)"><b>Table 6.</b> Struts, features and marks on macOS
+under <code>flutter_tester</code>; fonts are the bundled Roboto and the platform's own. Emoji, Indic and the other scripts
+from the device's fonts are measured once per run on the device (§4). “Decided” counts the layouts the breaker computes;
+the rest go to Flutter (a character no font here has, a mark left uncomposed next to an excluded character, a word wider
+than the line).</p>
+
+<h3>5.6 · Speed</h3>
 <p>All methods run on the same paragraphs, the ones break-first decides itself, at {{t_docs_size:g}} px. Each time is the median of
 {{timing_reps}} passes inside one run of a macOS release build, and then the median of {{timing_runs}} such runs; the
 speedups below differ by at most {{timing_spread_pct:.0f}}% between runs.</p>
@@ -356,7 +389,7 @@ equal <code>TextPainter</code>'s, which takes {{demo_tp_ms:.0f}} ms to compute t
 <figcaption><b>Figure 8.</b> Computing every item's exact height for a chat list.</figcaption></figure>
 </div>
 
-<h3>5.6 · Font sizes and float drift</h3>
+<h3>5.7 · Font sizes and float drift</h3>
 <div class="two">
 <div>
 <p>Flutter's widths are linear in font size, so one file in font units serves every size. But SkParagraph accumulates
@@ -410,13 +443,17 @@ claimed.</p>
 </ul>
 
 <h2>8 · Reproducibility</h2>
-<p>All code and results are in the accompanying folder:</p>
+<p>All code and results are in the repository
+(<a href="https://github.com/Rahiche/break-before-you-shape">github.com/Rahiche/break-before-you-shape</a>):</p>
 <ul>
-  <li><code>certify.py</code>: the analyzer;</li>
-  <li><code>bfl.c</code>: the C prototype and checker;</li>
-  <li><code>census.py</code>: the census;</li>
-  <li><code>packages/break_first/</code>: the Flutter package (breaker, sidecar build step, tests, list example);</li>
-  <li><code>flutter_bench/</code>: the benchmark app, the validation and timing harness, and the script tests;</li>
+  <li><code>certify.py</code>: the analyzer; <code>census.py</code>: the census; <code>bfl.c</code>: the C prototype
+  and checker;</li>
+  <li><code>packages/break_first/</code>: the Flutter package (breaker, rich text, sidecar build step, tests, list
+  example);</li>
+  <li><code>flutter_bench/</code>: the benchmark app, the validation and timing harness, and one test per check in
+  Tables 3–6; <code>flutter_bench/tool/validate_all.sh</code> runs every local check;</li>
+  <li><code>make_corpora.py</code> and <code>make_test_texts.py</code>: the corpora and the texts derived from them,
+  rebuilt from the machine's own files rather than shipped;</li>
   <li><code>native/</code>: the C port; <code>.github/workflows/</code>: the CI that reruns the benchmarks;</li>
   <li><code>paper/make_figures.py</code>: the figures and every number in this paper, read from the result files.</li>
 </ul>

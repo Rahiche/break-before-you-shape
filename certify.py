@@ -193,12 +193,19 @@ make_unsafe([cp for cp in chars if cp == 0x2044], "fraction slash triggers frac/
 # no width. Kerning either skips it or stops at it, by lookup flags (mark_mode).
 MARKS = {cp for cp in chars if gdef_class.get(nominal[cp]) == 3 and unicodedata.category(chr(cp)) in ("Mn", "Me")}
 make_unsafe([cp for cp in chars if gdef_class.get(nominal[cp]) == 3 and cp not in MARKS], "GDEF mark")
+# Combining diacritics the font does not class as marks (no GDEF, as in most AAT fonts):
+# not modelled, as before this range was certified at all.
+make_unsafe([cp for cp in chars if 0x300 <= cp <= 0x36F and cp not in MARKS], "combining mark without a GDEF class")
 # Hebrew: without GPOS mark positioning HarfBuzz composes points into presentation
 # forms instead (not modelled).
 if "hebrew" in os.environ.get("CERTIFY_SCRIPTS", "") and not (
         "GPOS" in font and font["GPOS"].table.FeatureList and
         any(fr.FeatureTag == "mark" for fr in font["GPOS"].table.FeatureList.FeatureRecord)):
     make_unsafe([cp for cp in MARKS if 0x591 <= cp <= 0x5C7], "Hebrew points without GPOS mark")
+# Marks in an AAT font are not modelled: left out from the start, so the morx analysis
+# never sees them (their ligatures with letters would make the letters islands).
+if "morx" in font or "kerx" in font:
+    make_unsafe(sorted(MARKS), "mark in an AAT font")
 MARK_GLYPHS = {nominal[cp] for cp in MARKS}
 COMPOSE = []
 for _c in sorted(cmap):
@@ -1398,20 +1405,25 @@ def run_round():
             if not gs:
                 return  # some position can never match: the rule cannot fire
             live_sets.append(gs)
-        # Two positions, one only marks and one a few other characters: the rule can
-        # fire only on a mark left uncomposed next to one of them. The breaker hands
-        # those clusters to Flutter (the mark's exclusions) instead.
-        if len(live_sets) == 2:
-            for ms, bs in (live_sets, live_sets[::-1]):
-                if ms & MARK_GLYPHS and not bs & MARK_GLYPHS and len(bs) <= 64 and not bs & outputs:
-                    near = {c for g in bs for c in glyph_chars.get(g, [])}
-                    for g in ms & MARK_GLYPHS:
-                        for cp in glyph_chars.get(g, []):
-                            excl.setdefault(cp, set()).update(near)
-                    rest = ms - MARK_GLYPHS  # glyphs in the mark position that are not GDEF marks
-                    if rest:
-                        block_glyphs(min([rest, bs], key=weight), reason)
-                    return
+        # Positions that hold only marks, and others that hold only other characters
+        # (a few): the rule can fire only on a mark left uncomposed in a cluster whose
+        # base, or the base after it, is one of those characters (they are the only
+        # non-marks it can match). The breaker hands such clusters to Flutter (the
+        # mark's exclusions) instead.
+        mark_pos = [x for x in live_sets if x & MARK_GLYPHS]
+        other_pos = [x for x in live_sets if not x & MARK_GLYPHS]
+        others = set().union(*other_pos) if other_pos else set()
+        if mark_pos and other_pos and len(others) <= 256 and not others & outputs:
+            near = {c for g in others for c in glyph_chars.get(g, [])}
+            rest = set()
+            for ms in mark_pos:
+                for g in ms & MARK_GLYPHS:
+                    for cp in glyph_chars.get(g, []):
+                        excl.setdefault(cp, set()).update(near)
+                rest |= ms - MARK_GLYPHS  # glyphs in a mark position that are not GDEF marks
+            if rest:
+                block_glyphs(min([rest, others], key=weight), reason)
+            return
         block_glyphs(min(live_sets, key=weight), reason)
 
     def skips(lk, g):

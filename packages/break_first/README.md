@@ -38,7 +38,21 @@ p?.lineCount(fontSize: 16, maxWidth: 320);
 // Style options, each measured against Flutter.
 const o = LineOptions(letterSpacing: 0.5, wordSpacing: 2, height: 1.3, maxLines: 3);
 bf.height(text, fontSize: 16, maxWidth: 280, options: o);
+
+// Struts and TextHeightBehavior (pass the same to the Text widget).
+bf.height(text, fontSize: 16, maxWidth: 280,
+    options: const LineOptions(strutStyle: StrutStyle(fontSize: 20, forceStrutHeight: true)));
+
+// Rich text: spans in several fonts and sizes, with bundled fallback fonts.
+final rich = RichParagraph.prepare([
+  RichSpan('Hello ', bf, 16),
+  RichSpan('world', bold, 20, fallback: [cjk]), // bold, cjk: other loaded sidecars
+]);
+rich?.height(280);
 ```
+
+Emoji and Indic text that no sidecar covers comes from the device's own fonts: `height` (and `RichParagraph`) measure
+each such run once through Flutter on the device, which is exact because a change of font is a change of shaping run.
 
 Lay the text out with `bf.style(fontSize, options)` (plus a colour) and `TextScaler.noScaling`; pass the scaled size
 yourself. Hard line breaks (`\n`, U+2028, U+2029) are handled.
@@ -58,8 +72,9 @@ final md = buildSidecar(fontFamily: 'MyFont', font: font, certificate: File('myf
 File('assets/myfont.bfw').writeAsBytesSync(md.encode());
 ```
 
-For Roboto this takes 614,675 layouts and about 9 s, and gives 573,104 bytes (10,357 gzipped). One file serves every
-font size. The package tests rebuild Roboto's sidecar on the machine running them and require the exact bytes that ship.
+For Roboto this takes 273,446 layouts and gives 593,652 bytes (12,285 gzipped). One file serves every font size.
+With font features, certify with `CERTIFY_FEATURES_ON=...` and pass the same `fontFeatures` to `buildSidecar` and
+`BreakFirst.load`. The package tests rebuild Roboto's sidecar on the machine running them and require the exact bytes that ship.
 
 ## Tests
 
@@ -70,9 +85,10 @@ font size. The package tests rebuild Roboto's sidecar on the machine running the
 - break opportunities;
 - the canary;
 - that rebuilding the sidecar gives the shipped bytes;
-- that 43,200 layouts of generated multilingual text break and measure exactly as Flutter does.
+- that layouts of generated multilingual text, with every style option, break and measure exactly as Flutter does.
 
-On macOS: 0 different, 1,190 sent to Flutter, all heights equal. CI runs them on Linux and macOS.
+CI runs them on Linux and macOS. The wider checks (rich text, fallback, marks, emoji, Indic, right-to-left, CJK) live in
+`flutter_bench/test/`; `flutter_bench/tool/validate_all.sh` runs them all.
 
 ## What Flutter does, and the breaker models
 
@@ -88,11 +104,19 @@ Each rule below was measured in Flutter (3.47), and is checked by the tests:
 - **Height multiplier.** Every line is round(size × height), with both in float32 and the product in double, so 15 × 1.3
   gives 19.
 - **`maxLines`.** Flutter shows min(lines, maxLines) lines.
+- **Struts and TextHeightBehavior** change line heights, never breaks; with one font all lines but the first and last
+  are alike, so three probe layouts per style give every height.
+- **Rich text.** A change of font or size starts a shaping run (no kerning across it); a change of colour or decoration
+  does not. A line is round(max ascent + max descent) of its runs. Scripts are itemized over the whole paragraph.
+- **Font fallback.** Each character goes to the first font that has it (the sidecar records the font's cmap).
+- **Combining marks** are composed when the font has the composite (HarfBuzz's order), have no width otherwise, and
+  kerning skips them or stops at them as the font's lookup flags say.
 
 ## Scope
 
-One font and size per paragraph, with the options above. The bundled sidecar is Roboto: Latin, Greek and Cyrillic. A
-sidecar built from another font covers Hebrew, Arabic (per joining form), Chinese, Japanese and Korean too:
-`buildSidecar(rtl: true)` distills it right to left, and `buildBidiRecords` combines a left-to-right and a right-to-left
-sidecar for mixed-direction text. Font features, `strutStyle`, vowel marks, letter-spaced Arabic, emoji, characters the
-font lacks and other scripts go to Flutter. See the [paper](../../paper/paper.pdf) for the method, its proofs and the checks.
+The bundled sidecar is Roboto: Latin, Greek and Cyrillic. A sidecar built from another font covers Hebrew (with
+points), Arabic (per joining form, with harakat), Chinese, Japanese and Korean too: `buildSidecar(rtl: true)` distills it
+right to left, and `buildBidiRecords` combines a left-to-right and a right-to-left sidecar for mixed-direction text.
+Emoji and Brahmic scripts come from the device's fonts, measured once per run. What the breaker cannot decide exactly
+(a character no font here has, a word wider than the line, a decision within float error) goes to Flutter, so heights
+always equal Flutter's. See the [paper](../../paper/paper.pdf) for the method, its proofs and the checks.

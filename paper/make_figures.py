@@ -426,6 +426,61 @@ script_rows = [
     cases("cjk_hiragino_sans_gb.json", "Japanese and Chinese · Hiragino Sans GB"),
     cases("cjk_apple_sd_gothic_neo.json", "Korean and Japanese · Apple SD Gothic Neo"),
 ]
+# Beyond one plain style: each check against Flutter writes its own result file.
+def cases_in(d, keep=lambda k: True, prefix=""):
+    """(label, counts) for every dict with layout counts inside d."""
+    for k, v in d.items():
+        if isinstance(v, dict):
+            label = f"{prefix}{k}"
+            if "identical" in v and "different" in v:
+                if keep(label):
+                    yield label, v
+            else:
+                yield from cases_in(v, keep, f"{label}/")
+
+
+def beyond(label, name, keep=lambda k: True):
+    if not os.path.exists(os.path.join(FR, name)):
+        return None
+    d = load(name)
+    cs = [d] if "identical" in d and "different" in d else [v for _, v in cases_in(d, keep)]
+    if not cs:
+        return None
+    same = sum(v["identical"] for v in cs)
+    diff = sum(v["different"] for v in cs)
+    total = sum(v["identical"] + v["different"] + v["deferred"] for v in cs)
+    heights = sum(v.get("heightsEqual", v.get("heightIdentical", 0)) for v in cs)
+    return label, same, diff, total, heights
+
+
+beyond_rows = [r for r in [
+    beyond("Struts and TextHeightBehavior, 4 settings · Roboto", "host_styles.json",
+           lambda k: k.startswith("styles/") and ("strut" in k or "ascent" in k or "leading" in k)),
+    beyond("Font features: tnum, smcp, c2sc, onum, ss01, dlig, frac, liga off · Roboto", "features_roboto.json"),
+    beyond("Rich text: 1–4 spans, 4 fonts, 3 sizes, height multipliers, colour changes", "rich.json"),
+    beyond("Bundled fallback fonts: Latin-script UI text with Japanese, Chinese, Korean", "fallback_cjk.json"),
+    beyond("Combining marks (NFD French, German, Greek, Russian, Ukrainian) · Roboto", "marks_nfd.json",
+           lambda k: k.startswith("Roboto/")),
+    beyond("Combining marks (NFD French, German, Greek, Russian, Ukrainian) · Arial", "marks_nfd.json",
+           lambda k: k.startswith("Arial/")),
+    beyond("Hebrew with points · Arial", "rtl_pointed_arial.json"),
+    beyond("Hebrew with points · Times New Roman", "rtl_pointed_times_new_roman.json"),
+    beyond("Arabic with harakat · Arial", "rtl_vowelled_arial.json"),
+    beyond("Arabic with harakat · Times New Roman", "rtl_vowelled_times_new_roman.json"),
+    beyond("Letter-spaced Arabic · Arial", "rtl_arabic_arial.json", lambda k: "pacing" in k or "spaced" in k),
+    beyond("Letter-spaced Arabic · Times New Roman", "rtl_arabic_times_new_roman.json",
+           lambda k: "pacing" in k or "spaced" in k),
+    beyond("Emoji from the device's font (ZWJ sequences, skin tones, flags)", "emoji_device.json"),
+    beyond("Hindi, Bengali, Tamil from the device's fonts, alone and in English", "indic_device.json"),
+    beyond("Thai, Lao, Khmer, Burmese (ICU dictionaries) from the device's fonts", "dictionary_scripts.json"),
+] if r]
+N["beyond_identical"] = sum(r[1] for r in beyond_rows)
+N["beyond_different"] = sum(r[2] for r in beyond_rows)
+N["beyond_layouts"] = sum(r[3] for r in beyond_rows)
+N["beyond_rows"] = len(beyond_rows)
+N["beyond_table"] = table(["Check · font", "Layouts", "Identical", "Different", "Heights equal", "Decided"], [
+    (label, fmt_int(total), fmt_int(same), cell_ok(diff), f"{fmt_int(heights)} / {fmt_int(same)}",
+     f"{100 * (same + diff) / total:.0f}%") for label, same, diff, total, heights in beyond_rows])
 N["scripts_identical"] = sum(r[1] for r in script_rows)
 N["scripts_different"] = sum(r[2] for r in script_rows)
 N["scripts_layouts"] = sum(r[3] for r in script_rows)
