@@ -1,0 +1,349 @@
+{
+ "asset thaidict.dict": {
+  "bytes": 126136,
+  "offsetInIcudtl": 564224
+ },
+ "asset laodict.dict": {
+  "bytes": 52102,
+  "offsetInIcudtl": 363792
+ },
+ "asset khmerdict.dict": {
+  "bytes": 94226,
+  "offsetInIcudtl": 269552
+ },
+ "asset burmesedict.dict": {
+  "bytes": 254438,
+  "offsetInIcudtl": 848
+ },
+ "wordBoundaries": {
+  "ui_th.txt": {
+   "runs": 11926,
+   "characters": 274009,
+   "different": 0,
+   "skipped": 0,
+   "examples": []
+  },
+  "names_th.txt": {
+   "runs": 2772,
+   "characters": 23577,
+   "different": 0,
+   "skipped": 0,
+   "examples": []
+  },
+  "vocab_th.txt": {
+   "runs": 7526,
+   "characters": 216656,
+   "different": 0,
+   "skipped": 0,
+   "examples": []
+  },
+  "names_lo.txt": {
+   "runs": 3657,
+   "characters": 21494,
+   "different": 0,
+   "skipped": 0,
+   "examples": []
+  },
+  "vocab_lo.txt": {
+   "runs": 7533,
+   "characters": 147013,
+   "different": 0,
+   "skipped": 8,
+   "examples": []
+  },
+  "names_km.txt": {
+   "runs": 2822,
+   "characters": 20621,
+   "different": 0,
+   "skipped": 0,
+   "examples": []
+  },
+  "vocab_km.txt": {
+   "runs": 7745,
+   "characters": 182463,
+   "different": 0,
+   "skipped": 0,
+   "examples": []
+  },
+  "names_my.txt": {
+   "runs": 2859,
+   "characters": 22490,
+   "different": 0,
+   "skipped": 0,
+   "examples": []
+  },
+  "vocab_my.txt": {
+   "runs": 7825,
+   "characters": 198368,
+   "different": 0,
+   "skipped": 0,
+   "examples": []
+  }
+ },
+ "lineBreaks": {
+  "ui_th.txt": {
+   "texts": 6372,
+   "layouts": 114696,
+   "identical": 114677,
+   "different": 0,
+   "identicalTakingBreaksInsideGraphemes": 0,
+   "identicalIgnoringBreaksInsideGraphemes": 0,
+   "deferredWordWiderThanLine": 15,
+   "deferredEdgeOrInsideGrapheme": 4,
+   "sizesWithoutPositions": 0,
+   "flaggedByBreakMayBeInsideGrapheme": 0,
+   "insideGraphemeNotFlagged": 0,
+   "dictionaryOpportunities": 42618,
+   "dictionaryOpportunitiesInsideGraphemes": 0,
+   "insideGraphemeExamples": [],
+   "examples": []
+  },
+  "names_th.txt": {
+   "texts": 1083,
+   "layouts": 19494,
+   "identical": 19494,
+   "different": 0,
+   "identicalTakingBreaksInsideGraphemes": 0,
+   "identicalIgnoringBreaksInsideGraphemes": 0,
+   "deferredWordWiderThanLine": 0,
+   "deferredEdgeOrInsideGrapheme": 0,
+   "sizesWithoutPositions": 0,
+   "flaggedByBreakMayBeInsideGrapheme": 0,
+   "insideGraphemeNotFlagged": 0,
+   "dictionaryOpportunities": 1828,
+   "dictionaryOpportunitiesInsideGraphemes": 0,
+   "insideGraphemeExamples": [],
+   "examples": []
+  },
+  "vocab_th.txt": {
+   "texts": 2977,
+   "layouts": 53586,
+   "identical": 53415,
+   "different": 0,
+   "identicalTakingBreaksInsideGraphemes": 0,
+   "identicalIgnoringBreaksInsideGraphemes": 0,
+   "deferredWordWiderThanLine": 123,
+   "deferredEdgeOrInsideGrapheme": 48,
+   "sizesWithoutPositions": 0,
+   "flaggedByBreakMayBeInsideGrapheme": 23,
+   "insideGraphemeNotFlagged": 0,
+   "dictionaryOpportunities": 50339,
+   "dictionaryOpportunitiesInsideGraphemes": 23,
+   "insideGraphemeExamples": [
+    "\"โปโลน้|ำอิซะอ\"",
+    "\"คค์ผูก|ำกับ\"",
+    "\"ชอน้|ำมูกฮว\"",
+    "\"กุงแมน|ำคนงาน\"",
+    "\"กุงแมน|ำ บาร์\"",
+    "\"กุงแมน|ำน้อง \""
+   ],
+   "examples": []
+  },
+  "names_lo.txt": {
+   "texts": 1012,
+   "layouts": 18216,
+   "identical": 18216,
+   "different": 0,
+   "identicalTakingBreaksInsideGraphemes": 0,
+   "identicalIgnoringBreaksInsideGraphemes": 0,
+   "deferredWordWiderThanLine": 0,
+   "deferredEdgeOrInsideGrapheme": 0,
+   "sizesWithoutPositions": 0,
+   "flaggedByBreakMayBeInsideGrapheme": 0,
+   "insideGraphemeNotFlagged": 0,
+   "dictionaryOpportunities": 1354,
+   "dictionaryOpportunitiesInsideGraphemes": 0,
+   "insideGraphemeExamples": [],
+   "examples": []
+  },
+  "vocab_lo.txt": {
+   "texts": 2975,
+   "layouts": 53550,
+   "identical": 53479,
+   "different": 0,
+   "identicalTakingBreaksInsideGraphemes": 12,
+   "identicalIgnoringBreaksInsideGraphemes": 0,
+   "deferredWordWiderThanLine": 45,
+   "deferredEdgeOrInsideGrapheme": 26,
+   "sizesWithoutPositions": 0,
+   "flaggedByBreakMayBeInsideGrapheme": 23,
+   "insideGraphemeNotFlagged": 0,
+   "dictionaryOpportunities": 33630,
+   "dictionaryOpportunitiesInsideGraphemes": 23,
+   "insideGraphemeExamples": [
+    "\"ກຳກັບ້|ຳ ອາວຸ\"",
+    "\"້ມໃສ່້|ຳສາມງາ\"",
+    "\"ັປະໂວກ|ຳປັ້ນບ\"",
+    "\"ອດສັບ້|ຳ\"",
+    "\"ີກັອກ້|ຳ\"",
+    "\"ມເວລາ້|ຳເກີບແ\""
+   ],
+   "examples": []
+  },
+  "names_km.txt": {
+   "texts": 812,
+   "layouts": 14616,
+   "identical": 14588,
+   "different": 0,
+   "identicalTakingBreaksInsideGraphemes": 0,
+   "identicalIgnoringBreaksInsideGraphemes": 0,
+   "deferredWordWiderThanLine": 27,
+   "deferredEdgeOrInsideGrapheme": 1,
+   "sizesWithoutPositions": 0,
+   "flaggedByBreakMayBeInsideGrapheme": 0,
+   "insideGraphemeNotFlagged": 0,
+   "dictionaryOpportunities": 246,
+   "dictionaryOpportunitiesInsideGraphemes": 0,
+   "insideGraphemeExamples": [],
+   "examples": []
+  },
+  "vocab_km.txt": {
+   "texts": 2764,
+   "layouts": 49752,
+   "identical": 48360,
+   "different": 0,
+   "identicalTakingBreaksInsideGraphemes": 0,
+   "identicalIgnoringBreaksInsideGraphemes": 0,
+   "deferredWordWiderThanLine": 1383,
+   "deferredEdgeOrInsideGrapheme": 9,
+   "sizesWithoutPositions": 0,
+   "flaggedByBreakMayBeInsideGrapheme": 0,
+   "insideGraphemeNotFlagged": 0,
+   "dictionaryOpportunities": 21658,
+   "dictionaryOpportunitiesInsideGraphemes": 0,
+   "insideGraphemeExamples": [],
+   "examples": []
+  },
+  "names_my.txt": {
+   "texts": 844,
+   "layouts": 15192,
+   "identical": 15168,
+   "different": 0,
+   "identicalTakingBreaksInsideGraphemes": 0,
+   "identicalIgnoringBreaksInsideGraphemes": 0,
+   "deferredWordWiderThanLine": 21,
+   "deferredEdgeOrInsideGrapheme": 3,
+   "sizesWithoutPositions": 0,
+   "flaggedByBreakMayBeInsideGrapheme": 24,
+   "insideGraphemeNotFlagged": 0,
+   "dictionaryOpportunities": 2126,
+   "dictionaryOpportunitiesInsideGraphemes": 24,
+   "insideGraphemeExamples": [
+    "\"ကာဂျစ္|စတန်\"",
+    "\"ကာဂျစ္|စတန် ဆ\"",
+    "\"စင်္|ကာပူ\"",
+    "\"စင်္|ကာပူ ဒ\"",
+    "\"စစ္|စလီ\"",
+    "\"စစ္|စီကာ\""
+   ],
+   "examples": []
+  },
+  "vocab_my.txt": {
+   "texts": 2691,
+   "layouts": 48438,
+   "identical": 45807,
+   "different": 0,
+   "identicalTakingBreaksInsideGraphemes": 0,
+   "identicalIgnoringBreaksInsideGraphemes": 84,
+   "deferredWordWiderThanLine": 2442,
+   "deferredEdgeOrInsideGrapheme": 189,
+   "sizesWithoutPositions": 0,
+   "flaggedByBreakMayBeInsideGrapheme": 112,
+   "insideGraphemeNotFlagged": 0,
+   "dictionaryOpportunities": 25578,
+   "dictionaryOpportunitiesInsideGraphemes": 112,
+   "insideGraphemeExamples": [
+    "\"ရားပစ္|စည်းဏ္\"",
+    "\"စည်းဏ္|ရဲအချပ\"",
+    "\"းခြင်္|သေမွတ်\"",
+    "\"မ္|စက်မဲ့\"",
+    "\"ြင်းဏ္|မီးရေက\"",
+    "\"င်ပံစ္|ချိုဘူ\""
+   ],
+   "examples": []
+  }
+ },
+ "lineStartsInsideRuns": {
+  "ui_th.txt": {
+   "texts": 8000,
+   "layouts": 96000,
+   "lineStartsInsideSA": 99482,
+   "atOurOpportunities": 97546,
+   "forcedInsideWord": 1936,
+   "unexplained": 0,
+   "examples": []
+  },
+  "names_th.txt": {
+   "texts": 1899,
+   "layouts": 22788,
+   "lineStartsInsideSA": 2846,
+   "atOurOpportunities": 2214,
+   "forcedInsideWord": 632,
+   "unexplained": 0,
+   "examples": []
+  },
+  "vocab_th.txt": {
+   "texts": 3000,
+   "layouts": 36000,
+   "lineStartsInsideSA": 98000,
+   "atOurOpportunities": 96062,
+   "forcedInsideWord": 1938,
+   "unexplained": 0,
+   "examples": []
+  },
+  "names_lo.txt": {
+   "texts": 1828,
+   "layouts": 21936,
+   "lineStartsInsideSA": 2176,
+   "atOurOpportunities": 2074,
+   "forcedInsideWord": 102,
+   "unexplained": 0,
+   "examples": []
+  },
+  "vocab_lo.txt": {
+   "texts": 3000,
+   "layouts": 36000,
+   "lineStartsInsideSA": 53062,
+   "atOurOpportunities": 52552,
+   "forcedInsideWord": 510,
+   "unexplained": 0,
+   "examples": []
+  },
+  "names_km.txt": {
+   "texts": 1559,
+   "layouts": 18708,
+   "lineStartsInsideSA": 1174,
+   "atOurOpportunities": 626,
+   "forcedInsideWord": 548,
+   "unexplained": 0,
+   "examples": []
+  },
+  "vocab_km.txt": {
+   "texts": 3000,
+   "layouts": 36000,
+   "lineStartsInsideSA": 67360,
+   "atOurOpportunities": 60432,
+   "forcedInsideWord": 6928,
+   "unexplained": 0,
+   "examples": []
+  },
+  "names_my.txt": {
+   "texts": 1605,
+   "layouts": 19260,
+   "lineStartsInsideSA": 4530,
+   "atOurOpportunities": 4270,
+   "forcedInsideWord": 260,
+   "unexplained": 0,
+   "examples": []
+  },
+  "vocab_my.txt": {
+   "texts": 3000,
+   "layouts": 36000,
+   "lineStartsInsideSA": 99980,
+   "atOurOpportunities": 83434,
+   "forcedInsideWord": 16546,
+   "unexplained": 0,
+   "examples": []
+  }
+ }
+}

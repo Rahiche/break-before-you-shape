@@ -16,3 +16,10 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
+flutter:
+  # ICU's Thai, Lao, Khmer and Burmese word dictionaries, copied byte for byte
+  # from Flutter's icudtl.dat by tool/extract_dictionaries.dart (527 KB), for
+  # lib/src/dictionary_break.dart.
+  assets:
+    - assets/dictionaries/
