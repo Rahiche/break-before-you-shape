@@ -465,7 +465,9 @@ class WidthModel {
   /// Builds the tables by measuring with [measure] at font size = units per em.
   /// With [noLigaCertText] (certify.py with CERTIFY_FEATURES_OFF=liga,clig,calt)
   /// and [measureNoLiga] (the engine's widths without ligatures), also the tables
-  /// for letter-spaced text.
+  /// for letter-spaced text. The island bound shrinks below the certificate's
+  /// until the islands times the safe characters (the island measurements) fit
+  /// [islandBudget]; a longer run of island characters is handed to Flutter.
   static WidthModel distill(
     String certText,
     Measure measure,
@@ -477,9 +479,11 @@ class WidthModel {
     bool rtl = false,
     double Function(String text, int k)? measurePrefix,
     double Function(String text, int k)? measurePrefixNoLiga,
+    int islandBudget = 2500000,
   }) {
     final rows = _CertRows(certText);
-    final name = rows.name, m = rows.m, pairsNone = rows.pairsNone;
+    final name = rows.name, pairsNone = rows.pairsNone;
+    var m = rows.m;
     final cps = rows.cps, cl = rows.cl, canFirst = rows.canFirst, canSecond = rows.canSecond;
     final n1 = cps.length;
     // A joining form is measured in its context: a zero-width joiner before a
@@ -578,6 +582,24 @@ class WidthModel {
       for (var id = 1; id < n1; id++)
         if (cl[id] == certS) id,
     ];
+    // Islands of each length, counted by (has a primer, last joins the next).
+    var count = <(bool, bool), int>{(false, false): 1}, islands = 0;
+    for (var len = 1; len <= m; len++) {
+      final next = <(bool, bool), int>{};
+      for (final e in count.entries) {
+        for (final id in ik) {
+          if (len > 1 && e.key.$2 != jp[id]) continue;
+          final k = (e.key.$1 || cl[id] == certP, jn[id]);
+          next[k] = (next[k] ?? 0) + e.value;
+        }
+      }
+      count = next;
+      islands += (count[(true, false)] ?? 0) + (count[(true, true)] ?? 0);
+      if (islands * safe.length > islandBudget) {
+        m = len - 1;
+        break;
+      }
+    }
     final base = ik.length + 1;
     var keys = 1;
     for (var i = 0; i <= m; i++) {

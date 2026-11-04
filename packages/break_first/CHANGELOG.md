@@ -7,6 +7,11 @@
 - Combining marks: compositions, zero-width marks and kerning across them, from the certificate (class M).
 - Emoji and Brahmic scripts from the device's fallback fonts, measured once per run; `height` uses this before
   laying a paragraph out with Flutter.
+- Thai, Lao, Khmer and Burmese: ICU's dictionary line breaks ported to Dart (`dictionaryBreaks`, the dictionaries
+  ship as package assets); runs from the device's fonts are measured once, like Brahmic text.
+- The sidecar build bounds its island tables: when the islands times the safe characters pass 2.5 million
+  measurements (`WidthModel.distill(islandBudget:)`), the island bound drops below the certificate's, and longer runs
+  of island characters go to Flutter. Script faces with many ligatures built for hours before.
 - Fixes: the hard-break calibration probes the character with the largest kern against a space; font-size calibration
   works without canary strings.
 
