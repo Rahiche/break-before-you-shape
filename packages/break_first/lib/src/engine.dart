@@ -19,12 +19,20 @@ ui.Paragraph layoutParagraph(
   double? height,
   int? maxLines,
   bool rtl = false,
+  ui.StrutStyle? strut,
+  ui.TextHeightBehavior? textHeightBehavior,
+  List<ui.FontFeature>? fontFeatures,
 }) {
   final b =
       ui.ParagraphBuilder(
-          maxLines == null && !rtl
+          maxLines == null && !rtl && strut == null && textHeightBehavior == null
               ? _ps
-              : ui.ParagraphStyle(textDirection: rtl ? ui.TextDirection.rtl : ui.TextDirection.ltr, maxLines: maxLines),
+              : ui.ParagraphStyle(
+                  textDirection: rtl ? ui.TextDirection.rtl : ui.TextDirection.ltr,
+                  maxLines: maxLines,
+                  strutStyle: strut,
+                  textHeightBehavior: textHeightBehavior,
+                ),
         )
         ..pushStyle(
           ui.TextStyle(
@@ -33,10 +41,58 @@ ui.Paragraph layoutParagraph(
             letterSpacing: letterSpacing == 0 ? null : letterSpacing,
             wordSpacing: wordSpacing == 0 ? null : wordSpacing,
             height: height,
+            fontFeatures: fontFeatures,
           ),
         )
         ..addText(text);
   return b.build()..layout(ui.ParagraphConstraints(width: width));
+}
+
+/// Heights of a paragraph's lines in one style, from Flutter: with one font,
+/// every line has the same metrics, so only the first line (and with
+/// TextHeightBehavior, the last) can differ from the others.
+class LineHeights {
+  const LineHeights(this.one, this.two, this.three);
+
+  /// Heights of paragraphs of one, two and three lines.
+  final double one, two, three;
+
+  /// Height of a paragraph of [lines] lines (an empty one has one line).
+  double of(int lines) => lines <= 1 ? one : two + (lines - 2) * (three - two);
+}
+
+/// [LineHeights] for one style: three layouts of one to three lines. For styles
+/// whose heights [lineHeightPx] does not model (struts, TextHeightBehavior).
+LineHeights probeLineHeights({
+  required String fontFamily,
+  required double fontSize,
+  double? height,
+  ui.StrutStyle? strut,
+  ui.TextHeightBehavior? textHeightBehavior,
+}) {
+  double h(String t) {
+    final p = layoutParagraph(t, fontFamily: fontFamily, fontSize: fontSize, height: height, strut: strut,
+        textHeightBehavior: textHeightBehavior);
+    final v = p.height;
+    p.dispose();
+    return v;
+  }
+
+  return LineHeights(h('Hg'), h('Hg\nHg'), h('Hg\nHg\nHg'));
+}
+
+/// Ascent and descent, px, of a line in one style (font metrics, so the same for
+/// any text in the font): what rich-text lines take the maximum of.
+(double, double) probeAscentDescent({
+  required String fontFamily,
+  required double fontSize,
+  double? height,
+  List<ui.FontFeature>? fontFeatures,
+}) {
+  final p = layoutParagraph('Hg', fontFamily: fontFamily, fontSize: fontSize, height: height, fontFeatures: fontFeatures);
+  final m = p.computeLineMetrics().first;
+  p.dispose();
+  return (m.ascent, m.descent);
 }
 
 /// Width of [text] on one line, trailing spaces included (cluster advances). A
@@ -48,6 +104,7 @@ double measureText(
   required double fontSize,
   double letterSpacing = 0,
   bool rtl = false,
+  List<ui.FontFeature>? fontFeatures,
 }) {
   final p = layoutParagraph(
     text,
@@ -55,6 +112,7 @@ double measureText(
     fontSize: fontSize,
     letterSpacing: letterSpacing,
     rtl: rtl,
+    fontFeatures: fontFeatures,
     // Just wide enough: float32 coordinates near 1e6 px are only good to 1/16 px.
     width: rtl ? fontSize * (text.length + 2) * 8 : double.infinity,
   );
@@ -77,6 +135,7 @@ double measurePrefixText(
   required double fontSize,
   bool rtl = false,
   double letterSpacing = 0,
+  List<ui.FontFeature>? fontFeatures,
 }) {
   final p = layoutParagraph(
     text,
@@ -84,6 +143,7 @@ double measurePrefixText(
     fontSize: fontSize,
     rtl: rtl,
     letterSpacing: letterSpacing,
+    fontFeatures: fontFeatures,
     width: rtl ? fontSize * (text.length + 2) * 8 : double.infinity,
   );
   var r = 0.0, l = double.infinity;
@@ -106,6 +166,66 @@ int upemOf(Uint8List font) {
   throw StateError('no head table');
 }
 
+/// The characters [font] maps, from its cmap (format 12, else format 4), as
+/// sorted inclusive [first, last] pairs.
+List<int> cmapRanges(Uint8List font) {
+  final bd = ByteData.sublistView(font);
+  final n = bd.getUint16(4);
+  var cmap = -1;
+  for (var i = 0; i < n; i++) {
+    final rec = 12 + 16 * i;
+    if (String.fromCharCodes(font.sublist(rec, rec + 4)) == 'cmap') cmap = bd.getUint32(rec + 8);
+  }
+  if (cmap < 0) throw StateError('no cmap table');
+  int? f12, f4;
+  for (var i = 0; i < bd.getUint16(cmap + 2); i++) {
+    final r = cmap + 4 + 8 * i, platform = bd.getUint16(r), encoding = bd.getUint16(r + 2);
+    final sub = cmap + bd.getUint32(r + 4), format = bd.getUint16(sub);
+    final unicode = platform == 0 || (platform == 3 && (encoding == 1 || encoding == 10));
+    if (!unicode) continue;
+    if (format == 12) f12 ??= sub;
+    if (format == 4) f4 ??= sub;
+  }
+  final ranges = <int>[];
+  void add(int a, int b) {
+    if (ranges.isNotEmpty && a <= ranges.last + 1) {
+      if (b > ranges.last) ranges.last = b;
+    } else {
+      ranges.addAll([a, b]);
+    }
+  }
+
+  if (f12 != null) {
+    final groups = <(int, int)>[];
+    for (var g = 0; g < bd.getUint32(f12 + 12); g++) {
+      final r = f12 + 16 + 12 * g;
+      if (bd.getUint32(r + 8) != 0) groups.add((bd.getUint32(r), bd.getUint32(r + 4))); // glyph 0 is .notdef
+    }
+    groups.sort((x, y) => x.$1.compareTo(y.$1));
+    for (final (a, b) in groups) {
+      add(a, b);
+    }
+  } else if (f4 != null) {
+    final segX2 = bd.getUint16(f4 + 6);
+    final ends = f4 + 14, starts = ends + segX2 + 2, deltas = starts + segX2, offs = deltas + segX2;
+    for (var k = 0; k < segX2 ~/ 2; k++) {
+      final end = bd.getUint16(ends + 2 * k), start = bd.getUint16(starts + 2 * k);
+      final delta = bd.getUint16(deltas + 2 * k), ro = bd.getUint16(offs + 2 * k);
+      for (var c = start; c <= end && c != 0xFFFF; c++) {
+        final glyph = ro == 0
+            ? (c + delta) & 0xFFFF
+            : () {
+                final at = offs + 2 * k + ro + 2 * (c - start);
+                final g = bd.getUint16(at);
+                return g == 0 ? 0 : (g + delta) & 0xFFFF;
+              }();
+        if (glyph != 0) add(c, c);
+      }
+    }
+  }
+  return ranges;
+}
+
 /// The build step: distils the sidecar for [font] from its certificate (written
 /// by certify.py) by measuring this engine at a font size equal to the font's
 /// units per em. The font must already be loaded under [fontFamily]. Run it on
@@ -116,6 +236,10 @@ int upemOf(Uint8List font) {
 /// the sidecar also covers letter-spaced text. Those widths are measured the way
 /// the engine produces them: with letter spacing, minus the spacing itself
 /// (measured: each character gains the spacing, plus half of it before the first).
+///
+/// With [fontFeatures], the sidecar describes text with those features: certify
+/// the font with the same features (CERTIFY_FEATURES_ON / CERTIFY_FEATURES_OFF),
+/// and load the sidecar with them.
 WidthModel buildSidecar({
   required String fontFamily,
   required Uint8List font,
@@ -123,49 +247,64 @@ WidthModel buildSidecar({
   String? noLigaCertificate,
   void Function(String text, double units)? measured,
   bool rtl = false,
+  List<ui.FontFeature>? fontFeatures,
 }) {
   final upem = upemOf(font);
   final size = upem.toDouble();
-  final hg = layoutParagraph('Hg', fontFamily: fontFamily, fontSize: size);
+  final ff = fontFeatures;
+  final hg = layoutParagraph('Hg', fontFamily: fontFamily, fontSize: size, fontFeatures: ff);
   final lineHeight = hg.height;
   hg.dispose();
   const spacing = 64.0;
-  return WidthModel.distill(
+  final md = WidthModel.distill(
     certificate,
     (s) {
-      final w = measureText(s, fontFamily: fontFamily, fontSize: size, rtl: rtl);
+      final w = measureText(s, fontFamily: fontFamily, fontSize: size, rtl: rtl, fontFeatures: ff);
       measured?.call(s, w);
       return w;
     },
     upem,
     lineHeight,
     rtl: rtl,
-    measurePrefix: (s, k) => measurePrefixText(s, k, fontFamily: fontFamily, fontSize: size, rtl: rtl),
+    measurePrefix: (s, k) => measurePrefixText(s, k, fontFamily: fontFamily, fontSize: size, rtl: rtl, fontFeatures: ff),
     measurePrefixNoLiga: (s, k) =>
-        measurePrefixText(s, k, fontFamily: fontFamily, fontSize: size, rtl: rtl, letterSpacing: spacing) -
+        measurePrefixText(s, k, fontFamily: fontFamily, fontSize: size, rtl: rtl, letterSpacing: spacing,
+            fontFeatures: ff) -
         (k + 0.5) * spacing,
     noLigaCertText: noLigaCertificate,
     measureNoLiga: (s) =>
-        measureText(s, fontFamily: fontFamily, fontSize: size, letterSpacing: spacing, rtl: rtl) -
+        measureText(s, fontFamily: fontFamily, fontSize: size, letterSpacing: spacing, rtl: rtl, fontFeatures: ff) -
         (s.length + 0.5) * spacing,
     // Negative spacing keeps ligatures: each glyph cluster gains it once, plus half
     // of it before the first.
     clustersOf: (s) =>
-        ((measureText(s, fontFamily: fontFamily, fontSize: size, letterSpacing: -spacing, rtl: rtl) -
-                        measureText(s, fontFamily: fontFamily, fontSize: size, rtl: rtl)) /
+        ((measureText(s, fontFamily: fontFamily, fontSize: size, letterSpacing: -spacing, rtl: rtl, fontFeatures: ff) -
+                        measureText(s, fontFamily: fontFamily, fontSize: size, rtl: rtl, fontFeatures: ff)) /
                     -spacing -
                 0.5)
             .round(),
   );
+  md.coverage = cmapRanges(font);
+  return md;
 }
 
 /// Calibrates this engine's conventions that differ between platforms (font
 /// size rounding, kerning before a hard break), for the font loaded under
 /// [fontFamily].
-void calibrateEngine(WidthModel md, String fontFamily) {
-  calibrateFontSize(md, (s, size) => measureText(s, fontFamily: fontFamily, fontSize: size, rtl: md.rtl));
+void calibrateEngine(WidthModel md, String fontFamily, {List<ui.FontFeature>? fontFeatures}) {
+  calibrateFontSize(
+    md,
+    (s, size) => measureText(s, fontFamily: fontFamily, fontSize: size, rtl: md.rtl, fontFeatures: fontFeatures),
+  );
   calibrateHardBreak(md, (s) {
-    final p = layoutParagraph(s, fontFamily: fontFamily, fontSize: md.upem.toDouble(), rtl: md.rtl, width: 1e5);
+    final p = layoutParagraph(
+      s,
+      fontFamily: fontFamily,
+      fontSize: md.upem.toDouble(),
+      rtl: md.rtl,
+      width: 1e5,
+      fontFeatures: fontFeatures,
+    );
     final w = p.computeLineMetrics().first.width;
     p.dispose();
     return w;
@@ -174,10 +313,12 @@ void calibrateEngine(WidthModel md, String fontFamily) {
 
 /// Largest difference, in px at 16 px, between the canary widths stored in the
 /// sidecar and this engine's widths for the font loaded under [fontFamily].
-double canaryError(WidthModel md, String fontFamily) {
+double canaryError(WidthModel md, String fontFamily, {List<ui.FontFeature>? fontFeatures}) {
   var maxErr = 0.0;
   for (final e in md.probes.entries) {
-    final engine = measureText(e.key, fontFamily: fontFamily, fontSize: 16.0, rtl: md.rtl) / (16.0 / md.upem);
+    final engine =
+        measureText(e.key, fontFamily: fontFamily, fontSize: 16.0, rtl: md.rtl, fontFeatures: fontFeatures) /
+        (16.0 / md.upem);
     final err = (engine - e.value).abs() * 16.0 / md.upem;
     if (err > maxErr) maxErr = err;
   }

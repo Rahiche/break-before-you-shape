@@ -1,0 +1,110 @@
+{
+ "paragraphs": 2700,
+ "joined": 2700,
+ "-liga": {
+  "canaryErrPx": 0.0,
+  "default": {
+   "identical": 47947,
+   "different": 0,
+   "deferred": 653,
+   "heightsEqual": 47947
+  },
+  "letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "identical": 45606,
+   "different": 0,
+   "deferred": 2994,
+   "heightsEqual": 45606
+  }
+ },
+ "c2sc+smcp": {
+  "canaryErrPx": 0.0,
+  "default": {
+   "identical": 47912,
+   "different": 0,
+   "deferred": 688,
+   "heightsEqual": 47912
+  },
+  "letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "identical": 45432,
+   "different": 0,
+   "deferred": 3168,
+   "heightsEqual": 45432
+  }
+ },
+ "dlig": {
+  "canaryErrPx": 0.0,
+  "default": {
+   "identical": 47056,
+   "different": 0,
+   "deferred": 1544,
+   "heightsEqual": 47056
+  },
+  "letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "identical": 13728,
+   "different": 0,
+   "deferred": 34872,
+   "heightsEqual": 13728
+  }
+ },
+ "frac": {
+  "canaryErrPx": 0.0,
+  "default": {
+   "identical": 46249,
+   "different": 0,
+   "deferred": 2351,
+   "heightsEqual": 46249
+  },
+  "letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "identical": 41435,
+   "different": 0,
+   "deferred": 7165,
+   "heightsEqual": 41435
+  }
+ },
+ "onum+ss01": {
+  "canaryErrPx": 0.0,
+  "default": {
+   "identical": 47947,
+   "different": 0,
+   "deferred": 653,
+   "heightsEqual": 47947
+  },
+  "letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "identical": 45574,
+   "different": 0,
+   "deferred": 3026,
+   "heightsEqual": 45574
+  }
+ },
+ "smcp": {
+  "canaryErrPx": 0.0,
+  "default": {
+   "identical": 47844,
+   "different": 0,
+   "deferred": 756,
+   "heightsEqual": 47844
+  },
+  "letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "identical": 45265,
+   "different": 0,
+   "deferred": 3335,
+   "heightsEqual": 45265
+  }
+ },
+ "tnum": {
+  "canaryErrPx": 0.0,
+  "default": {
+   "identical": 47940,
+   "different": 0,
+   "deferred": 660,
+   "heightsEqual": 47940
+  },
+  "letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "identical": 45606,
+   "different": 0,
+   "deferred": 2994,
+   "heightsEqual": 45606
+  }
+ },
+ "examples": []
+}

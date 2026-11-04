@@ -189,6 +189,12 @@ const styleConfigs = {
   'height 1.3': LineOptions(height: 1.3),
   'maxLines 3': LineOptions(maxLines: 3),
   'combined': LineOptions(letterSpacing: 0.7, wordSpacing: 1.5, height: 1.2, maxLines: 4),
+  'strut 20 px, forced': LineOptions(strutStyle: StrutStyle(fontSize: 20, forceStrutHeight: true)),
+  'strut height 1.6, leading 0.4': LineOptions(strutStyle: StrutStyle(height: 1.6, leading: 0.4)),
+  'height 1.5, no first ascent or last descent': LineOptions(
+      height: 1.5, textHeightBehavior: TextHeightBehavior(applyHeightToFirstAscent: false, applyHeightToLastDescent: false)),
+  'height 1.4, even leading': LineOptions(
+      height: 1.4, textHeightBehavior: TextHeightBehavior(leadingDistribution: TextLeadingDistribution.even)),
 };
 
 /// Exactness with style options and hard line breaks: every corpus, its
@@ -218,6 +224,12 @@ Future<Map<String, Object?>> validateStyles(WidthModel md, {int sample = 2000}) 
       for (final size in sizes) {
         final scale = scaleFor(md, size);
         final lh = lineHeightPx(md, size, height: o.height);
+        // Struts and TextHeightBehavior: heights from three probe layouts.
+        final probed = o.strutStyle != null || o.textHeightBehavior != null
+            ? probeLineHeights(fontFamily: family, fontSize: size, height: o.height, strut: o.uiStrutStyle,
+                textHeightBehavior: o.textHeightBehavior)
+            : null;
+        double expected(int lines) => probed?.of(lines) ?? lines * lh;
         for (var k = 0; k < 8; k++) {
           final w = size * (9.0 + k * 36.0 / 7);
           for (var i = 0; i < e.value.length; i++) {
@@ -229,7 +241,8 @@ Future<Map<String, Object?>> validateStyles(WidthModel md, {int sample = 2000}) 
             }
             if (o.maxLines != null && ours.length > o.maxLines!) ours = ours.sublist(0, o.maxLines!);
             final p = layoutParagraph(t, fontFamily: family, fontSize: size, width: w, letterSpacing: o.letterSpacing,
-                wordSpacing: o.wordSpacing, height: o.height, maxLines: o.maxLines);
+                wordSpacing: o.wordSpacing, height: o.height, maxLines: o.maxLines, strut: o.uiStrutStyle,
+                textHeightBehavior: o.textHeightBehavior);
             final theirs = flutterLineStarts(p, t);
             lines += theirs.length;
             var eq = ours.length == theirs.length;
@@ -239,10 +252,10 @@ Future<Map<String, Object?>> validateStyles(WidthModel md, {int sample = 2000}) 
             if (eq) {
               same++;
               checked++;
-              if ((ours.length * lh - p.height).abs() < 1e-3) {
+              if ((expected(ours.length) - p.height).abs() < 1e-3) {
                 heightSame++;
               } else if (examples.where((x) => x.startsWith(c.key)).length < 3) {
-                examples.add('${c.key} ${e.key} height size=$size ours=${ours.length * lh} flutter=${p.height}');
+                examples.add('${c.key} ${e.key} height size=$size ours=${expected(ours.length)} flutter=${p.height}');
               }
             } else {
               diff++;

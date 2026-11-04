@@ -1,0 +1,153 @@
+{
+ "Roboto": {
+  "marks": 8,
+  "compositions": 165,
+  "canaryErrPx": 0.0,
+  "ui_de_nfd": {
+   "texts": 1803,
+   "identical": 18,
+   "different": 0,
+   "deferred": 32436,
+   "heightsEqual": 18
+  },
+  "ui_de_nfd, letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "texts": 601,
+   "identical": 0,
+   "different": 0,
+   "deferred": 10818,
+   "heightsEqual": 0
+  },
+  "ui_el_nfd": {
+   "texts": 3000,
+   "identical": 50308,
+   "different": 0,
+   "deferred": 3692,
+   "heightsEqual": 50308
+  },
+  "ui_el_nfd, letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "texts": 1000,
+   "identical": 15209,
+   "different": 0,
+   "deferred": 2791,
+   "heightsEqual": 15209
+  },
+  "ui_fr_nfd": {
+   "texts": 2154,
+   "identical": 29701,
+   "different": 0,
+   "deferred": 9071,
+   "heightsEqual": 29701
+  },
+  "ui_fr_nfd, letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "texts": 718,
+   "identical": 5964,
+   "different": 0,
+   "deferred": 6960,
+   "heightsEqual": 5964
+  },
+  "ui_ru_nfd": {
+   "texts": 1589,
+   "identical": 18,
+   "different": 0,
+   "deferred": 28584,
+   "heightsEqual": 18
+  },
+  "ui_ru_nfd, letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "texts": 529,
+   "identical": 0,
+   "different": 0,
+   "deferred": 9522,
+   "heightsEqual": 0
+  },
+  "ui_uk_nfd": {
+   "texts": 1406,
+   "identical": 0,
+   "different": 0,
+   "deferred": 25308,
+   "heightsEqual": 0
+  },
+  "ui_uk_nfd, letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "texts": 468,
+   "identical": 0,
+   "different": 0,
+   "deferred": 8424,
+   "heightsEqual": 0
+  }
+ },
+ "Arial": {
+  "marks": 115,
+  "compositions": 782,
+  "canaryErrPx": 0.0,
+  "ui_de_nfd": {
+   "texts": 1803,
+   "identical": 29856,
+   "different": 0,
+   "deferred": 2598,
+   "heightsEqual": 29856
+  },
+  "ui_de_nfd, letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "texts": 601,
+   "identical": 8930,
+   "different": 0,
+   "deferred": 1888,
+   "heightsEqual": 8930
+  },
+  "ui_el_nfd": {
+   "texts": 3000,
+   "identical": 51362,
+   "different": 0,
+   "deferred": 2638,
+   "heightsEqual": 51362
+  },
+  "ui_el_nfd, letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "texts": 1000,
+   "identical": 15737,
+   "different": 0,
+   "deferred": 2263,
+   "heightsEqual": 15737
+  },
+  "ui_fr_nfd": {
+   "texts": 2154,
+   "identical": 36666,
+   "different": 0,
+   "deferred": 2106,
+   "heightsEqual": 36666
+  },
+  "ui_fr_nfd, letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "texts": 718,
+   "identical": 10867,
+   "different": 0,
+   "deferred": 2057,
+   "heightsEqual": 10867
+  },
+  "ui_ru_nfd": {
+   "texts": 1589,
+   "identical": 24909,
+   "different": 0,
+   "deferred": 3693,
+   "heightsEqual": 24909
+  },
+  "ui_ru_nfd, letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "texts": 529,
+   "identical": 7149,
+   "different": 0,
+   "deferred": 2373,
+   "heightsEqual": 7149
+  },
+  "ui_uk_nfd": {
+   "texts": 1406,
+   "identical": 22982,
+   "different": 0,
+   "deferred": 2326,
+   "heightsEqual": 22982
+  },
+  "ui_uk_nfd, letterSpacing 0.5, wordSpacing 1, hard breaks": {
+   "texts": 468,
+   "identical": 6535,
+   "different": 0,
+   "deferred": 1889,
+   "heightsEqual": 6535
+  }
+ },
+ "examples": []
+}

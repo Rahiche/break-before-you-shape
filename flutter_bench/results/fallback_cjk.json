@@ -1,0 +1,10 @@
+{
+ "texts": 2400,
+ "fallback": {
+  "identical": 30674,
+  "different": 0,
+  "deferred": 5326,
+  "heightsEqual": 30674
+ },
+ "examples": []
+}

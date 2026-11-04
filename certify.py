@@ -66,8 +66,8 @@ import unicodedata
 
 from fontTools.ttLib import TTFont
 
-RANGES = [(0x20, 0x7E), (0xA0, 0x24F), (0x2B0, 0x2FF), (0x2010, 0x2027), (0x2030, 0x205E), (0x20AC, 0x20AC),
-          (0x2122, 0x2122)]
+RANGES = [(0x20, 0x7E), (0xA0, 0x24F), (0x2B0, 0x2FF), (0x300, 0x36F), (0x2010, 0x2027), (0x2030, 0x205E),
+          (0x20AC, 0x20AC), (0x2122, 0x2122)]
 if "greek" in os.environ.get("CERTIFY_SCRIPTS", ""):
     RANGES.append((0x370, 0x3FF))
 if "cyrillic" in os.environ.get("CERTIFY_SCRIPTS", ""):
@@ -93,6 +93,10 @@ FEATURES = {"rvrn", "ltra", "ltrm", "rand", "ccmp", "locl", "rlig", "calt", "cli
 # Features the engine switches off, e.g. CERTIFY_FEATURES_OFF=liga,clig,calt for
 # Flutter text with letter spacing (measured: it disables ligatures).
 FEATURES -= set(f for f in os.environ.get("CERTIFY_FEATURES_OFF", "").split(",") if f)
+# Features the app turns on for the whole text (Flutter's fontFeatures), e.g.
+# CERTIFY_FEATURES_ON=tnum,smcp. HarfBuzz applies them to every character.
+FEATURES_ON = set(f for f in os.environ.get("CERTIFY_FEATURES_ON", "").split(",") if f)
+FEATURES |= FEATURES_ON
 # Right-to-left paragraphs (CERTIFY_DIRECTION=rtl): HarfBuzz applies rtla/rtlm instead
 # of ltra/ltrm.
 if os.environ.get("CERTIFY_DIRECTION") == "rtl":
@@ -182,7 +186,28 @@ def make_unsafe(cps, reason):
 
 
 make_unsafe([cp for cp in chars if cp == 0x2044], "fraction slash triggers frac/numr/dnom")
-make_unsafe([cp for cp in chars if gdef_class.get(nominal[cp]) == 3], "GDEF mark")
+# Combining marks (class M): non-spacing marks the font classes as marks in GDEF.
+# HarfBuzz composes a base and a following mark into the precomposed character the
+# font has (normalization, before any lookup; COMPOSE lists the font's), and zeroes
+# the advance of every GDEF mark after positioning: a mark left uncomposed takes
+# no width. Kerning either skips it or stops at it, by lookup flags (mark_mode).
+MARKS = {cp for cp in chars if gdef_class.get(nominal[cp]) == 3 and unicodedata.category(chr(cp)) in ("Mn", "Me")}
+make_unsafe([cp for cp in chars if gdef_class.get(nominal[cp]) == 3 and cp not in MARKS], "GDEF mark")
+# Hebrew: without GPOS mark positioning HarfBuzz composes points into presentation
+# forms instead (not modelled).
+if "hebrew" in os.environ.get("CERTIFY_SCRIPTS", "") and not (
+        "GPOS" in font and font["GPOS"].table.FeatureList and
+        any(fr.FeatureTag == "mark" for fr in font["GPOS"].table.FeatureList.FeatureRecord)):
+    make_unsafe([cp for cp in MARKS if 0x591 <= cp <= 0x5C7], "Hebrew points without GPOS mark")
+MARK_GLYPHS = {nominal[cp] for cp in MARKS}
+COMPOSE = []
+for _c in sorted(cmap):
+    _d = unicodedata.decomposition(chr(_c))
+    if _d and not _d.startswith("<"):
+        _parts = [int(x, 16) for x in _d.split()]
+        if len(_parts) == 2 and _parts[1] in MARKS and _parts[0] in cmap and \
+                unicodedata.normalize("NFC", chr(_parts[0]) + chr(_parts[1])) == chr(_c):
+            COMPOSE.append((_parts[0], _parts[1], _c))
 
 
 def form_substitutes():
@@ -657,6 +682,8 @@ except Unprovable as e:
 POS_MACHINES, POS_FAIL = build_pos_machines()
 if "mort" in font and "morx" not in font:
     CONFIG_FAIL = "mort table not analysed"
+if FEATURES_ON and "morx" in font and "GSUB" not in font:
+    CONFIG_FAIL = "features turned on for an AAT font (not mapped to selectors)"
 
 
 class Step:
@@ -1183,6 +1210,39 @@ def analyse_aat(live, status, formed):
     return blocked, None, produced, glyphs_of, m_eff
 
 
+def single_reach():
+    """Glyphs each glyph can become under the active single substitutions (GSUB type 1
+    lookups a feature applies to every glyph they cover: context-free, so a character
+    keeps one glyph wherever it stands, and its measured width is that glyph's). The
+    identity plus every image, closed under repeated application in any order (a
+    superset of what the lookup order allows)."""
+    if "GSUB" not in font or "morx" in font:
+        return {}
+    maps = [st.mapping for lk in active_lookups("GSUB")[1] for typ, st in subtables(lk, 7) if typ == 1]
+    reach = {}
+    for g in set(nominal.values()):
+        seen, todo = {g}, [g]
+        while todo:
+            x = todo.pop()
+            for m in maps:
+                y = m.get(x)
+                if y is not None and y not in seen:
+                    seen.add(y)
+                    todo.append(y)
+        reach[g] = seen
+    return reach
+
+
+REACH = single_reach()
+
+
+def reach_of(cp):
+    return REACH.get(nominal[cp], {nominal[cp]})
+
+
+MARK_INFO = {}  # mark -> (kerning modes, exclusions), from the last round
+
+
 def run_round():
     """One pass of the analysis given the current unsafe set. Returns
     (status per char, new unsafe reasons, island bound)."""
@@ -1199,14 +1259,25 @@ def run_round():
 
     # ---------------- GSUB: which ligatures can form at all
     ot_ligs = []
+    mark_ligs = []  # (head, first mark): a base and an uncomposed mark the font joins
+    mark_only_ligs = []  # (marks, mark glyph): marks the font joins into one mark
     gsub_lookups = active_lookups("GSUB")[1] if "GSUB" in font else []
     for lk in gsub_lookups:
         for typ, st in subtables(lk, 7):
             if typ == 4:
                 for head, ligs in st.ligatures.items():
                     for lig in ligs:
-                        ot_ligs.append((head, list(lig.Component), lig.LigGlyph))
-    present = {nominal[cp] for cp in live}
+                        comps = list(lig.Component)
+                        if head not in MARK_GLYPHS and comps and comps[0] in MARK_GLYPHS:
+                            mark_ligs.append((head, comps[0]))
+                        elif head in MARK_GLYPHS and all(c in MARK_GLYPHS for c in comps) and \
+                                gdef_class.get(lig.LigGlyph) == 3:
+                            # Marks joined into one mark (shadda and a vowel): no width
+                            # either way; kerning must treat the result as its parts.
+                            mark_only_ligs.append(([head] + comps, lig.LigGlyph))
+                        else:
+                            ot_ligs.append((head, comps, lig.LigGlyph))
+    present = {g for cp in live for g in reach_of(cp)}
     formed = []
     changed = True
     while changed:
@@ -1217,12 +1288,27 @@ def run_round():
                 formed.append((head, comps, out))
                 changed = True
     for head, comps, out in formed:
-        promote([cp for cp in live if nominal[cp] == head], "P")
-        promote([cp for cp in live if nominal[cp] in comps], "K")
+        promote([cp for cp in live if head in reach_of(cp)], "P")
+        promote([cp for cp in live if reach_of(cp) & set(comps)], "K")
+    for cp in live:
+        if cp in MARKS and (status[cp] != "S" or any(g not in MARK_GLYPHS for g in reach_of(cp))):
+            blocked.setdefault(cp, "mark in a ligature or substituted to a non-mark")
+    excl = {}  # mark -> characters next to which a rule can fire on it (left uncomposed)
+    mode = {}  # mark -> set of: kerning skips it (True), stops at it (False)
+    # A ligature of a base and a mark (ccmp: the font's own compositions, also for
+    # pairs Unicode has no composite for). HarfBuzz composes the pairs the cmap has
+    # first; the rest reach the ligature, so the breaker leaves those to Flutter.
+    for head, mk in mark_ligs:
+        bases = [cp for cp in live if head in reach_of(cp)]
+        for cp in live:
+            if mk in reach_of(cp):
+                excl.setdefault(cp, set()).update(bases)
 
     # ---------------- AAT: morx, and the kerx / kern state machines
     aat_blocked, font_wide_fail, aat_outputs, glyphs_of, m_eff = analyse_aat(live, status, formed)
     outputs |= aat_outputs
+    for cp in live:
+        glyphs_of[cp] = set(glyphs_of[cp]) | reach_of(cp)
     for cp, why in aat_blocked.items():
         blocked.setdefault(cp, why)
     island_chars = [cp for cp in live if status[cp] != "S"]
@@ -1259,13 +1345,41 @@ def run_round():
             if not gs:
                 return  # some position can never match: the rule cannot fire
             live_sets.append(gs)
+        # Two positions, one only marks and one a few other characters: the rule can
+        # fire only on a mark left uncomposed next to one of them. The breaker hands
+        # those clusters to Flutter (the mark's exclusions) instead.
+        if len(live_sets) == 2:
+            for ms, bs in (live_sets, live_sets[::-1]):
+                if ms & MARK_GLYPHS and not bs & MARK_GLYPHS and len(bs) <= 64 and not bs & outputs:
+                    near = {c for g in bs for c in glyph_chars.get(g, [])}
+                    for g in ms & MARK_GLYPHS:
+                        for cp in glyph_chars.get(g, []):
+                            excl.setdefault(cp, set()).update(near)
+                    rest = ms - MARK_GLYPHS  # glyphs in the mark position that are not GDEF marks
+                    if rest:
+                        block_glyphs(min([rest, bs], key=weight), reason)
+                    return
         block_glyphs(min(live_sets, key=weight), reason)
+
+    def skips(lk, g):
+        """Whether lookup lk skips mark glyph g when it looks for the next glyph."""
+        flag = lk.LookupFlag
+        if flag & 0x8:
+            return True
+        if flag & 0x10 and "GDEF" in font and font["GDEF"].table.MarkGlyphSetsDef:
+            sets = font["GDEF"].table.MarkGlyphSetsDef.Coverage
+            return lk.MarkFilteringSet >= len(sets) or g not in set(sets[lk.MarkFilteringSet].glyphs)
+        if flag & 0xFF00 and "GDEF" in font and font["GDEF"].table.MarkAttachClassDef:
+            return font["GDEF"].table.MarkAttachClassDef.classDefs.get(g, 0) != flag >> 8
+        return False
 
     # ---------------- GSUB: everything but ligatures that can fire on present glyphs
     for lk in gsub_lookups:
         for typ, st in subtables(lk, 7):
-            if typ in (1, 2):
-                block_glyphs(st.mapping, "GSUB single/multiple substitution")
+            if typ == 1:
+                pass  # in glyphs_of: each character's glyph is fixed (single_reach)
+            elif typ == 2:
+                block_glyphs(st.mapping, "GSUB multiple substitution")
             elif typ == 3:
                 block_glyphs(st.alternates, "GSUB alternate substitution")
             elif typ in (5, 6, 8):
@@ -1283,14 +1397,36 @@ def run_round():
                     cov = st.Coverage.glyphs
                     if st.ValueFormat2:
                         block_glyphs(cov, "PairPos with ValueFormat2 skips the next pair")
+                    # Marks: skipped, or the pair stops at them; never kerned themselves.
+                    if st.Format == 1:
+                        second = {r.SecondGlyph for ps in st.PairSet for r in ps.PairValueRecord}
+                        every2 = False
+                    else:
+                        second = set((st.ClassDef2.classDefs if st.ClassDef2 else {}).keys())
+                        every2 = any(c1.Class2Record[0].Value1 is not None and
+                                     any(getattr(c1.Class2Record[0].Value1, a, 0) for a in c1.Class2Record[0].Value1.__dict__)
+                                     for c1 in st.Class1Record)
+                    for g in MARK_GLYPHS & gstar:
+                        sk = skips(lk, g)
+                        for cp in glyph_chars.get(g, []):
+                            mode.setdefault(cp, set()).add(sk)
+                        if not sk and (g in cov or g in second or every2):
+                            block_glyphs([g], "a mark in pair kerning")
+                    for parts, out in mark_only_ligs:
+                        sk = skips(lk, out)
+                        if (not sk and (out in cov or out in second or every2)) or \
+                                any(skips(lk, g) != sk for g in parts):
+                            block_glyphs(parts, "marks joined into a mark kerning differently")
                 elif typ == 3:
                     cov = st.Coverage.glyphs
                     block_glyphs(cov, "cursive attachment")
                 elif typ in (4, 5):
-                    cov = st.MarkCoverage.glyphs
+                    # Mark attachment moves marks, never advances; GDEF marks' advances are
+                    # zeroed after positioning. Only glyphs that are not GDEF marks matter.
+                    cov = [g for g in st.MarkCoverage.glyphs if gdef_class.get(g) != 3]
                     block_glyphs(cov, "mark attachment")
                 elif typ == 6:
-                    cov = st.Mark1Coverage.glyphs
+                    cov = [g for g in st.Mark1Coverage.glyphs if gdef_class.get(g) != 3]
                     block_glyphs(cov, "mark attachment")
                 elif typ in (7, 8):
                     for pos in rule_positions(st, "context" if typ == 7 else "chain"):
@@ -1303,6 +1439,25 @@ def run_round():
                     block_glyphs(cov, "lookup ignores ligatures")
     # kern formats 0, 2, 3 and kerx formats 0, 2, 6 are pair kerning (hb_kern_machine_t); kerx format 4
     # and cross-stream subtables only move offsets. Format 1 state machines are analysed above.
+    # HarfBuzz's kern machine skips marks; marks in an AAT font are not modelled.
+    if "kerx" in font or "morx" in font:
+        block_glyphs(MARK_GLYPHS, "mark in an AAT font")
+    elif "kern" in font:
+        kerned = set()
+        for kt in font["kern"].kernTables:
+            if getattr(kt, "format", None) == 0:
+                kerned |= {g for pair in kt.kernTable for g in pair}
+            else:
+                kerned |= MARK_GLYPHS
+        block_glyphs(MARK_GLYPHS & kerned, "a mark in kern table pairs")
+        for cp in live:
+            if cp in MARKS:
+                mode.setdefault(cp, set()).add(True)
+    for cp, m in mode.items():
+        if len(m) > 1:
+            blocked.setdefault(cp, "kerning lookups disagree on skipping the mark")
+    MARK_INFO.clear()
+    MARK_INFO.update({cp: (mode.get(cp, {True}), excl.get(cp, set())) for cp in live if cp in MARKS})
     return status, blocked, m_eff
 
 
@@ -1460,14 +1615,25 @@ with open(out_path, "w") as fp:
     # The column covers pairs of characters that are not combining marks: the
     # breaker never accepts those (they are outside its line-break table).
     p1, p2 = (set(), set()) if free else pair_sets()
+    # Compositions HarfBuzz makes (base, mark, composite in the font), for the breaker.
+    for b, mk, c in COMPOSE:
+        fp.write(f"# compose {b:04X} {mk:04X} {c:04X}\n")
     for cp in chars:
         g = nominal[cp]
+        gs = reach_of(cp)
         # Combining marks too: HarfBuzz sets their advance by Unicode category, so
         # the character before one can change width with it (measured: Roboto's
         # U+0387 next to U+0488).
         island = final[cp] in ("P", "K") or unicodedata.category(chr(cp)).startswith("M")
-        f = "f" if island or p1 is None or g in p1 else ""
-        s2 = "s" if island or p2 is None or g in p2 else ""
+        f = "f" if island or p1 is None or gs & p1 else ""
+        s2 = "s" if island or p2 is None or gs & p2 else ""
+        if cp in MARKS and final[cp] == "S":
+            # A mark: combining class, whether kerning skips it, and characters next to
+            # which it must not be left uncomposed.
+            modes, near = MARK_INFO.get(cp, ({True}, set()))
+            fp.write(f"{cp:04X} {gid[g]} M {unicodedata.combining(chr(cp))} {'skip' if True in modes else 'break'} "
+                     f"{','.join(f'{x:04X}' for x in sorted(near)) or '-'}\n")
+            continue
         fp.write(f"{cp:04X} {gid[g]} {final[cp]} {f + s2 or '-'}\n")
 
 if os.environ.get("CERTIFY_DUMP"):

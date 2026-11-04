@@ -82,15 +82,28 @@ int _joining(int cu) {
 
 /// Id of the joining letter at [i] in the form HarfBuzz's Arabic shaper gives it
 /// from its neighbours' joining types, or 0 when the sidecar has no such form.
-int _formId(WidthModel md, String t, int i) {
-  final cu = t.codeUnitAt(i);
-  final jp = i > 0 && _joining(t.codeUnitAt(i - 1)) == 2;
-  final jn = _joining(cu) == 2 && i + 1 < t.length && _joining(t.codeUnitAt(i + 1)) > 0;
+int _formId(WidthModel md, String t, int i, [int? cu]) {
+  cu ??= t.codeUnitAt(i);
+  // Combining marks are transparent to joining (Unicode joining type T): the
+  // neighbours are the nearest characters that are not marks. HarfBuzz composes
+  // first, but every composition of an Arabic letter keeps its joining type.
+  var a = i - 1, b = i + 1;
+  while (a >= 0 && isCombiningMark(t.codeUnitAt(a))) {
+    a--;
+  }
+  while (b < t.length && isCombiningMark(t.codeUnitAt(b))) {
+    b++;
+  }
+  final jp = a >= 0 && _joining(t.codeUnitAt(a)) == 2;
+  final jn = _joining(cu) == 2 && b < t.length && _joining(t.codeUnitAt(b)) > 0;
   return md.formIdOf[(cu - 0x600) * 4 + (jp ? (jn ? 2 : 3) : (jn ? 1 : 0))];
 }
 
 // Certificate classes from certify.py.
 const int certS = 0, certK = 1, certP = 2, certU = 3;
+
+/// A combining mark the font zeroes (GDEF mark): no width when left uncomposed.
+const int certM = 4;
 
 /// SkParagraph's line-fit test, emulated in float32: a line fits when its width,
 /// floored to 1/100 px (1/10 px from 10,000 px), is not greater than the box width.
@@ -126,9 +139,19 @@ double effectiveFontSize(double size) => quantizeFontSize ? (size * 64).floorToD
 /// One layout tells whether this engine quantizes font sizes: at 16.01 px a
 /// quantizing engine lays out at 16.0 px.
 void calibrateFontSize(WidthModel md, double Function(String, double) measure) {
-  final probe = md.probes.keys.first;
+  // A canary string, or else any certified character with a width.
+  var probe = md.probes.keys.firstOrNull, units = probe == null ? 0.0 : md.probes[probe]!;
+  if (probe == null) {
+    for (var id = 1; id < md.n1 && probe == null; id++) {
+      if (md.cert[id] == certS && md.cps[id] < 0x10000 && md.adv[id] > 0) {
+        probe = String.fromCharCode(md.cps[id]);
+        units = md.adv[id];
+      }
+    }
+    if (probe == null) return;
+  }
   const size = 16.01;
-  final effective = measure(probe, size) / md.probes[probe]! * md.upem;
+  final effective = measure(probe, size) / units * md.upem;
   quantizeFontSize = (effective - (size * 64).floorToDouble() / 64).abs() < (effective - size).abs();
 }
 
@@ -139,18 +162,24 @@ void calibrateFontSize(WidthModel md, double Function(String, double) measure) {
 bool hardBreakKerns = true;
 
 /// One layout tells whether this engine kerns a hard break like a space: line 0
-/// of "a\nb" for a character a that kerns with a space. [lineWidth] gives the
-/// width of a text's first line, in font units.
+/// of "a\nb" for the character a whose kern with a space is largest (a tiny one,
+/// a float artifact, could not tell). [lineWidth] gives the width of a text's
+/// first line, in font units.
 void calibrateHardBreak(WidthModel md, double Function(String) lineWidth) {
   final sp = md.idOf[0x20];
   if (sp == 0) return;
+  var best = 0, bestKern = 0.0;
   for (var a = 1; a < md.n1; a++) {
-    final v = md.pair(a, sp), rs = md.clsRight?[md.fc[a] + md.sc[sp]] ?? 0;
-    if (v == 0 || md.cert[a] != certS || lbClass(md.cps[a]) == lbXX || md.cps[a] == 0x20) continue;
-    final w = lineWidth('${String.fromCharCode(md.cps[a])}\nx');
-    hardBreakKerns = (w - (md.adv[a] + v - rs)).abs() < (w - md.adv[a]).abs();
-    return;
+    final v = md.pair(a, sp) - (md.clsRight?[md.fc[a] + md.sc[sp]] ?? 0);
+    if (md.cert[a] != certS || lbClass(md.cps[a]) == lbXX || md.cps[a] == 0x20) continue;
+    if (v.abs() > bestKern.abs()) {
+      best = a;
+      bestKern = v;
+    }
   }
+  if (bestKern.abs() < 1) return; // no kern with a space to tell by: nothing to model
+  final w = lineWidth('${String.fromCharCode(md.cps[best])}\nx');
+  hardBreakKerns = (w - (md.adv[best] + bestKern)).abs() < (w - md.adv[best]).abs();
 }
 
 /// Flutter's height of one line at [size]. Default style: the font's line height
@@ -176,10 +205,21 @@ class _CertRows {
   // Fourth column: whether the character can be the first (f) or second (s)
   // glyph of a pair adjustment. Without it, both.
   final canFirst = <bool>[false], canSecond = <bool>[false];
+  // Marks (class M): code point -> (combining class, kerning stops at it,
+  // characters next to which it must not be left uncomposed).
+  final marks = <int, (int, bool, Set<int>)>{};
+  // HarfBuzz's compositions the font has: (base << 21 | mark) -> composite.
+  final compose = <int, int>{};
 
   _CertRows(String certText) {
     for (final line in certText.split('\n')) {
+      if (line.startsWith('# compose ')) {
+        final x = line.substring(10).trim().split(' ').map((h) => int.parse(h, radix: 16)).toList();
+        compose[x[0] << 21 | x[1]] = x[2];
+        continue;
+      }
       if (line.startsWith('#')) {
+        if (!line.contains(' m=')) continue;
         final mm = RegExp(r'm=(\d+)').firstMatch(line);
         if (mm != null) m = int.parse(mm.group(1)!);
         pairsNone = line.contains(' pairs=none');
@@ -187,13 +227,23 @@ class _CertRows {
         continue;
       }
       final parts = line.trim().split(RegExp(r'\s+'));
-      if (parts.length != 3 && parts.length != 4) continue;
+      if (parts.length < 3) continue;
       final cp = int.parse(parts[0], radix: 16);
-      final c = const {'S': certS, 'K': certK, 'P': certP, 'U': certU}[parts[2]]!;
+      final c = const {'S': certS, 'K': certK, 'P': certP, 'U': certU, 'M': certM}[parts[2]]!;
       if (c == certU || (cp >= 0x10000 && cp < _vBase) || (cp >= 0xD800 && cp < 0xE000)) continue;
+      if (c == certM) {
+        if (parts.length != 6) continue;
+        marks[cp] = (
+          int.parse(parts[3]),
+          parts[4] == 'break',
+          parts[5] == '-' ? <int>{} : {for (final h in parts[5].split(',')) int.parse(h, radix: 16)},
+        );
+      } else if (parts.length != 3 && parts.length != 4) {
+        continue;
+      }
       cps.add(cp);
       cl.add(c);
-      final roles = parts.length == 4 ? parts[3] : 'fs';
+      final roles = c == certM ? '-' : (parts.length == 4 ? parts[3] : 'fs');
       canFirst.add(roles.contains('f'));
       canSecond.add(roles.contains('s'));
     }
@@ -255,6 +305,38 @@ class WidthModel {
   /// right-to-left; a left-to-right one, paragraphs with no right-to-left
   /// characters. Mixed-direction paragraphs go to Flutter.
   bool rtl = false;
+
+  /// Combining marks the certificate models: code point -> (combining class,
+  /// kerning stops at it rather than skipping it, characters next to which it
+  /// must not be left uncomposed). Empty for sidecars without marks.
+  Map<int, (int, bool, Set<int>)> marks = const {};
+
+  /// HarfBuzz's compositions of a base and a mark that the font has:
+  /// (base << 21 | mark) -> composite.
+  Map<int, int> compose = const {};
+
+  /// Every character the font maps (its cmap), as inclusive [first, last] pairs,
+  /// certified or not: Flutter's font fallback picks the first font that has a
+  /// character. Null for sidecars built without it.
+  List<int>? coverage;
+
+  /// Whether the font has [cp], or null when the sidecar does not say.
+  bool? hasCodePoint(int cp) {
+    final c = coverage;
+    if (c == null) return null;
+    var lo = 0, hi = c.length ~/ 2 - 1;
+    while (lo <= hi) {
+      final mid = (lo + hi) >> 1;
+      if (cp < c[2 * mid]) {
+        hi = mid - 1;
+      } else if (cp > c[2 * mid + 1]) {
+        lo = mid + 1;
+      } else {
+        return true;
+      }
+    }
+    return false;
+  }
   final int upem, m;
   final double lineHeight; // one line's height, in units
   final Int32List cps; // id -> codepoint (id 0 = not in the model)
@@ -322,6 +404,7 @@ class WidthModel {
           'K': certK,
           'P': certP,
           'U': certU,
+          'M': certM,
         }[line.trim().split(RegExp(r'\s+'))[2]]!,
   };
 
@@ -405,6 +488,18 @@ class WidthModel {
     String realize(String core, int first, int last) => '${jp[first] ? '\u200D' : ''}$core${jn[last] ? '\u200D' : ''}';
     final adv = Float64List(n1);
     for (var id = 1; id < n1; id++) {
+      if (cl[id] == certM) {
+        // A mark: HarfBuzz zeroes a GDEF mark's advance. Checked after a base it
+        // neither composes with nor is excluded next to; otherwise not modelled.
+        final info = rows.marks[cps[id]]!;
+        final base = [0x30, 0x78, 0x71].firstWhere(
+          (b) => rows.compose[b << 21 | cps[id]] == null && !info.$3.contains(b),
+          orElse: () => -1,
+        );
+        final b = String.fromCharCode(base);
+        if (base < 0 || (measure(b + str[id]) - measure(b)).abs() > 1e-9) cl[id] = certU;
+        continue;
+      }
       adv[id] = measure(realize(str[id], id, id));
     }
     // Pairs measured: first-capable × second-capable characters; every other pair
@@ -475,7 +570,7 @@ class WidthModel {
     // Islands: every P/K string of length <= m that contains a primer.
     final ik = [
       for (var id = 1; id < n1; id++)
-        if (cl[id] != certS) id,
+        if (cl[id] == certK || cl[id] == certP) id,
     ];
     final safe = [
       for (var id = 1; id < n1; id++)
@@ -576,6 +671,11 @@ class WidthModel {
       probes,
     );
     md.rtl = rtl;
+    md.marks = {
+      for (final e in rows.marks.entries)
+        if (cl[cps.indexOf(e.key)] == certM) e.key: e.value,
+    };
+    md.compose = rows.compose;
     if (clsRight != null || splitIslands) {
       md.clsRight = clsRight ?? Float64List(nF * nS);
       md.islandLRight = Float64List.fromList(lRight);
@@ -606,6 +706,12 @@ class WidthModel {
         if (clsRight != null) 'split': true,
         if (noLigaRowRight != null) 'splitNoLiga': true,
         if (noLigaCert != null) 'noLiga': true,
+        if (coverage != null) 'coverage': coverage,
+        if (marks.isNotEmpty)
+          'marks': [
+            for (final e in marks.entries) [e.key, e.value.$1, e.value.$2 ? 1 : 0, e.value.$3.toList()..sort()],
+          ],
+        if (compose.isNotEmpty) 'compose': [for (final e in compose.entries) ...[e.key >> 21, e.key & 0x1FFFFF, e.value]],
       }),
     );
     final b = BytesBuilder()
@@ -738,6 +844,17 @@ class WidthModel {
       (meta['probes'] as Map).map((k, v) => MapEntry(k as String, (v as num).toDouble())),
     );
     md.rtl = meta['direction'] == 'rtl';
+    if (meta['coverage'] != null) md.coverage = (meta['coverage'] as List).cast<int>();
+    if (meta['marks'] != null) {
+      md.marks = {
+        for (final e in (meta['marks'] as List).cast<List>())
+          e[0] as int: (e[1] as int, e[2] == 1, (e[3] as List).cast<int>().toSet()),
+      };
+    }
+    if (meta['compose'] != null) {
+      final c = (meta['compose'] as List).cast<int>();
+      md.compose = {for (var i = 0; i + 2 < c.length; i += 3) c[i] << 21 | c[i + 1]: c[i + 2]};
+    }
     if (meta['noLiga'] == true) {
       md.noLigaCert = Uint8List.fromList(copy.sublist(off, off + n1));
       off = (off + n1 + 3) & ~3;
@@ -1336,6 +1453,10 @@ class Records {
   /// Word spacing is unknown for this paragraph: it has a space on a bidi run
   /// boundary (measured: Flutter spaces some of those and not others).
   bool wordSpacingUnsure = false;
+
+  /// Widths are px from runs at several scales ([buildRichRecords]): always
+  /// allow for float drift.
+  bool inexact = false;
   final Float64List prefix;
   final Int32List ends, nexts; // line would end at ends[j]; next line starts at nexts[j]
   final int count; // the last record is the end of the paragraph
@@ -1366,7 +1487,8 @@ class Records {
     final maxF = _toF32(maxWidth);
     final ls = letterSpacing, ws = wordSpacing;
     final len = prefix.length - 1;
-    final rel = exactPositions(scale, prefix[len] * scale + ls.abs() * len + ws.abs() * spaceCount[count], ls, ws)
+    final rel =
+        !inexact && exactPositions(scale, prefix[len] * scale + ls.abs() * len + ws.abs() * spaceCount[count], ls, ws)
         ? 0.0
         : driftPerPx;
     var unsure = false;
@@ -1449,7 +1571,65 @@ bool isHardBreak(int cu) => cu == 0x0A || cu == 0x2028 || cu == 0x2029;
 /// (count, riskyCount), or null when a character is outside the line-break table.
 /// The text splits at hard breaks into segments (UAX #14 LB4, LB6: always break
 /// after one, never before); each segment's last record ends its line there.
+/// Combining marks (UAX #14 class CM) of the scripts the breaker handles.
+bool isCombiningMark(int cu) =>
+    (cu >= 0x300 && cu <= 0x36F) ||
+    (cu >= 0x483 && cu <= 0x489) ||
+    (cu >= 0x591 && cu <= 0x5BD) ||
+    cu == 0x5BF ||
+    cu == 0x5C1 ||
+    cu == 0x5C2 ||
+    cu == 0x5C4 ||
+    cu == 0x5C5 ||
+    cu == 0x5C7 ||
+    (cu >= 0x610 && cu <= 0x61A) ||
+    (cu >= 0x64B && cu <= 0x65F) ||
+    cu == 0x670 ||
+    (cu >= 0x6D6 && cu <= 0x6DC) ||
+    (cu >= 0x6DF && cu <= 0x6E4) ||
+    cu == 0x6E7 ||
+    cu == 0x6E8 ||
+    (cu >= 0x6EA && cu <= 0x6ED) ||
+    (cu >= 0x1AB0 && cu <= 0x1AFF) ||
+    (cu >= 0x1DC0 && cu <= 0x1DFF) ||
+    (cu >= 0x20D0 && cu <= 0x20FF) ||
+    (cu >= 0xFE20 && cu <= 0xFE2F);
+
+/// Break opportunities with combining marks: LB9 (X CM* is X) is UAX #14 on the
+/// text without its marks, positions mapped back; a mark after a space, a hard
+/// break or nothing (LB10) sends the paragraph to Flutter.
 (int, int)? _opportunities(String t) {
+  var marks = false;
+  for (var i = 0; i < t.length && !marks; i++) {
+    marks = isCombiningMark(t.codeUnitAt(i));
+  }
+  if (!marks) return _opportunitiesNoMarks(t);
+  final b = StringBuffer(), at = <int>[];
+  for (var i = 0; i < t.length; i++) {
+    final cu = t.codeUnitAt(i);
+    if (isCombiningMark(cu)) {
+      if (i == 0 || t.codeUnitAt(i - 1) == 0x20 || isHardBreak(t.codeUnitAt(i - 1))) return null;
+      continue;
+    }
+    at.add(i);
+    b.writeCharCode(cu);
+  }
+  at.add(t.length);
+  final r = _opportunitiesNoMarks(b.toString());
+  if (r == null) return null;
+  final (n, nr) = r;
+  for (var j = 0; j < n; j++) {
+    _ends[j] = at[_ends[j]];
+    _nexts[j] = at[_nexts[j]];
+  }
+  for (var j = 0; j < nr; j++) {
+    _rEnds[j] = at[_rEnds[j]];
+    _rNexts[j] = at[_rNexts[j]];
+  }
+  return r;
+}
+
+(int, int)? _opportunitiesNoMarks(String t) {
   final len = t.length;
   if (_ends.length < len + 2) {
     _ends = Int32List(len * 2 + 2);
@@ -1645,10 +1825,64 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
       continue;
     }
     if (gate && (md.rtl ? _strongLOrNumber(cu) : _strongR(cu))) return false; // a mixed-direction paragraph
-    final id = _joining(cu) > 0 ? _formId(md, t, i) : idOf[cu];
+    var id = _joining(cu) > 0 ? _formId(md, t, i) : idOf[cu];
     if (id == 0) return false;
-    final c = cert[id];
-    if (c == certU) return false;
+    var c = cert[id];
+    if (c == certU || c == certM) return false; // a mark here has no base (LB10)
+    // A base and its combining marks: HarfBuzz composes them (marks sorted by
+    // combining class, each composing with the base unless blocked by a kept mark
+    // of the same or a higher class) into the composite the font has, which is
+    // then the character here; marks left over take no width, and kerning either
+    // skips them or stops at them.
+    var mEnd = i + 1;
+    while (mEnd < end && isCombiningMark(t.codeUnitAt(mEnd))) {
+      mEnd++;
+    }
+    var keptMarks = 0, stops = false;
+    if (mEnd > i + 1) {
+      if (c != certS || mEnd - i > 32) return false;
+      final ms = [for (var k = i + 1; k < mEnd; k++) t.codeUnitAt(k)];
+      final info = [for (final x in ms) md.marks[x]];
+      if (info.any((x) => x == null || x.$1 == 0)) return false;
+      // HarfBuzz's Arabic shaper moves modifier marks (hamza above and below, and
+      // a few more) ahead of the others, which can change what composes.
+      if (ms.length > 1 && ms.any((x) => const {0x654, 0x655, 0x658, 0x6DC, 0x6E3, 0x6E7, 0x6E8}.contains(x))) {
+        return false;
+      }
+      final order = List.generate(ms.length, (k) => k)..sort((a, b) {
+        final d = info[a]!.$1 - info[b]!.$1;
+        return d != 0 ? d : a - b;
+      });
+      var starter = cu, lastKept = -1, composed = 0;
+      final kept = <int>[];
+      for (final k in order) {
+        final cc = info[k]!.$1;
+        final comp = md.compose[starter << 21 | ms[k]];
+        if (comp != null && (kept.isEmpty || lastKept < cc)) {
+          starter = comp;
+          composed++;
+          continue;
+        }
+        kept.add(k);
+        lastKept = cc;
+      }
+      if (starter >= 0x10000) return false;
+      id = _joining(starter) > 0 ? _formId(md, t, i, starter) : idOf[starter];
+      if (id == 0 || cert[id] != certS) return false;
+      c = certS;
+      final next = mEnd < end ? t.codeUnitAt(mEnd) : -1;
+      for (final k in kept) {
+        final x = info[k]!;
+        if (x.$3.contains(starter) || x.$3.contains(next)) return false; // a rule could fire on it
+        stops = stops || x.$2;
+      }
+      keptMarks = kept.length;
+      if (clusters && keptMarks > 0) return false; // negative spacing: clusters not measured with marks
+      if (composed > 0) {
+        (lossEnds ??= []).add(mEnd); // composed marks are no glyphs of their own
+        (lossDelta ??= []).add(composed);
+      }
+    }
     final s = scriptOf(cu);
     if (s != scCommon && s != run) {
       run = s; // a new script run: no pair adjustment across it
@@ -1724,6 +1958,12 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
     prevId = id;
     prevIsland = -1;
     i++;
+    if (mEnd > i) {
+      for (; i < mEnd; i++) {
+        prefix[i] = double.nan; // inside the cluster: never a break position
+      }
+      if (keptMarks > 0 && stops) prevId = 0; // the next pair adjustment stops at a mark
+    }
   }
   pass.p = p;
   pass.run = run;
@@ -1795,6 +2035,41 @@ Records? buildBidiRecords(
     }
   }
   return r;
+}
+
+/// Rich text, left to right: [runs] are shaping runs (start, end, sidecar, px per
+/// unit) that cover [t] in order. A change of font or size starts a new run
+/// (measured: no pair adjustment crosses it, and widths add up); spans that
+/// differ only in colour or decoration belong to one run. The prefix is in px,
+/// so lines are broken at scale 1.
+Records? buildRichRecords(String t, List<(int, int, WidthModel, double)> runs, {double letterSpacing = 0}) {
+  final pass = _start(t, letterSpacing), px = pass.prefix;
+  var offset = 0.0, at = 0, script = pass.run;
+  for (final (a, b, md, scale) in runs) {
+    if (a != at || b <= a || b > t.length) return null;
+    final sub = _start(t, letterSpacing);
+    // Scripts are itemized over the whole paragraph, across font changes: neutrals
+    // at the start of a run continue the script before them (measured: a space
+    // in Roboto after Chinese text does not kern with the Latin letter after it).
+    for (var q = a; q < t.length && script == scCommon; q++) {
+      script = scriptOf(t.codeUnitAt(q));
+    }
+    sub.run = script;
+    if (!_widths(md, t, a, b, sub)) return null;
+    script = sub.run;
+    for (var i = a; i < b; i++) {
+      px[i] = offset + sub.prefix[i] * scale; // NaN inside islands stays NaN
+    }
+    offset += sub.p * scale;
+    if (sub.lossEnds != null) {
+      (pass.lossEnds ??= []).addAll(sub.lossEnds!);
+      (pass.lossDelta ??= []).addAll(sub.lossDelta!);
+    }
+    at = b;
+  }
+  if (at != t.length) return null;
+  pass.p = offset;
+  return _finish(t, pass)?..inexact = true;
 }
 
 Records? _finish(String t, _Pass pass) {

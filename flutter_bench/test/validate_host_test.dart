@@ -8,8 +8,10 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   testWidgets('validate on host', (tester) async {
     await tester.runAsync(() async {
-      final r = await runApp(mode: 'validate', sample: int.parse(Platform.environment['BF_SAMPLE'] ?? '100000'));
-      File('results/host_validate.json').writeAsStringSync(const JsonEncoder.withIndent(' ').convert(r));
+      // BF_MODE: validate (default) or styles.
+      final mode = Platform.environment['BF_MODE'] ?? 'validate';
+      final r = await runApp(mode: mode, sample: int.parse(Platform.environment['BF_SAMPLE'] ?? '100000'));
+      File('results/host_$mode.json').writeAsStringSync(const JsonEncoder.withIndent(' ').convert(r));
       print('HOST ${jsonEncode(r['canary'])}');
     });
   }, timeout: const Timeout(Duration(hours: 2)));
