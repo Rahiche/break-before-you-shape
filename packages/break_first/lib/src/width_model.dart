@@ -17,6 +17,8 @@ library;
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'dictionary_break.dart';
+
 typedef Measure = double Function(String text);
 
 // Virtual characters of certify.py: _vBase + 4 * letter + joining form (0 isolated,
@@ -1649,12 +1651,35 @@ bool isCombiningMark(int cu) =>
   var marks = false;
   for (var i = 0; i < t.length && !marks; i++) {
     final cu = t.codeUnitAt(i);
-    marks = isCombiningMark(cu) || (cu >= 0xD800 && cu < 0xDC00) || cu == 0x200D || cu == 0xFE0F || isBrahmic(cu);
+    marks = isCombiningMark(cu) ||
+        (cu >= 0xD800 && cu < 0xDC00) ||
+        cu == 0x200D ||
+        cu == 0xFE0F ||
+        isBrahmic(cu) ||
+        isComplexContext(cu);
   }
   if (!marks) return _opportunitiesNoMarks(t);
-  final b = StringBuffer(), at = <int>[];
+  final b = StringBuffer(), at = <int>[], extra = <int>[];
   for (var i = 0; i < t.length; i++) {
     final cu = t.codeUnitAt(i);
+    // A run of Thai, Lao, Khmer or Burmese (UAX #14 class SA): one AL character
+    // for the rules around it, and inside it the breaks ICU's dictionaries find
+    // (dictionary_break.dart). A run that starts with a mark, or whose break could
+    // fall inside a grapheme (the font's clusters decide), goes to Flutter.
+    if (isComplexContext(cu)) {
+      var j = i + 1;
+      while (j < t.length && isComplexContext(t.codeUnitAt(j))) {
+        j++;
+      }
+      if (isComplexContextMark(cu)) return null;
+      final br = dictionaryBreaks(t, i, j);
+      if (br == null || br.any((p) => breakMayBeInsideGrapheme(t, p))) return null;
+      extra.addAll(br);
+      at.add(i);
+      b.writeCharCode(0x61);
+      i = j - 1;
+      continue;
+    }
     if (isCombiningMark(cu) || cu == 0xFE0F) {
       if (i == 0 || t.codeUnitAt(i - 1) == 0x20 || isHardBreak(t.codeUnitAt(i - 1))) return null;
       continue;
@@ -1695,7 +1720,31 @@ bool isCombiningMark(int cu) =>
     _rEnds[j] = at[_rEnds[j]];
     _rNexts[j] = at[_rNexts[j]];
   }
-  return r;
+  if (extra.isEmpty) return r;
+  // The dictionary breaks, among the records in order of position.
+  final ends = <int>[], nexts = <int>[], mand = <int>[];
+  var x = 0;
+  for (var j = 0; j < n; j++) {
+    while (x < extra.length && extra[x] < _nexts[j]) {
+      ends.add(extra[x]);
+      nexts.add(extra[x++]);
+      mand.add(0);
+    }
+    ends.add(_ends[j]);
+    nexts.add(_nexts[j]);
+    mand.add(_mand[j]);
+  }
+  if (_ends.length < ends.length + 2) {
+    _ends = Int32List(ends.length * 2 + 2);
+    _nexts = Int32List(ends.length * 2 + 2);
+    _mand = Uint8List(ends.length * 2 + 2);
+  }
+  for (var j = 0; j < ends.length; j++) {
+    _ends[j] = ends[j];
+    _nexts[j] = nexts[j];
+    _mand[j] = mand[j];
+  }
+  return (ends.length, nr);
 }
 
 (int, int)? _opportunitiesNoMarks(String t) {

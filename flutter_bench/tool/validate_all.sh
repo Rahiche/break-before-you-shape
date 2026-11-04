@@ -1,7 +1,8 @@
 #!/bin/sh
 # Every local check against Flutter's own layout, on macOS (system fonts are read
 # in place, never copied into the repository). Results go to results/.
-# Needs the corpora (tool/prepare_assets.sh, then ../make_test_texts.py) and
+# Needs the corpora (tool/prepare_assets.sh, ../make_corpora.py ../corpora sea, then
+# ../make_test_texts.py) and
 # fontTools. usage: tool/validate_all.sh [python]
 set -e
 cd "$(dirname "$0")/.."
@@ -44,6 +45,10 @@ echo "== emoji and Brahmic scripts from the device's fallback fonts"
 EMOJI_OUT="$PWD/results/emoji_device.json" flutter test test/emoji_test.dart
 INDIC_CORPUS=../corpora/ui_hi.txt:../corpora/ui_bn.txt:../corpora/ui_ta.txt INDIC_OUT="$PWD/results/indic_device.json" \
   flutter test test/indic_test.dart
+echo "== Thai, Lao, Khmer and Burmese (ICU's dictionaries), from the device's fonts"
+DICT_OUT="$PWD/results/dictionary_break.json" flutter test test/dictionary_break_test.dart
+SEA_CORPUS=$(ls ../corpora/ui_th.txt ../corpora/names_*.txt ../corpora/vocab_*.txt | tr '\n' ':' | sed 's/:$//') \
+  SEA_OUT="$PWD/results/dictionary_scripts.json" flutter test test/dictionary_scripts_test.dart
 echo "== right to left: Hebrew and Arabic, with spacing and mixed direction; points and harakat"
 for f in Arial "Times New Roman"; do
   n=$(echo "$f" | tr 'A-Z ' 'a-z_')

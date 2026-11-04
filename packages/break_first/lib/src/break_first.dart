@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/painting.dart';
 
+import 'dictionary_break.dart';
 import 'engine.dart';
 import 'width_model.dart';
 
@@ -298,9 +299,12 @@ class RichParagraph {
         // An emoji cluster, or a run of Brahmic letters, no bundled font has: the
         // device's fallback font.
         var e = emojiClusterEnd(s.text, i);
-        // The danda (U+0964, U+0965) comes from the same fallback font.
-        bool inRun(int x) => isBrahmic(x) || x == 0x964 || x == 0x965;
-        final brahmic = e == i && inRun(cu);
+        // The danda (U+0964, U+0965) comes from the same fallback font. Thai, Lao,
+        // Khmer and Burmese (class SA) runs are measured the same way, with
+        // offsets at their dictionary breaks.
+        final sa = e == i && isComplexContext(cu);
+        bool inRun(int x) => sa ? isComplexContext(x) : isBrahmic(x) || x == 0x964 || x == 0x965;
+        final brahmic = e == i && (sa || inRun(cu));
         if (brahmic) {
           e = i + 1;
           while (e < s.text.length) {
@@ -413,13 +417,14 @@ class RichParagraph {
     for (var i = 0; i < run.length;) {
       final e = emojiClusterEnd(run, i);
       if (e == i) {
-        // Letters: no break inside a run of them (LB28a), only after a danda.
-        for (var k = 1; k < run.length; k++) {
-          final c = run.codeUnitAt(k - 1);
-          if (c == 0x964 || c == 0x965) {
-            final boxes = p.getBoxesForRange(0, k);
-            offsets[k] = boxes.isEmpty ? 0 : boxes.map((x) => x.right).reduce((x, y) => x > y ? x : y);
-          }
+        // Letters: no break inside a Brahmic run (LB28a) but after a danda; in a
+        // Thai, Lao, Khmer or Burmese run, at the dictionary breaks.
+        final at = isComplexContext(run.codeUnitAt(0))
+            ? (dictionaryBreaks(run, 0, run.length) ?? const <int>[])
+            : [for (var k = 1; k < run.length; k++) if (const {0x964, 0x965}.contains(run.codeUnitAt(k - 1))) k];
+        for (final k in at) {
+          final boxes = p.getBoxesForRange(0, k);
+          offsets[k] = boxes.isEmpty ? 0 : boxes.map((x) => x.right).reduce((x, y) => x > y ? x : y);
         }
         offsets[run.length] = p.computeLineMetrics().first.width;
         break;
