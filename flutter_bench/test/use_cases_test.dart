@@ -32,7 +32,8 @@ void main() {
       // Flutter's.
       final server = Platform.environment['SERVER_HEIGHTS'];
       if (server != null) {
-        final heights = (jsonDecode(File(server).readAsStringSync())['heights'] as List).cast<num?>();
+        final cli = jsonDecode(File(server).readAsStringSync()) as Map<String, dynamic>;
+        final heights = (cli['heights'] as List).cast<num?>();
         final chat = <String>[for (final c in chatCorpora) ...await loadCorpus(c)];
         expect(heights.length, chat.length);
         var equal = 0, decided = 0;
@@ -43,7 +44,8 @@ void main() {
           if ((p.height - heights[i]!).abs() < 1e-3) equal++;
           p.dispose();
         }
-        r['server'] = {'texts': chat.length, 'decided': decided, 'heightsEqual': equal};
+        r['server'] = {'texts': chat.length, 'decided': decided, 'heightsEqual': equal,
+            'cliMedianMs': cli['medianMs'], 'cliLoadMs': cli['loadMs']};
         File(Platform.environment['USECASES_OUT'] ?? 'results/use_cases_host.json')
             .writeAsStringSync(const JsonEncoder.withIndent(' ').convert(r));
         expect(equal, decided);

@@ -25,6 +25,8 @@
 - `package:break_first/model.dart`: the width model and breaker without Flutter, for background isolates, servers and
   command-line tools (Flutter's own text layout fails outside the root isolate).
 - Flutter web: pair keys are arithmetic, not shifts (which truncate to 32 bits there); checked against CanvasKit.
+- Records build about 1.6× faster: the combining-mark and special-character tests are tables below U+3000, and
+  per-script lookups happen once per run (each check below U+0300 had grown to some 30 comparisons per character).
 - Fixes: the hard-break calibration probes the character with the largest kern against a space; font-size calibration
   works without canary strings; a face with more than 128 island characters no longer hangs or misreads its
   letter-spaced pairs (island digits were 8-bit; Trattatello); certify.py counts every ligature, also one whose glyph

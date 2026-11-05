@@ -803,8 +803,17 @@ Future<Map<String, Object?>> useCases(WidthModel md, Uint8List sidecar, {int rep
     for (var i = 0; i < chat.length; i++) {
       if ((tpH[i] - bfH[i]).abs() < 1e-3) equal++;
     }
+    // What keeping the records costs: their typed data, against the text's UTF-16 code units.
+    var recordBytes = 0;
+    for (final r in recs) {
+      if (r == null) continue;
+      recordBytes += r.prefix.lengthInBytes + r.ends.lengthInBytes + r.nexts.lengthInBytes + r.riskyEnds.lengthInBytes +
+          r.riskyNexts.lengthInBytes + r.mandatory.lengthInBytes + r.spaceCount.lengthInBytes +
+          (r.clusterLoss?.lengthInBytes ?? 0);
+    }
     out['textScale'] = {'messages': chat.length, 'width': w, 'fromSize': size0, 'toSize': size1,
-        'textPainterMs': tpMs, 'breakFirstMs': bfMs, 'heightsEqual': equal};
+        'textPainterMs': tpMs, 'breakFirstMs': bfMs, 'heightsEqual': equal, 'recordBytes': recordBytes,
+        'codeUnits': chat.fold<int>(0, (a, m) => a + m.length)};
   }
 
   // 3. Pagination: a long document (license texts, then Python documentation) on

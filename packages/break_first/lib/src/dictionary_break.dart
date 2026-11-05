@@ -115,10 +115,10 @@ List<int>? dictionaryWordBreaks(String text, int start, int end) =>
     start < end && isComplexContextMark(text.codeUnitAt(start)) ? null : _breaks(text, start, end, 1);
 
 /// UAX #14 class SA (LineBreak=Complex_Context), Unicode 17.
-bool isComplexContext(int cp) => _inRanges(_sa, cp);
+bool isComplexContext(int cp) => cp >= 0x0E01 && _inRanges(_sa, cp); // 0x0E01: the table's first
 
 /// SA characters with General_Category Mn or Mc: CM for the line rules (LB1).
-bool isComplexContextMark(int cp) => _inRanges(_saMarks, cp);
+bool isComplexContextMark(int cp) => cp >= 0x0E31 && _inRanges(_saMarks, cp);
 
 /// The dictionary script whose engine handles [cp], or null.
 DictionaryScript? dictionaryScriptOf(int cp) {

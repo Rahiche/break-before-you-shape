@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:break_first/break_first.dart';
+import 'package:flutter/foundation.dart' show kIsWasm;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -39,7 +40,8 @@ bool _same(List<int> a, List<int> b) => a.length == b.length && [for (var i = 0;
 double _median(List<double> xs) => (xs.toList()..sort())[xs.length ~/ 2];
 
 Future<Map<String, Object?>> run() async {
-  final out = <String, Object?>{};
+  // dart2wasm runs on skwasm; a --wasm build falls back to dart2js and CanvasKit in a browser without WasmGC.
+  final out = <String, Object?>{'compiler': kIsWasm ? 'dart2wasm' : 'dart2js', 'renderer': kIsWasm ? 'skwasm' : 'canvaskit'};
   final fontData = await rootBundle.load('assets/Roboto-Regular.ttf');
   await (FontLoader(family)..addFont(Future.value(fontData))).load();
   final bytes = (await rootBundle.load('assets/roboto.bfw')).buffer.asUint8List();

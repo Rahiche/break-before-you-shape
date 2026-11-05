@@ -1719,8 +1719,38 @@ int emojiClusterEnd(String t, int i) {
 }
 
 /// Combining marks (UAX #14 class CM) of the scripts the breaker handles.
-bool isCombiningMark(int cu) =>
-    (cu >= 0x300 && cu <= 0x36F) ||
+bool isCombiningMark(int cu) => cu < 0x3000 ? _markBelow3000[cu] == 1 : _isCombiningMark(cu);
+
+// Characters that take the slower path of [_opportunities]: marks, surrogates, ZWJ,
+// VS16, and the scripts measured as runs. [_specialBelow3000]: the same as a table.
+bool _special(int cu) =>
+    isCombiningMark(cu) ||
+    (cu >= 0xD800 && cu < 0xDC00) ||
+    cu == 0x200D ||
+    cu == 0xFE0F ||
+    isBrahmic(cu) ||
+    isComplexContext(cu);
+
+final Uint8List _specialBelow3000 = () {
+  final m = Uint8List(0x3000);
+  for (var c = 0; c < 0x3000; c++) {
+    if (_special(c)) m[c] = 1;
+  }
+  return m;
+}();
+
+// [_isCombiningMark] as a table below U+3000, where it is asked about nearly every character.
+final Uint8List _markBelow3000 = () {
+  final m = Uint8List(0x3000);
+  for (var c = 0x300; c < 0x3000; c++) {
+    if (_isCombiningMark(c)) m[c] = 1;
+  }
+  return m;
+}();
+
+bool _isCombiningMark(int cu) =>
+    cu >= 0x300 &&
+    ((cu <= 0x36F) ||
     (cu >= 0x483 && cu <= 0x489) ||
     (cu >= 0x591 && cu <= 0x5BD) ||
     cu == 0x5BF ||
@@ -1740,7 +1770,7 @@ bool isCombiningMark(int cu) =>
     (cu >= 0x1AB0 && cu <= 0x1AFF) ||
     (cu >= 0x1DC0 && cu <= 0x1DFF) ||
     (cu >= 0x20D0 && cu <= 0x20FF) ||
-    (cu >= 0xFE20 && cu <= 0xFE2F);
+    (cu >= 0xFE20 && cu <= 0xFE2F));
 
 /// Break opportunities with combining marks: LB9 (X CM* is X) is UAX #14 on the
 /// text without its marks, positions mapped back; a mark after a space, a hard
@@ -1749,12 +1779,7 @@ bool isCombiningMark(int cu) =>
   var marks = false;
   for (var i = 0; i < t.length && !marks; i++) {
     final cu = t.codeUnitAt(i);
-    marks = isCombiningMark(cu) ||
-        (cu >= 0xD800 && cu < 0xDC00) ||
-        cu == 0x200D ||
-        cu == 0xFE0F ||
-        isBrahmic(cu) ||
-        isComplexContext(cu);
+    marks = cu < 0x3000 ? _specialBelow3000[cu] == 1 : _special(cu);
   }
   if (!marks) return _opportunitiesNoMarks(t);
   final b = StringBuffer(), at = <int>[], extra = <int>[];
@@ -2019,6 +2044,10 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
   final cr = md.clsRight, lr = md.islandLRight, rr = md.islandRRight;
   if (cr != null && !ligatures && md.noLigaRowRight == null) return false; // no split tables without ligatures
   var prevId = 0, prevIsland = -1;
+  final rtl = md.rtl, markT = _markBelow3000;
+  // The run's script's own lookups over Common characters, looked up per run.
+  final variants = md.scriptVariant;
+  var sv = variants.isEmpty ? null : variants[run];
   var i = start;
   while (i < end) {
     final cu = t.codeUnitAt(i);
@@ -2045,7 +2074,7 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
       i++;
       continue;
     }
-    if (gate && (md.rtl ? _strongLOrNumber(cu) : _strongR(cu))) return false; // a mixed-direction paragraph
+    if (gate && (rtl ? _strongLOrNumber(cu) : _strongR(cu))) return false; // a mixed-direction paragraph
     var id = _joining(cu) > 0 ? _formId(md, t, i) : idOf[cu];
     if (id == 0) return false;
     var c = cert[id];
@@ -2056,7 +2085,10 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
     // then the character here; marks left over take no width, and kerning either
     // skips them or stops at them.
     var mEnd = i + 1;
-    while (mEnd < end && isCombiningMark(t.codeUnitAt(mEnd))) {
+    for (;;) {
+      if (mEnd >= end) break;
+      final nx = t.codeUnitAt(mEnd);
+      if (nx < 0x3000 ? markT[nx] == 0 : !_isCombiningMark(nx)) break; // isCombiningMark, inlined
       mEnd++;
     }
     var keptMarks = 0, stops = false;
@@ -2109,8 +2141,8 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
       run = s; // a new script run: no pair adjustment across it
       prevId = 0;
       prevIsland = -1;
+      sv = variants.isEmpty ? null : variants[run];
     }
-    final sv = md.scriptVariant[run];
     if (sv != null) {
       // This run's script has lookups of its own over some Common characters.
       var q = i - 1;
