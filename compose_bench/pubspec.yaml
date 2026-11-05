@@ -1,0 +1,10 @@
+name: compose_check
+description: Break-first against Jetpack Compose's text layout (host side of the compose_bench app).
+publish_to: none
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  break_first:
+    path: ../packages/break_first

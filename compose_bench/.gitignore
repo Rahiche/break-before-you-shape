@@ -1,0 +1,9 @@
+/build/
+/app/build/
+/.gradle/
+/local.properties
+/.kotlin/
+/app/src/main/assets/*.txt
+/.dart_tool/
+/pubspec.lock
+!/app/src/main/assets/Roboto_LICENSE.txt

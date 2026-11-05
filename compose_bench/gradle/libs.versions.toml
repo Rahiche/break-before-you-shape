@@ -1,0 +1,10 @@
+[versions]
+agp = "9.4.1"
+composeBom = "2026.09.00"
+
+[libraries]
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-ui-text = { group = "androidx.compose.ui", name = "ui-text" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }

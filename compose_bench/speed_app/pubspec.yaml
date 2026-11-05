@@ -1,0 +1,21 @@
+name: bf_speed
+description: Break-first's Compose line breaking timed on the Android emulator (compose_bench).
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  break_first:
+    path: ../../packages/break_first
+  compose_check:
+    path: ..
+
+flutter:
+  # roboto.cert, Compose's widths (compose_check.dart with CACHE_DIR) and the chat
+  # corpora: copied in by ../tool/speed.sh, not shipped.
+  assets:
+    - assets/

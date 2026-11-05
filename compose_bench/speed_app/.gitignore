@@ -1,0 +1,5 @@
+/assets/
+/build/
+.dart_tool/
+.idea/
+*.iml
