@@ -31,7 +31,10 @@
   works without canary strings; a face with more than 128 island characters no longer hangs or misreads its
   letter-spaced pairs (island digits were 8-bit; Trattatello); certify.py counts every ligature, also one whose glyph
   another ligature already makes ("(c)" and "(C)" in Superclarendon); a Thai or Lao run that starts with AM
-  (after a space) goes to Flutter, which starts the line at that space.
+  (after a space) goes to Flutter, which starts the line at that space; a paragraph with a word less than 1/100 px
+  wider than the box goes to Flutter (the line fit floors widths to 1/100 px, SkParagraph's too-long-word test does
+  not, so Flutter breaks that word inside, on the line before; 2 of 636,882 letter-spaced layouts on GitHub's Linux
+  runner).
 
 ## 0.2.0
 

@@ -134,6 +134,42 @@ void main() {
     expect(bytes, sidecar);
   });
 
+  test('a word less than 1/100 px wider than the box goes to Flutter', () {
+    // The line fit floors to 1/100 px; SkParagraph's "too long word" test does
+    // not. Such a word fits a line of its own, yet Flutter breaks it inside, on
+    // the line before (found on GitHub Actions, in Greek with letter spacing).
+    double f32(double x) => (Float32List(1)..[0] = x)[0];
+    final md = WidthModel.decode(sidecar);
+    calibrateEngine(md, family);
+    var cases = 0;
+    for (final word in ['extraordinarily', 'Fußgängerbrücke', 'Ψυχοφθόρα', 'объявление', 'current_schemas()']) {
+      for (final size in [12.0, 13.0, 16.0, 18.4, 24.0]) {
+        for (final ls in [0.0, 0.5]) {
+          final t = 'Ab $word ab';
+          final r = buildRecords(md, t, letterSpacing: ls)!;
+          final scale = scaleFor(md, size);
+          final a = 3, b = 3 + word.length;
+          final w = (r.prefix[b] - r.prefix[a]) * scale + ls * (b - a);
+          final box = (w * 100).floorToDouble() / 100;
+          if (w - box < 1e-3 || !fitsLine(w, f32(box))) continue;
+          final p = layoutParagraph(t, fontFamily: family, fontSize: size, width: box, letterSpacing: ls);
+          final flutter = flutterLineStarts(p);
+          p.dispose();
+          expect(flutter[1], inExclusiveRange(a, b), reason: '$word at $size px, letter spacing $ls');
+          expect(r.lineStarts(box, scale, letterSpacing: ls), isNull);
+          // Past the window the word moves to the next line whole, as before.
+          final wider = layoutParagraph(t, fontFamily: family, fontSize: size, width: box + 0.01, letterSpacing: ls);
+          final ours = r.lineStarts(box + 0.01, scale, letterSpacing: ls);
+          if (ours != null) expect(ours.toList(), flutterLineStarts(wider));
+          wider.dispose();
+          cases++;
+        }
+      }
+    }
+    report['tooLongWordCases'] = cases;
+    expect(cases, greaterThan(10));
+  });
+
   test('line breaks and heights equal Flutter on generated text', () {
     final bf = BreakFirst.load(sidecar, fontFamily: family)!;
     final paras = generate(600, 7);

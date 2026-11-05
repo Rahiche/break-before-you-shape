@@ -1580,7 +1580,7 @@ class Records {
   int _clusters(int s, int e) => clusterLoss == null ? e - s : e - s - (clusterLoss![e] - clusterLoss![s]);
 
   /// Greedy first-fit line starts for a box [maxWidth] px wide at [scale] px per
-  /// unit, or null when Flutter must decide: a word wider than the line, an
+  /// unit, or null when Flutter must decide: a word as wide as the line, an
   /// ambiguous space that could end it, or a fit decision within float drift.
   /// [letterSpacing] is added to every glyph cluster of a line (measured:
   /// SkParagraph adds it to each glyph's advance; build the records with the same
@@ -1653,6 +1653,14 @@ class Records {
         if (unsure) return null;
       }
       if (best == count - 1) return Int32List.fromList(out);
+      // A word wider than the box by less than the 1/100 px floor fits a line of
+      // its own, but SkParagraph tests a word for "too long" without the floor
+      // and then breaks it inside, on this line (measured): Flutter decides.
+      if (mandatory[best] == 0) {
+        final a = nexts[best], b = ends[best + 1];
+        final word = (prefix[b] - prefix[a]) * scale + ls * _clusters(a, b);
+        if (word > maxF - 1e-4 - rel * 2 * (prefix[b] * scale + ls.abs() * b)) return null;
+      }
       s = nexts[best];
       out.add(s);
       k = best + 1;

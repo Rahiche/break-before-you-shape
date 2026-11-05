@@ -357,6 +357,10 @@ static int32_t wrap(const Model *md, const Records *r, int32_t len, double max_w
       if (f.unsure) return -1;
     }
     if (best == count - 1) return lines;
+    // A word up to the 1/100 px floor wider than the box (Dart: lineStarts).
+    if ((prefix[r->ends[best + 1]] - prefix[r->nexts[best]]) * scale >
+        f.max_f - 1e-4 - f.rel * 2 * prefix[r->ends[best + 1]] * scale)
+      return -1;
     s = r->nexts[best];
     if (starts && lines < cap) starts[lines] = s;
     lines++;
