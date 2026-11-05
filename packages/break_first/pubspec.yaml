@@ -1,6 +1,6 @@
 name: break_first
-description: Exact line breaks and paragraph heights before shaping, from a precompiled, certified per-font width model.
-version: 0.3.0
+description: "What if you could ask a Text its size before layout? Text('hi').width, .height(w), .canFit(w): exact, from a small per-font sidecar."
+version: 0.3.1
 repository: https://github.com/Rahiche/break-before-you-shape/tree/main/packages/break_first
 
 environment:

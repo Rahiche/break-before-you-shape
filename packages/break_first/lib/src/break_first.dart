@@ -73,6 +73,24 @@ class BreakFirst {
   /// Largest canary error on this device, px at 16 px.
   final double canaryErrorPx;
 
+  static final _registered = <String, BreakFirst>{};
+
+  /// The DefaultTextStyle a [Text] is measured under without a BuildContext
+  /// (`Text(...).width`): by default none, as for a Text built outside any theme.
+  static TextStyle defaultTextStyle = const TextStyle();
+
+  /// Lets `Text(...).width`, `height`, `lineCount` and `canFit` answer from this
+  /// sidecar for text in [fontFamily]. With [asDefault], a Text measured without
+  /// a BuildContext and without a font family is measured in this font, as under
+  /// a theme with this font family.
+  void register({bool asDefault = false}) {
+    _registered[fontFamily] = this;
+    if (asDefault) defaultTextStyle = defaultTextStyle.copyWith(fontFamily: fontFamily);
+  }
+
+  /// The sidecar registered for [fontFamily], if any.
+  static BreakFirst? registered(String? fontFamily) => _registered[fontFamily];
+
   /// Decodes [sidecar] and checks it against this engine: calibrates the
   /// engine's conventions (font-size rounding, kerning before a hard break) and
   /// measures the canary strings. Returns null
@@ -224,7 +242,7 @@ class PreparedParagraph {
       letterSpacing: options.letterSpacing,
       wordSpacing: options.wordSpacing,
     );
-    return n < 0 ? null : options.maxLines != null && n > options.maxLines!;
+    return n < 0 ? null : exceedsLines(text, n, options.maxLines);
   }
 
   /// Height in px, or null when Flutter must decide at this width.
@@ -232,6 +250,17 @@ class PreparedParagraph {
     final n = lineCount(fontSize: fontSize, maxWidth: maxWidth);
     return n == null ? null : _bf.heightOfLines(n, fontSize, options);
   }
+}
+
+/// Flutter's didExceedMaxLines for a paragraph of [lines] lines: more than
+/// [maxLines], except that the empty line after a final hard break is not cut
+/// (measured: "a\nb\n" in 2 lines does not exceed). Null when the cut lines would
+/// be empty lines only after more hard breaks, which is not measured.
+bool? exceedsLines(String text, int lines, int? maxLines) {
+  if (maxLines == null || lines <= maxLines) return false;
+  if (text.isEmpty || !isHardBreak(text.codeUnitAt(text.length - 1))) return true;
+  if (lines > maxLines + 1) return true;
+  return text.length >= 2 && isHardBreak(text.codeUnitAt(text.length - 2)) ? null : false;
 }
 
 /// One span of a rich paragraph: [text] in [font] (a loaded sidecar) at

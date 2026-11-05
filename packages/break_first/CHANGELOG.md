@@ -1,3 +1,18 @@
+## 0.3.1
+
+- Ask a `Text` its size before it is laid out: `Text(...).width`, `.height(maxWidth)`, `.lineCount(maxWidth)` and
+  `.canFit(maxWidth, maxHeight:)`, from the sidecar registered for its font family (`BreakFirst.register`), otherwise
+  from a `TextPainter` set up as the widget sets up its own. `Text(...).measure(context)` resolves the Text as
+  `Text.build` does there (DefaultTextStyle, text scaling, bold text, MediaQuery's spacing overrides, direction,
+  locale). Checked against the widgets: 870,000 answers in 87 configurations, 0 different.
+- Widths from the sidecar equal Flutter's `maxIntrinsicWidth` bit for bit, with and without letter spacing, when glyph
+  positions are exact in float32 (measured).
+- `PreparedParagraph.exceedsMaxLines` follows Flutter's `didExceedMaxLines`: the empty line after a final hard break
+  does not exceed `maxLines` (`exceedsLines`).
+- The breaker is 1.9× faster (macOS release: docs 22.5 → 13.1 ms, chat 38.0 → 20.0 ms): a dedicated loop for most
+  text, no list built by `lineCount`, the fit test a plain function. It gives the same records and line starts as 0.3.0
+  in all 50,588,155 differential checks, and every check of 0.3.0 passed again.
+
 ## 0.3.0
 
 - `LineOptions.strutStyle` and `textHeightBehavior` (heights from three probe layouts per style).

@@ -1,0 +1,670 @@
+{
+ "no context / 12.0 px / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "no context / 12.0 px / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2836
+ },
+ "no context / 12.0 px / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2953
+ },
+ "no context / 14.0 px / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2989,
+  "linesFromSidecar": 2993
+ },
+ "no context / 14.0 px / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2744
+ },
+ "no context / 14.0 px / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2936
+ },
+ "no context / 16.0 px / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "no context / 16.0 px / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2550
+ },
+ "no context / 16.0 px / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2915
+ },
+ "no context / 24.0 px / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "no context / 24.0 px / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 1089
+ },
+ "no context / 24.0 px / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2876
+ },
+ "no context / 13.0 px / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2957,
+  "linesFromSidecar": 2993
+ },
+ "no context / 13.0 px / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2799
+ },
+ "no context / 13.0 px / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2952
+ },
+ "no context / 18.4 px / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 0,
+  "linesFromSidecar": 2993
+ },
+ "no context / 18.4 px / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2143
+ },
+ "no context / 18.4 px / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2852
+ },
+ "no context / maxLines 2 / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2694,
+  "linesFromSidecar": 2993
+ },
+ "no context / maxLines 2 / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2550
+ },
+ "no context / maxLines 2 / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2915
+ },
+ "no context / softWrap false / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "no context / softWrap false / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2993
+ },
+ "no context / softWrap false / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2993
+ },
+ "no context / textScaler 1.3 / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 0,
+  "linesFromSidecar": 2993
+ },
+ "no context / textScaler 1.3 / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 1620
+ },
+ "no context / textScaler 1.3 / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2856
+ },
+ "no context / letterSpacing 0.5, wordSpacing 1 / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 0,
+  "linesFromSidecar": 2995
+ },
+ "no context / letterSpacing 0.5, wordSpacing 1 / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2437
+ },
+ "no context / letterSpacing 0.5, wordSpacing 1 / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2916
+ },
+ "no context / height 1.3 / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "no context / height 1.3 / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2550
+ },
+ "no context / height 1.3 / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2915
+ },
+ "no context / ellipsis, maxLines 3 / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 0,
+  "linesFromSidecar": 0
+ },
+ "no context / ellipsis, maxLines 3 / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 0
+ },
+ "no context / ellipsis, maxLines 3 / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 0
+ },
+ "no context / locale en / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "no context / locale en / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2550
+ },
+ "no context / locale en / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2915
+ },
+ "no context / locale de / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "no context / locale de / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2550
+ },
+ "no context / locale de / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2915
+ },
+ "no context / locale fr / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "no context / locale fr / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2550
+ },
+ "no context / locale fr / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2915
+ },
+ "no context / locale es / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "no context / locale es / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2550
+ },
+ "no context / locale es / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2915
+ },
+ "no context / locale it / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "no context / locale it / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2550
+ },
+ "no context / locale it / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2915
+ },
+ "no context / locale pt / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "no context / locale pt / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2550
+ },
+ "no context / locale pt / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2915
+ },
+ "no context / locale nl / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "no context / locale nl / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2550
+ },
+ "no context / locale nl / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2915
+ },
+ "no context / locale ru / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "no context / locale ru / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2550
+ },
+ "no context / locale ru / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2915
+ },
+ "no context / locale uk / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "no context / locale uk / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2550
+ },
+ "no context / locale uk / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2915
+ },
+ "no context / locale el / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "no context / locale el / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2550
+ },
+ "no context / locale el / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2915
+ },
+ "bare tree / 16 px / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "bare tree / 16 px / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2550
+ },
+ "bare tree / 16 px / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2915
+ },
+ "Material app (bodyMedium) / theme style / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2991,
+  "linesFromSidecar": 2995
+ },
+ "Material app (bodyMedium) / theme style / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2668
+ },
+ "Material app (bodyMedium) / theme style / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2932
+ },
+ "Material app (bodyMedium) / theme style, 16 px, maxLines 3 / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2995,
+  "linesFromSidecar": 2995
+ },
+ "Material app (bodyMedium) / theme style, 16 px, maxLines 3 / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2497
+ },
+ "Material app (bodyMedium) / theme style, 16 px, maxLines 3 / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2913
+ },
+ "Material app (bodyMedium) / inherit: false, 16 px / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2993,
+  "linesFromSidecar": 2993
+ },
+ "Material app (bodyMedium) / inherit: false, 16 px / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2550
+ },
+ "Material app (bodyMedium) / inherit: false, 16 px / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2915
+ },
+ "Material app, text scaled 1.15 / theme style / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 0,
+  "linesFromSidecar": 2995
+ },
+ "Material app, text scaled 1.15 / theme style / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2414
+ },
+ "Material app, text scaled 1.15 / theme style / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2875
+ },
+ "Material app, bold text / theme style / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 0,
+  "linesFromSidecar": 0
+ },
+ "Material app, bold text / theme style / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 0
+ },
+ "Material app, bold text / theme style / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 0
+ },
+ "Material app, spacing overrides / theme style / unbounded": {
+  "texts": 3000,
+  "widthEqual": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "widthFromSidecar": 2991,
+  "linesFromSidecar": 2995
+ },
+ "Material app, spacing overrides / theme style / 120.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2611
+ },
+ "Material app, spacing overrides / theme style / 280.0 px": {
+  "texts": 3000,
+  "heightEqual": 3000,
+  "canFitEqual": 3000,
+  "lineCountEqual": 3000,
+  "linesFromSidecar": 2938
+ },
+ "different": 0
+}

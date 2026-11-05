@@ -9,6 +9,8 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:break_first/break_first.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -239,6 +241,58 @@ void main() {
       final m = r as Map;
       expect(m['identical'] as int, greaterThan((m['layouts'] as int) * 0.7));
     }
+  });
+
+  testWidgets('Text(...).width, height, lineCount and canFit equal the widget\'s size', (tester) async {
+    BreakFirst.load(sidecar, fontFamily: family)!.register(asDefault: true);
+    final paras = generate(240, 13, newlines: true);
+    const key = ValueKey('texts');
+    Widget plain(Widget c) => Directionality(
+      textDirection: TextDirection.ltr,
+      child: DefaultTextStyle(style: BreakFirst.defaultTextStyle, child: c),
+    );
+    Widget material(Widget c) => MaterialApp(theme: ThemeData(fontFamily: family), home: Material(child: c));
+    final cases = <String, (Widget Function(Widget), Text Function(String), bool)>{
+      '16 px': (plain, (s) => Text(s, style: const TextStyle(fontSize: 16)), false),
+      '13 px, maxLines 2': (plain, (s) => Text(s, maxLines: 2, style: const TextStyle(fontSize: 13)), false),
+      '18.4 px, softWrap false': (plain, (s) => Text(s, softWrap: false, style: const TextStyle(fontSize: 18.4)), false),
+      'letter-spaced, text scale 1.25': (
+        plain,
+        (s) => Text(s, textScaler: const TextScaler.linear(1.25), style: const TextStyle(fontSize: 16, letterSpacing: 0.25)),
+        false,
+      ),
+      'Material 3 theme, with context': (material, Text.new, true),
+    };
+    final results = <String, Object?>{};
+    var different = 0;
+    for (final MapEntry(key: name, value: (wrap, text, withContext)) in cases.entries) {
+      for (final w in [double.infinity, 150.0, 330.0]) {
+        var n = 0, equal = 0, fromSidecar = 0;
+        final batch = [for (final s in paras) text(s)];
+        await tester.pumpWidget(wrap(OverflowBox(
+          alignment: Alignment.topLeft,
+          minWidth: 0,
+          maxWidth: w,
+          minHeight: 0,
+          maxHeight: double.infinity,
+          child: Column(key: key, crossAxisAlignment: CrossAxisAlignment.start, children: batch),
+        )));
+        final ctx = tester.element(find.byKey(key));
+        final rps = tester.renderObjectList<RenderParagraph>(find.descendant(of: find.byKey(key), matching: find.byType(RichText))).toList();
+        for (var i = 0; i < batch.length; i++) {
+          final m = batch[i].measure(withContext ? ctx : null), rp = rps[i];
+          final fits = !rp.didExceedMaxLines && rp.size.height <= 60 && rp.textSize.width <= w;
+          final ok = (w.isFinite || m.width == rp.size.width) && m.height(w) == rp.size.height && m.canFit(w, maxHeight: 60) == fits;
+          n++;
+          if (ok) equal++;
+          if (m.linesFromSidecar(w)) fromSidecar++;
+        }
+        different += n - equal;
+        results['$name, ${w.isFinite ? '$w px' : 'unbounded'}'] = {'texts': n, 'equal': equal, 'fromSidecar': fromSidecar};
+      }
+    }
+    report['textApi'] = results;
+    expect(different, 0);
   });
 }
 

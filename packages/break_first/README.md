@@ -1,16 +1,24 @@
 # break_first
 
-Exact line breaks and paragraph heights for Flutter, computed **before** shaping, from a small per-font file
-(the *sidecar*) built once at build time. When it can't be sure, it hands the paragraph back to Flutter, so its
-answers equal Flutter's own layout.
+**What if you could ask a `Text` its size before it is laid out?**
 
-![Jumping to message #2,500 in a 10,000-message chat list](https://raw.githubusercontent.com/Rahiche/break-before-you-shape/v0.3.0/media/list_extents_jump.gif)
+```dart
+Text('hello', style: style).width          // the width Flutter will give it
+Text(message, style: style).height(280)    // its height in a 280 px box
+Text(caption, maxLines: 3).canFit(240)     // does all of it show in 240 px?
+```
 
-The [example](https://github.com/Rahiche/break-before-you-shape/tree/v0.3.0/packages/break_first/example) is a chat list with 10,000 messages. A stock `ListView` (left) learns heights only by laying
+Each answer equals the size Flutter gives the widget. It comes from a small per-font file (the *sidecar*) built once
+at build time: no shaping, no layout. When the sidecar can't be sure, the answer comes from a `TextPainter` set up as
+the widget sets up its own, so it is never an estimate.
+
+![Jumping to message #2,500 in a 10,000-message chat list](https://raw.githubusercontent.com/Rahiche/break-before-you-shape/v0.3.1/media/list_extents_jump.gif)
+
+The [example](https://github.com/Rahiche/break-before-you-shape/tree/v0.3.1/packages/break_first/example) is a chat list with 10,000 messages. A stock `ListView` (left) learns heights only by laying
 items out, so it can only estimate where message #2,500 is. It also has to lay out every message between the current
 position and the target. With extents from break-first (right), the list knows every height and its total height before
-anything is laid out. Android emulator, release build, one run ([full video](https://github.com/Rahiche/break-before-you-shape/blob/v0.3.0/media/list_extents_android.mp4),
-[measured log](https://github.com/Rahiche/break-before-you-shape/blob/v0.3.0/media/list_extents_android_measured.txt)):
+anything is laid out. Android emulator, release build, one run, recorded with 0.3.0 ([full video](https://github.com/Rahiche/break-before-you-shape/blob/v0.3.1/media/list_extents_android.mp4),
+[measured log](https://github.com/Rahiche/break-before-you-shape/blob/v0.3.1/media/list_extents_android_measured.txt)):
 
 | | Stock `ListView` | break-first extents |
 |---|---|---|
@@ -21,6 +29,30 @@ anything is laid out. Android emulator, release build, one run ([full video](htt
 
 Every bubble the right-hand list lays out is checked against its predicted height. At the end, all 10,000 extents are
 checked against `TextPainter`: 10,000 of 10,000 equal.
+
+## Ask a Text
+
+```dart
+// Once, at startup: the sidecar for the font family your Text widgets use.
+BreakFirst.load(bytes, fontFamily: 'RobotoSidecar', font: font)?.register(asDefault: true);
+
+Text('hello').width;                                   // without a BuildContext: this font, Flutter's defaults
+Text(caption, maxLines: 3).canFit(240, maxHeight: 60); // no line cut by maxLines, not too high
+Text(message).lineCount(280);
+
+// With a BuildContext, resolved as Text.build resolves it there: DefaultTextStyle (your theme), text scaling,
+// bold text, MediaQuery's spacing overrides, direction and locale.
+final m = Text(message).measure(context);
+m.height(280);
+m.widthFromSidecar; // true when no layout was needed
+```
+
+Checked against the widgets themselves (`flutter_bench/test/text_api_test.dart`): 870,000 answers (width, height,
+line count, `canFit`) for 261,000 `Text` widgets in 87 configurations, from six font sizes and ten locales to
+`maxLines`, `softWrap`, text scaling, letter and word spacing, ellipsis, bold text and a Material 3 theme: 0 different.
+The sidecar decided 87% of the heights and fits and 79% of the widths. The rest went to a `TextPainter`: a width when
+glyph positions are not exact in float32 (18.4 px, a text scale of 1.3), word spacing, an ellipsis, bold text, rich
+text.
 
 ## Use
 
@@ -68,7 +100,7 @@ platform.
 
 ## Build a sidecar
 
-1. Certify the font's layout tables with [`certify.py`](https://github.com/Rahiche/break-before-you-shape/blob/v0.3.0/certify.py)
+1. Certify the font's layout tables with [`certify.py`](https://github.com/Rahiche/break-before-you-shape/blob/v0.3.1/certify.py)
    from the repository (needs fontTools): `python3 certify.py MyFont.ttf myfont.cert 4`.
 2. Under `flutter test`, load the font and distil the sidecar by measuring Flutter's own text stack:
 
@@ -126,4 +158,4 @@ points), Arabic (per joining form, with harakat), Chinese, Japanese and Korean t
 right to left, and `buildBidiRecords` combines a left-to-right and a right-to-left sidecar for mixed-direction text.
 Emoji and Brahmic scripts come from the device's fonts, measured once per run. What the breaker cannot decide exactly
 (a character no font here has, a word wider than the line, a decision within float error) goes to Flutter, so heights
-always equal Flutter's. See the [paper](https://github.com/Rahiche/break-before-you-shape/blob/v0.3.0/paper/paper.pdf) for the method, its proofs and the checks.
+always equal Flutter's. See the [paper](https://github.com/Rahiche/break-before-you-shape/blob/v0.3.1/paper/paper.pdf) for the method, its proofs and the checks.

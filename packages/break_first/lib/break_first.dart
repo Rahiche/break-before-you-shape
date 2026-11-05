@@ -9,4 +9,5 @@ library;
 export 'src/break_first.dart';
 export 'src/dictionary_break.dart';
 export 'src/engine.dart';
+export 'src/text_measure.dart';
 export 'src/width_model.dart';
