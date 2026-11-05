@@ -1,8 +1,8 @@
 {
- "texts": 600,
- "identical": 3881,
+ "texts": 2400,
+ "identical": 15153,
  "different": 0,
- "deferred": 3319,
- "heightsEqual": 3881,
+ "deferred": 13647,
+ "heightsEqual": 15153,
  "examples": []
 }

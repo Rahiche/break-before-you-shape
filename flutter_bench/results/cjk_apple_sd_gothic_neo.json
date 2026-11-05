@@ -1,38 +1,15 @@
 {
- "font": "Apple SD Gothic Neo Regular (macOS system font, face 0)",
+ "font": "face.otf",
  "characters": 16644,
- "buildMs": 742,
- "sidecarBytes": 323380,
+ "pairsToMeasure": 3016,
+ "buildMs": 732,
+ "sidecarBytes": 365968,
  "pairClasses": [
   57,
   51
  ],
- "canaryErrPx": 7.2021484375e-05,
+ "canaryErrPx": 0.000072021484375,
  "quantized": false,
- "ui_ko messages": {
-  "texts": 4000,
-  "covered": 3968,
-  "identical": 71161,
-  "different": 0,
-  "deferred": 839,
-  "heightsEqual": 71161
- },
- "ui_ko joined with hard breaks": {
-  "texts": 1333,
-  "covered": 1301,
-  "identical": 23166,
-  "different": 0,
-  "deferred": 828,
-  "heightsEqual": 23166
- },
- "ui_ko letterSpacing 0.5, wordSpacing 1": {
-  "texts": 4000,
-  "covered": 3968,
-  "identical": 70987,
-  "different": 0,
-  "deferred": 1013,
-  "heightsEqual": 70987
- },
  "ui_ja messages": {
   "texts": 4000,
   "covered": 2953,
@@ -56,6 +33,54 @@
   "different": 0,
   "deferred": 19394,
   "heightsEqual": 52606
+ },
+ "ui_zh_CN messages": {
+  "texts": 4000,
+  "covered": 711,
+  "identical": 12612,
+  "different": 0,
+  "deferred": 59388,
+  "heightsEqual": 12612
+ },
+ "ui_zh_CN joined with hard breaks": {
+  "texts": 1333,
+  "covered": 56,
+  "identical": 966,
+  "different": 0,
+  "deferred": 23028,
+  "heightsEqual": 966
+ },
+ "ui_zh_CN letterSpacing 0.5, wordSpacing 1": {
+  "texts": 4000,
+  "covered": 711,
+  "identical": 12545,
+  "different": 0,
+  "deferred": 59455,
+  "heightsEqual": 12545
+ },
+ "ui_ko messages": {
+  "texts": 4000,
+  "covered": 3968,
+  "identical": 71161,
+  "different": 0,
+  "deferred": 839,
+  "heightsEqual": 71161
+ },
+ "ui_ko joined with hard breaks": {
+  "texts": 1333,
+  "covered": 1301,
+  "identical": 23166,
+  "different": 0,
+  "deferred": 828,
+  "heightsEqual": 23166
+ },
+ "ui_ko letterSpacing 0.5, wordSpacing 1": {
+  "texts": 4000,
+  "covered": 3968,
+  "identical": 70987,
+  "different": 0,
+  "deferred": 1013,
+  "heightsEqual": 70987
  },
  "examples": []
 }

@@ -1,0 +1,3 @@
+CPU(s):                                  4
+Model name:                              Intel(R) Xeon(R) 6975P-C
+Ubuntu 24.04.5 LTS

@@ -1,0 +1,225 @@
+{
+ "mode": "useCases",
+ "runs": 3,
+ "useCases": {
+  "autoFit": {
+   "messages": 3000,
+   "width": 280.0,
+   "maxLines": 3,
+   "sizes": 41,
+   "textPainterMs": 424.613,
+   "breakFirstMs": 10.559,
+   "sameSize": 3000,
+   "textPainterLayoutsPerRun": 19824,
+   "breakFirstFallbacksPerRun": 125
+  },
+  "textScale": {
+   "messages": 24000,
+   "width": 280.0,
+   "fromSize": 16.0,
+   "toSize": 20.8,
+   "textPainterMs": 571.001,
+   "breakFirstMs": 15.692,
+   "heightsEqual": 24000,
+   "recordBytes": 13981029,
+   "codeUnits": 1368951
+  },
+  "pagination": {
+   "paragraphs": 6455,
+   "pageWidth": 360.0,
+   "pageHeight": 600.0,
+   "at16": {
+    "size": 16.0,
+    "pages": 994,
+    "textPainterMs": 428.219,
+    "breakFirstMs": 47.9,
+    "samePageBreaks": true,
+    "recordsReused": false
+   },
+   "at18": {
+    "size": 18.0,
+    "pages": 1230,
+    "textPainterMs": 439.712,
+    "breakFirstMs": 10.89,
+    "samePageBreaks": true,
+    "recordsReused": true
+   }
+  },
+  "backgroundIsolate": {
+   "messages": 24000,
+   "workerMs": 91.017,
+   "uiIsolateMs": 4.869,
+   "handedBackToUi": 122,
+   "heightsEqual": 24000,
+   "textPainterInBackgroundIsolate": "error: UI actions are only available on root isolate."
+  }
+ },
+ "perRun": [
+  {
+   "autoFit": {
+    "messages": 3000,
+    "width": 280.0,
+    "maxLines": 3,
+    "sizes": 41,
+    "textPainterMs": 428.169,
+    "breakFirstMs": 10.823,
+    "sameSize": 3000,
+    "textPainterLayoutsPerRun": 19824,
+    "breakFirstFallbacksPerRun": 125
+   },
+   "textScale": {
+    "messages": 24000,
+    "width": 280.0,
+    "fromSize": 16.0,
+    "toSize": 20.8,
+    "textPainterMs": 575.528,
+    "breakFirstMs": 15.692,
+    "heightsEqual": 24000,
+    "recordBytes": 13981029,
+    "codeUnits": 1368951
+   },
+   "pagination": {
+    "paragraphs": 6455,
+    "pageWidth": 360.0,
+    "pageHeight": 600.0,
+    "at16": {
+     "size": 16.0,
+     "pages": 994,
+     "textPainterMs": 428.219,
+     "breakFirstMs": 45.706,
+     "samePageBreaks": true,
+     "recordsReused": false
+    },
+    "at18": {
+     "size": 18.0,
+     "pages": 1230,
+     "textPainterMs": 439.712,
+     "breakFirstMs": 10.89,
+     "samePageBreaks": true,
+     "recordsReused": true
+    }
+   },
+   "backgroundIsolate": {
+    "messages": 24000,
+    "workerMs": 91.017,
+    "uiIsolateMs": 4.914,
+    "handedBackToUi": 122,
+    "heightsEqual": 24000,
+    "textPainterInBackgroundIsolate": "error: UI actions are only available on root isolate."
+   }
+  },
+  {
+   "autoFit": {
+    "messages": 3000,
+    "width": 280.0,
+    "maxLines": 3,
+    "sizes": 41,
+    "textPainterMs": 424.613,
+    "breakFirstMs": 10.512,
+    "sameSize": 3000,
+    "textPainterLayoutsPerRun": 19824,
+    "breakFirstFallbacksPerRun": 125
+   },
+   "textScale": {
+    "messages": 24000,
+    "width": 280.0,
+    "fromSize": 16.0,
+    "toSize": 20.8,
+    "textPainterMs": 569.555,
+    "breakFirstMs": 15.098,
+    "heightsEqual": 24000,
+    "recordBytes": 13981029,
+    "codeUnits": 1368951
+   },
+   "pagination": {
+    "paragraphs": 6455,
+    "pageWidth": 360.0,
+    "pageHeight": 600.0,
+    "at16": {
+     "size": 16.0,
+     "pages": 994,
+     "textPainterMs": 425.208,
+     "breakFirstMs": 48.991,
+     "samePageBreaks": true,
+     "recordsReused": false
+    },
+    "at18": {
+     "size": 18.0,
+     "pages": 1230,
+     "textPainterMs": 437.849,
+     "breakFirstMs": 10.905,
+     "samePageBreaks": true,
+     "recordsReused": true
+    }
+   },
+   "backgroundIsolate": {
+    "messages": 24000,
+    "workerMs": 89.999,
+    "uiIsolateMs": 4.861,
+    "handedBackToUi": 122,
+    "heightsEqual": 24000,
+    "textPainterInBackgroundIsolate": "error: UI actions are only available on root isolate."
+   }
+  },
+  {
+   "autoFit": {
+    "messages": 3000,
+    "width": 280.0,
+    "maxLines": 3,
+    "sizes": 41,
+    "textPainterMs": 424.601,
+    "breakFirstMs": 10.559,
+    "sameSize": 3000,
+    "textPainterLayoutsPerRun": 19824,
+    "breakFirstFallbacksPerRun": 125
+   },
+   "textScale": {
+    "messages": 24000,
+    "width": 280.0,
+    "fromSize": 16.0,
+    "toSize": 20.8,
+    "textPainterMs": 571.001,
+    "breakFirstMs": 16.363,
+    "heightsEqual": 24000,
+    "recordBytes": 13981029,
+    "codeUnits": 1368951
+   },
+   "pagination": {
+    "paragraphs": 6455,
+    "pageWidth": 360.0,
+    "pageHeight": 600.0,
+    "at16": {
+     "size": 16.0,
+     "pages": 994,
+     "textPainterMs": 442.731,
+     "breakFirstMs": 47.9,
+     "samePageBreaks": true,
+     "recordsReused": false
+    },
+    "at18": {
+     "size": 18.0,
+     "pages": 1230,
+     "textPainterMs": 443.224,
+     "breakFirstMs": 10.857,
+     "samePageBreaks": true,
+     "recordsReused": true
+    }
+   },
+   "backgroundIsolate": {
+    "messages": 24000,
+    "workerMs": 99.634,
+    "uiIsolateMs": 4.869,
+    "handedBackToUi": 122,
+    "heightsEqual": 24000,
+    "textPainterInBackgroundIsolate": "error: UI actions are only available on root isolate."
+   }
+  }
+ ],
+ "speedupSpreadAcrossRuns": {
+  "autoFit": 0.020693757718374856,
+  "textScale": 0.07710676634059405,
+  "pagination/at16": 0.07461796630366915,
+  "pagination/at18": 0.016657388554142137
+ },
+ "note": "median of 3 app runs; each run reports the median of its passes per method"
+}

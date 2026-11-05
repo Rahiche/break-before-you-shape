@@ -1,0 +1,64 @@
+{
+ "font": "/usr/share/fonts/truetype/noto/NotoSansHebrew-Regular.ttf",
+ "characters": 91,
+ "buildMs": 32,
+ "canaryErrPx": 0.00078515625,
+ "quantized": true,
+ "messages": {
+  "texts": 4000,
+  "covered": 797,
+  "identical": 14291,
+  "different": 0,
+  "deferred": 57709,
+  "heightsEqual": 14291
+ },
+ "messages joined with hard breaks": {
+  "texts": 1333,
+  "covered": 119,
+  "identical": 2127,
+  "different": 0,
+  "deferred": 21867,
+  "heightsEqual": 2127
+ },
+ "letterSpacing 0.5, wordSpacing 1": {
+  "texts": 4000,
+  "covered": 797,
+  "identical": 14210,
+  "different": 0,
+  "deferred": 57790,
+  "heightsEqual": 14210
+ },
+ "mixed: RTL paragraphs": {
+  "texts": 4000,
+  "covered": 796,
+  "identical": 14276,
+  "different": 0,
+  "deferred": 57724,
+  "heightsEqual": 14276
+ },
+ "mixed: RTL paragraphs with hard breaks": {
+  "texts": 1333,
+  "covered": 119,
+  "identical": 2127,
+  "different": 0,
+  "deferred": 21867,
+  "heightsEqual": 2127
+ },
+ "mixed: RTL paragraphs, spaced": {
+  "texts": 4000,
+  "covered": 796,
+  "identical": 14195,
+  "different": 0,
+  "deferred": 57805,
+  "heightsEqual": 14195
+ },
+ "mixed: LTR paragraphs": {
+  "texts": 4000,
+  "covered": 796,
+  "identical": 14276,
+  "different": 0,
+  "deferred": 57724,
+  "heightsEqual": 14276
+ },
+ "examples": []
+}

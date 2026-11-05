@@ -1,64 +1,64 @@
 {
- "font": "Arial (macOS system font)",
- "characters": 1148,
- "buildMs": 190381,
+ "font": "/System/Library/Fonts/Supplemental/Arial.ttf",
+ "characters": 1303,
+ "buildMs": 10573,
  "canaryErrPx": 0.0,
  "quantized": false,
  "messages": {
-  "texts": 4000,
-  "covered": 1349,
-  "identical": 24281,
+  "texts": 1500,
+  "covered": 557,
+  "identical": 10026,
   "different": 0,
-  "deferred": 47719,
-  "heightsEqual": 24281
+  "deferred": 16974,
+  "heightsEqual": 10026
  },
  "messages joined with hard breaks": {
-  "texts": 1333,
-  "covered": 162,
-  "identical": 2916,
+  "texts": 500,
+  "covered": 76,
+  "identical": 1367,
   "different": 0,
-  "deferred": 21078,
-  "heightsEqual": 2916
+  "deferred": 7633,
+  "heightsEqual": 1367
  },
  "letterSpacing 0.5, wordSpacing 1": {
-  "texts": 4000,
+  "texts": 1500,
   "covered": 0,
   "identical": 0,
   "different": 0,
-  "deferred": 72000,
+  "deferred": 27000,
   "heightsEqual": 0
  },
  "mixed: RTL paragraphs": {
-  "texts": 4000,
-  "covered": 1825,
-  "identical": 32735,
+  "texts": 1500,
+  "covered": 696,
+  "identical": 12480,
   "different": 0,
-  "deferred": 39265,
-  "heightsEqual": 32735
+  "deferred": 14520,
+  "heightsEqual": 12480
  },
  "mixed: RTL paragraphs with hard breaks": {
-  "texts": 1333,
-  "covered": 229,
-  "identical": 4086,
+  "texts": 500,
+  "covered": 86,
+  "identical": 1538,
   "different": 0,
-  "deferred": 19908,
-  "heightsEqual": 4086
+  "deferred": 7462,
+  "heightsEqual": 1538
  },
  "mixed: RTL paragraphs, spaced": {
-  "texts": 4000,
-  "covered": 0,
-  "identical": 0,
+  "texts": 1500,
+  "covered": 12,
+  "identical": 136,
   "different": 0,
-  "deferred": 72000,
-  "heightsEqual": 0
+  "deferred": 26864,
+  "heightsEqual": 136
  },
  "mixed: LTR paragraphs": {
-  "texts": 4000,
-  "covered": 1824,
-  "identical": 32717,
+  "texts": 1500,
+  "covered": 696,
+  "identical": 12480,
   "different": 0,
-  "deferred": 39283,
-  "heightsEqual": 32717
+  "deferred": 14520,
+  "heightsEqual": 12480
  },
  "examples": []
 }

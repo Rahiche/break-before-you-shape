@@ -1,0 +1,24 @@
+{
+ "paragraphs": 3600,
+ "fonts": [
+  "Roboto",
+  "Arial",
+  "Times New Roman",
+  "Georgia"
+ ],
+ "rich": {
+  "identical": 17313,
+  "different": 0,
+  "deferred": 687,
+  "heightsEqual": 17313,
+  "paragraphsWithColourOnlyChange": 1112
+ },
+ "rich, letterSpacing 0.5, wordSpacing 1": {
+  "identical": 17145,
+  "different": 0,
+  "deferred": 855,
+  "heightsEqual": 17145,
+  "paragraphsWithColourOnlyChange": 1158
+ },
+ "examples": []
+}

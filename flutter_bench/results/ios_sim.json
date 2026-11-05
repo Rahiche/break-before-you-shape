@@ -2,11 +2,12 @@
  "platform": "ios",
  "mode": "validate",
  "sidecar": {
-  "bytes": 573104,
-  "loadMs": 11.241,
-  "describe": "Roboto: 699 characters, pair classes 114x121, 90 islands up to m=4"
+  "bytes": 593684,
+  "loadMs": 28.844,
+  "describe": "Roboto: 707 characters, pair classes 113x120, 90 islands up to m=4"
  },
  "fontSizeQuantized": false,
+ "hardBreakKerns": true,
  "canary": {
   "probes": 5,
   "maxErrPx": 0.0,

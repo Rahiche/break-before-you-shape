@@ -1,0 +1,26 @@
+{
+ "same": {
+  "canaryPasses": true,
+  "canaryErrorPx": 0.0,
+  "loadsWithFontBytes": true,
+  "rebuildGivesShippedBytes": true,
+  "staleIdentical": 17860,
+  "staleDifferent": 0
+ },
+ "wider": {
+  "canaryPasses": false,
+  "canaryErrorPx": 3.5390625,
+  "loadsWithFontBytes": false,
+  "rebuildGivesShippedBytes": false,
+  "staleIdentical": 16441,
+  "staleDifferent": 1419
+ },
+ "eacute": {
+  "canaryPasses": true,
+  "canaryErrorPx": 0.0,
+  "loadsWithFontBytes": false,
+  "rebuildGivesShippedBytes": false,
+  "staleIdentical": 17823,
+  "staleDifferent": 37
+ }
+}

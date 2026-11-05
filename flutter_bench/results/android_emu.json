@@ -2,11 +2,12 @@
  "platform": "android",
  "mode": "all",
  "sidecar": {
-  "bytes": 573104,
-  "loadMs": 54.79,
-  "describe": "Roboto: 699 characters, pair classes 114x121, 90 islands up to m=4"
+  "bytes": 593684,
+  "loadMs": 53.535,
+  "describe": "Roboto: 707 characters, pair classes 113x120, 90 islands up to m=4"
  },
  "fontSizeQuantized": true,
+ "hardBreakKerns": false,
  "canary": {
   "probes": 5,
   "maxErrPx": 0.0,
@@ -60,12 +61,12 @@
   "en_man": {
    "paragraphs": 300,
    "covered": 298,
-   "identical": 21041,
+   "identical": 21040,
    "different": 0,
-   "deferred": 415,
-   "lines": 109524,
-   "heightIdentical": 21041,
-   "heightChecked": 21041,
+   "deferred": 416,
+   "lines": 109508,
+   "heightIdentical": 21040,
+   "heightChecked": 21040,
    "maxHeightErrPx": 0.0,
    "maxSingleLineWidthErrPx": 0.0,
    "perSize": {
@@ -90,9 +91,9 @@
      104
     ],
     "21.3": [
-     3471,
+     3470,
      0,
-     105
+     106
     ],
     "24.0": [
      3529,
@@ -431,19 +432,19 @@
    "codeUnits": 870779,
    "size": 16.0,
    "width": 400.0,
-   "textPainterMs": 459.595,
-   "uiParagraphMs": 443.049,
-   "breakFirstMs": 13.791,
-   "wordCacheColdMs": 335.34,
-   "wordCacheWarmMs": 12.665,
+   "textPainterMs": 440.872,
+   "uiParagraphMs": 423.181,
+   "breakFirstMs": 26.973,
+   "wordCacheColdMs": 569.441,
+   "wordCacheWarmMs": 15.19,
    "wordCacheIdentical": 5086,
    "wordCacheChecked": 5089,
-   "textPainterAllMs": 538.036,
-   "breakFirstAllMs": 18.688,
-   "relayoutFlutterMs": 23.841,
-   "relayoutBreakFirstMs": 2.468,
-   "relayoutWordCacheMs": 3.365,
-   "breakFirstNsPerCodeUnit": 15.837543165372615
+   "textPainterAllMs": 451.655,
+   "breakFirstAllMs": 32.482,
+   "relayoutFlutterMs": 27.437,
+   "relayoutBreakFirstMs": 2.509,
+   "relayoutWordCacheMs": 3.305,
+   "breakFirstNsPerCodeUnit": 30.9757125516348
   },
   "chat": {
    "paragraphsAll": 24000,
@@ -451,24 +452,24 @@
    "codeUnits": 1342438,
    "size": 16.0,
    "width": 280.0,
-   "textPainterMs": 939.463,
-   "uiParagraphMs": 1017.98,
-   "breakFirstMs": 26.997,
-   "wordCacheColdMs": 527.097,
-   "wordCacheWarmMs": 26.796,
+   "textPainterMs": 1015.862,
+   "uiParagraphMs": 959.253,
+   "breakFirstMs": 43.511,
+   "wordCacheColdMs": 533.776,
+   "wordCacheWarmMs": 31.273,
    "wordCacheIdentical": 23733,
    "wordCacheChecked": 23736,
-   "textPainterAllMs": 1012.803,
-   "breakFirstAllMs": 27.927,
-   "relayoutFlutterMs": 82.2,
-   "relayoutBreakFirstMs": 5.389,
-   "relayoutWordCacheMs": 6.591,
-   "breakFirstNsPerCodeUnit": 20.110425956357016
+   "textPainterAllMs": 955.352,
+   "breakFirstAllMs": 46.989,
+   "relayoutFlutterMs": 125.547,
+   "relayoutBreakFirstMs": 6.678,
+   "relayoutWordCacheMs": 5.213,
+   "breakFirstNsPerCodeUnit": 32.41192516898359
   },
   "listExtents": {
    "messages": 24000,
-   "breakFirstMs": 65.131,
-   "textPainterMs": 1286.17,
+   "breakFirstMs": 72.683,
+   "textPainterMs": 1268.617,
    "heightsEqual": 24000,
    "maxScrollOffsetErrPx": 0.0,
    "totalExtentPx": 952948.0

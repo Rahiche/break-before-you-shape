@@ -481,6 +481,26 @@ N["beyond_rows"] = len(beyond_rows)
 N["beyond_table"] = table(["Check · font", "Layouts", "Identical", "Different", "Heights equal", "Decided"], [
     (label, fmt_int(total), fmt_int(same), cell_ok(diff), f"{fmt_int(heights)} / {fmt_int(same)}",
      f"{100 * (same + diff) / total:.0f}%") for label, same, diff, total, heights in beyond_rows])
+# The font census in Flutter: every local face's sidecar built through Flutter and
+# checked against Flutter's layout (flutter_bench/test/font_census_test.dart).
+fc_path = os.path.join(FR, "font_census.jsonl")
+if os.path.exists(fc_path):
+    fc = [json.loads(l) for l in open(fc_path) if l.strip()]
+    ok = [r for r in fc if "default" in r]
+    N["fcensus_faces"] = len(fc)
+    N["fcensus_checked"] = len(ok)
+    N["fcensus_skipped"] = len(fc) - len(ok)
+    N["fcensus_identical"] = sum(r["default"]["identical"] + r["spacedWithBreaks"]["identical"] for r in ok)
+    N["fcensus_different"] = sum(r["default"]["different"] + r["spacedWithBreaks"]["different"] for r in ok)
+    N["fcensus_layouts"] = sum(r["default"]["identical"] + r["default"]["different"] + r["default"]["deferred"] +
+                               r["spacedWithBreaks"]["identical"] + r["spacedWithBreaks"]["different"] +
+                               r["spacedWithBreaks"]["deferred"] for r in ok)
+    N["fcensus_canary_fail"] = sum(r["canaryErrPx"] >= 1e-3 for r in ok)
+    N["fcensus_heights"] = sum(r["default"]["heightsEqual"] + r["spacedWithBreaks"]["heightsEqual"] for r in ok)
+    N["fcensus_paragraphs"] = ok[0]["default"]["paragraphs"]
+    # The paper says every identical layout has Flutter's height.
+    assert N["fcensus_heights"] == N["fcensus_identical"], (N["fcensus_heights"], N["fcensus_identical"])
+
 N["scripts_identical"] = sum(r[1] for r in script_rows)
 N["scripts_different"] = sum(r[2] for r in script_rows)
 N["scripts_layouts"] = sum(r[3] for r in script_rows)
@@ -525,6 +545,22 @@ ci_t["android"]["list"] = a_ci["listExtents"]["textPainterMs"] / a_ci["listExten
 for plat, v in ci_t.items():
     for k, x in v.items():
         N[f"ci_{plat}_{k}_speedup"] = x
+assert N["ci_different"] == 0
+for f in sorted(os.listdir(os.path.join(CI, ci_run))):
+    if f.endswith("_styles.json"):
+        assert all(v["different"] == 0 for v in ci(f)["styles"].values() if isinstance(v, dict) and "different" in v), f
+# The mismatch GitHub's Linux runner found on 5f441fb (a word less than 1/100 px
+# wider than the box), and the package test's constructed words of that kind.
+N["ci_fail_run"] = 41953508573
+fail = json.load(open(os.path.join(CI, f"run-{N['ci_fail_run']}", "linux_styles.json")))["styles"]["letterSpacing 0.5"]
+N["ci_fail_different"], N["ci_fail_layouts"] = fail["different"], fail["identical"] + fail["different"]
+N["too_long_cases"] = load("package_tests_macos.json")["tooLongWordCases"]
+assert ci_run != f"run-{N['ci_fail_run']}"
+# The same runner's layouts on the fix (its corpora are the same files).
+fix = ci("linux_styles.json")["styles"]["letterSpacing 0.5"]
+assert fix["different"] == 0 and sum(fix[k] for k in ("identical", "deferred")) == sum(
+    fail[k] for k in ("identical", "different", "deferred"))
+N["ci_fix_identical"], N["ci_fix_more_deferred"] = fix["identical"], fix["deferred"] - fail["deferred"]
 
 # The C port through dart:ffi.
 nat = load("native_macos.json")["runs"]
@@ -545,6 +581,103 @@ N["demo_stock_to"], N["demo_stock_at"], N["demo_stock_ms"] = int(jumps[0][1]), i
 N["demo_bf_to"], N["demo_bf_at"], N["demo_bf_ms"] = int(jumps[1][1]), int(jumps[1][2]), float(jumps[1][3])
 v = re.search(r"verify size=[\d.]+ equal=(\d+) of (\d+) textPainterMs=([\d.]+)", demo)
 N["demo_equal"], N["demo_messages"], N["demo_tp_ms"] = int(v[1]), int(v[2]), float(v[3])
+
+# Where it pays: use cases timed against what an app does today and checked answer
+# for answer (bench.dart useCases, macOS release, median of runs), heights with no
+# Flutter (tool/heights_cli.dart), Flutter web, and a stale sidecar.
+uc = load("use_cases_macos.json")
+U = uc["useCases"]
+N["uc_runs"] = uc["runs"]
+N["uc_spread_pct"] = 100 * max(uc["speedupSpreadAcrossRuns"].values())
+af, ts, pg, bgi = U["autoFit"], U["textScale"], U["pagination"], U["backgroundIsolate"]
+srv = load("use_cases_host.json")["server"]
+for pre, d in (("uc_fit", af), ("uc_scale", ts), ("uc_page16", pg["at16"]), ("uc_page18", pg["at18"]), ("uc_bg", bgi),
+               ("uc_srv", srv)):
+    for k, v in d.items():
+        N[f"{pre}_{k}"] = v
+N["uc_page_paragraphs"] = pg["paragraphs"]
+# Cases where the records are reused: auto-fit probes, a new text scale, a new page size.
+reuse = [af["textPainterMs"] / af["breakFirstMs"], ts["textPainterMs"] / ts["breakFirstMs"],
+         pg["at18"]["textPainterMs"] / pg["at18"]["breakFirstMs"]]
+N["uc_reuse_lo"], N["uc_reuse_hi"] = min(reuse), max(reuse)
+N["uc_bg_error"] = bgi["textPainterInBackgroundIsolate"].removeprefix("error: ").rstrip(".")
+assert bgi["textPainterInBackgroundIsolate"].startswith("error")
+assert af["sameSize"] == af["messages"] and ts["heightsEqual"] == ts["messages"]
+assert pg["at16"]["samePageBreaks"] and pg["at18"]["samePageBreaks"] and bgi["heightsEqual"] == bgi["messages"]
+assert srv["heightsEqual"] == srv["decided"]
+web = {}
+for r in ("canvaskit", "skwasm"):
+    if os.path.exists(os.path.join(FR, f"web_{r}.json")):
+        web[r] = load(f"web_{r}.json")
+        w = web[r]
+        for k in ("identical", "different", "deferred", "heightsEqual"):
+            N[f"web_{r}_{k}"] = w["validate"][k]
+        N[f"web_{r}_list_speedup"] = w["listExtents"]["textPainterMs"] / w["listExtents"]["breakFirstMs"]
+        N[f"web_{r}_fit_speedup"] = w["autoFit"]["textPainterMs"] / w["autoFit"]["breakFirstMs"]
+        assert w["listExtents"]["heightsEqual"] == w["listExtents"]["messages"]
+        assert w["autoFit"]["sameSize"] == w["autoFit"]["messages"]
+wc = web["canvaskit"]
+N["web_calibration"] = ", ".join([
+    "font sizes truncated to 1/64 px" if wc["fontSizeQuantized"] else "font sizes as given",
+    "no kerning across a hard break" if not wc["hardBreakKerns"] else "kerning across a hard break",
+]) + (", as on Linux and Android" if wc["fontSizeQuantized"] and not wc["hardBreakKerns"] else "")
+assert all(w["fontSizeQuantized"] == wc["fontSizeQuantized"] and w["hardBreakKerns"] == wc["hardBreakKerns"]
+           for w in web.values())
+N["web_renderers"] = " and ".join({"canvaskit": "CanvasKit", "skwasm": "skwasm (WebAssembly)"}[r] for r in web)
+
+
+def ms(x):
+    return f"{x:,.0f} ms" if x >= 10 else f"{x:.1f} ms"
+
+
+def fast(a, b):
+    return f"<b>{a / b:.1f}×</b>"
+
+
+qd = quiet["docs"]
+uc_rows = [
+    (f"Exact extents for a {fmt_int(le['messages'])}-message chat list", f"TextPainter: {ms(le['textPainterMs'])}",
+     ms(le["breakFirstMs"]), fast(le["textPainterMs"], le["breakFirstMs"]),
+     f"{fmt_int(le['heightsEqual'])} / {fmt_int(le['messages'])} heights"),
+    (f"Re-wrap {fmt_int(qd['paragraphs'])} laid-out paragraphs at a new width (resize, rotation)",
+     f"re-layout: {ms(qd['relayoutFlutterMs'])}", ms(qd["relayoutBreakFirstMs"]),
+     fast(qd["relayoutFlutterMs"], qd["relayoutBreakFirstMs"]), "Table 2"),
+    (f"Text scale {ts['fromSize']:g} → {ts['toSize']:g} px: every height again ({fmt_int(ts['messages'])} messages)",
+     f"TextPainter: {ms(ts['textPainterMs'])}", ms(ts["breakFirstMs"]), fast(ts["textPainterMs"], ts["breakFirstMs"]),
+     f"{fmt_int(ts['heightsEqual'])} / {fmt_int(ts['messages'])} heights"),
+    (f"Auto-fit: the largest of {af['sizes']} sizes that keeps a message in {af['maxLines']} lines "
+     f"({fmt_int(af['messages'])} messages)", f"TextPainter: {ms(af['textPainterMs'])}", ms(af["breakFirstMs"]),
+     fast(af["textPainterMs"], af["breakFirstMs"]), f"{fmt_int(af['sameSize'])} / {fmt_int(af['messages'])} sizes"),
+    (f"Paginate {fmt_int(pg['paragraphs'])} paragraphs into {fmt_int(pg['at16']['pages'])} pages",
+     f"TextPainter: {ms(pg['at16']['textPainterMs'])}", ms(pg["at16"]["breakFirstMs"]),
+     fast(pg["at16"]["textPainterMs"], pg["at16"]["breakFirstMs"]), "every page break"),
+    (f"Re-paginate at {pg['at18']['size']:g} px ({fmt_int(pg['at18']['pages'])} pages)",
+     f"TextPainter: {ms(pg['at18']['textPainterMs'])}", ms(pg["at18"]["breakFirstMs"]),
+     fast(pg["at18"]["textPainterMs"], pg["at18"]["breakFirstMs"]), "every page break"),
+    (f"Every height in a background isolate ({fmt_int(bgi['messages'])} messages)", "not possible",
+     f"{ms(bgi['workerMs'])} off the UI isolate, {ms(bgi['uiIsolateMs'])} on it", "—",
+     f"{fmt_int(bgi['heightsEqual'])} / {fmt_int(bgi['messages'])} heights"),
+    (f"Heights on a server, no Flutter ({fmt_int(srv['texts'])} messages)", "not possible",
+     f"{ms(srv['cliMedianMs'])}, native executable", "—",
+     f"{fmt_int(srv['heightsEqual'])} / {fmt_int(srv['decided'])} decided"),
+]
+for r, w in web.items():
+    name = {"canvaskit": "CanvasKit", "skwasm": "skwasm"}[r]
+    l, f = w["listExtents"], w["autoFit"]
+    uc_rows.append((f"Flutter web ({name}): chat-list extents", f"TextPainter: {ms(l['textPainterMs'])}",
+                    ms(l["breakFirstMs"]), fast(l["textPainterMs"], l["breakFirstMs"]),
+                    f"{fmt_int(l['heightsEqual'])} / {fmt_int(l['messages'])} heights"))
+    uc_rows.append((f"Flutter web ({name}): auto-fit", f"TextPainter: {ms(f['textPainterMs'])}", ms(f["breakFirstMs"]),
+                    fast(f["textPainterMs"], f["breakFirstMs"]),
+                    f"{fmt_int(f['sameSize'])} / {fmt_int(f['messages'])} sizes"))
+N["uc_table"] = table(["Use case", "Flutter today", "Break-first", "Faster", "Same answers"], uc_rows)
+fs = load("failsafe.json")
+for name, d in fs.items():
+    for k, v in d.items():
+        N[f"fs_{name}_{k}"] = v
+assert not fs["wider"]["canaryPasses"] and fs["eacute"]["canaryPasses"] and not fs["eacute"]["loadsWithFontBytes"]
+assert fs["same"]["loadsWithFontBytes"] and fs["same"]["staleDifferent"] == 0
+N["fs_checked"] = fs["eacute"]["staleIdentical"] + fs["eacute"]["staleDifferent"]
 
 with open(os.path.join(HERE, "numbers.json"), "w") as fp:
     json.dump(N, fp, indent=1, ensure_ascii=False)

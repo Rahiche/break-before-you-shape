@@ -1,0 +1,66 @@
+{
+ "platform": "macos",
+ "mode": "timing",
+ "sidecar": {
+  "bytes": 593684,
+  "loadMs": 2.967,
+  "describe": "Roboto: 707 characters, pair classes 113x120, 90 islands up to m=4"
+ },
+ "fontSizeQuantized": false,
+ "hardBreakKerns": true,
+ "canary": {
+  "probes": 5,
+  "maxErrPx": 0.0,
+  "pass": true
+ },
+ "timing": {
+  "docs": {
+   "paragraphsAll": 5296,
+   "paragraphs": 5209,
+   "codeUnits": 889096,
+   "size": 16.0,
+   "width": 400.0,
+   "textPainterMs": 346.918,
+   "uiParagraphMs": 342.837,
+   "breakFirstMs": 31.682,
+   "wordCacheColdMs": 436.462,
+   "wordCacheWarmMs": 19.826,
+   "wordCacheIdentical": 5206,
+   "wordCacheChecked": 5209,
+   "textPainterAllMs": 357.524,
+   "breakFirstAllMs": 31.101,
+   "relayoutFlutterMs": 22.587,
+   "relayoutBreakFirstMs": 2.902,
+   "relayoutWordCacheMs": 4.055,
+   "breakFirstNsPerCodeUnit": 35.63394729028136
+  },
+  "chat": {
+   "paragraphsAll": 24000,
+   "paragraphs": 23694,
+   "codeUnits": 1340775,
+   "size": 16.0,
+   "width": 280.0,
+   "textPainterMs": 760.514,
+   "uiParagraphMs": 752.495,
+   "breakFirstMs": 50.217,
+   "wordCacheColdMs": 535.719,
+   "wordCacheWarmMs": 38.49,
+   "wordCacheIdentical": 23691,
+   "wordCacheChecked": 23694,
+   "textPainterAllMs": 789.044,
+   "breakFirstAllMs": 62.07,
+   "relayoutFlutterMs": 50.79,
+   "relayoutBreakFirstMs": 8.042,
+   "relayoutWordCacheMs": 6.563,
+   "breakFirstNsPerCodeUnit": 37.4537114728422
+  },
+  "listExtents": {
+   "messages": 24000,
+   "breakFirstMs": 65.126,
+   "textPainterMs": 778.929,
+   "heightsEqual": 24000,
+   "maxScrollOffsetErrPx": 0.0,
+   "totalExtentPx": 955244.0
+  }
+ }
+}

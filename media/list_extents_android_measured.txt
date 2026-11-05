@@ -1,7 +1,7 @@
-DEMO extents first size=15.0 width=142.0 breakFirstMs=98.744 flutterMs=16.881 toFlutter=481
-DEMO jump stock to=2500 at=1969 frameMs=716.981
-DEMO jump breakFirst to=2500 at=2500 frameMs=21.715
-DEMO jump stock to=300 at=246 frameMs=723.507
-DEMO jump breakFirst to=300 at=300 frameMs=18.613
-DEMO extents re-wrap size=18.0 width=142.0 breakFirstMs=15.065999999999999 flutterMs=18.145 toFlutter=522
-DEMO verify size=18.0 equal=10000 of 10000 textPainterMs=443.502
+DEMO extents first size=15.0 width=142.0 breakFirstMs=60.903 flutterMs=7.254 toFlutter=481
+DEMO jump stock to=2500 at=1969 frameMs=570.265
+DEMO jump breakFirst to=2500 at=2500 frameMs=16.877
+DEMO jump stock to=300 at=246 frameMs=432.361
+DEMO jump breakFirst to=300 at=300 frameMs=16.913
+DEMO extents re-wrap size=18.0 width=142.0 breakFirstMs=7.965 flutterMs=21.063 toFlutter=522
+DEMO verify size=18.0 equal=10000 of 10000 textPainterMs=419.859

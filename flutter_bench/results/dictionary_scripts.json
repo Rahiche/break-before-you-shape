@@ -1,0 +1,129 @@
+{
+ "names_km": {
+  "texts": 1559,
+  "identical": 11509,
+  "different": 0,
+  "deferred": 2522,
+  "heightsEqual": 11509
+ },
+ "names_km inside English": {
+  "texts": 1559,
+  "identical": 11426,
+  "different": 0,
+  "deferred": 2605,
+  "heightsEqual": 11426
+ },
+ "names_lo": {
+  "texts": 1828,
+  "identical": 15156,
+  "different": 0,
+  "deferred": 1296,
+  "heightsEqual": 15156
+ },
+ "names_lo inside English": {
+  "texts": 1828,
+  "identical": 14968,
+  "different": 0,
+  "deferred": 1484,
+  "heightsEqual": 14968
+ },
+ "names_my": {
+  "texts": 1605,
+  "identical": 13883,
+  "different": 0,
+  "deferred": 562,
+  "heightsEqual": 13883
+ },
+ "names_my inside English": {
+  "texts": 1605,
+  "identical": 13888,
+  "different": 0,
+  "deferred": 557,
+  "heightsEqual": 13888
+ },
+ "names_th": {
+  "texts": 1899,
+  "identical": 17068,
+  "different": 0,
+  "deferred": 23,
+  "heightsEqual": 17068
+ },
+ "names_th inside English": {
+  "texts": 1899,
+  "identical": 16865,
+  "different": 0,
+  "deferred": 226,
+  "heightsEqual": 16865
+ },
+ "ui_th": {
+  "texts": 8000,
+  "identical": 71559,
+  "different": 0,
+  "deferred": 441,
+  "heightsEqual": 71559
+ },
+ "ui_th inside English": {
+  "texts": 8000,
+  "identical": 70946,
+  "different": 0,
+  "deferred": 1054,
+  "heightsEqual": 70946
+ },
+ "vocab_km": {
+  "texts": 3000,
+  "identical": 25512,
+  "different": 0,
+  "deferred": 1488,
+  "heightsEqual": 25512
+ },
+ "vocab_km inside English": {
+  "texts": 3000,
+  "identical": 25658,
+  "different": 0,
+  "deferred": 1342,
+  "heightsEqual": 25658
+ },
+ "vocab_lo": {
+  "texts": 3000,
+  "identical": 26333,
+  "different": 0,
+  "deferred": 667,
+  "heightsEqual": 26333
+ },
+ "vocab_lo inside English": {
+  "texts": 3000,
+  "identical": 26190,
+  "different": 0,
+  "deferred": 810,
+  "heightsEqual": 26190
+ },
+ "vocab_my": {
+  "texts": 3000,
+  "identical": 22888,
+  "different": 0,
+  "deferred": 4112,
+  "heightsEqual": 22888
+ },
+ "vocab_my inside English": {
+  "texts": 3000,
+  "identical": 23870,
+  "different": 0,
+  "deferred": 3130,
+  "heightsEqual": 23870
+ },
+ "vocab_th": {
+  "texts": 3000,
+  "identical": 26131,
+  "different": 0,
+  "deferred": 869,
+  "heightsEqual": 26131
+ },
+ "vocab_th inside English": {
+  "texts": 3000,
+  "identical": 26079,
+  "different": 0,
+  "deferred": 921,
+  "heightsEqual": 26079
+ },
+ "examples": []
+}

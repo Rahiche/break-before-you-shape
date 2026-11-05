@@ -2,11 +2,12 @@
  "platform": "macos",
  "mode": "all",
  "sidecar": {
-  "bytes": 573104,
-  "loadMs": 3.507,
-  "describe": "Roboto: 699 characters, pair classes 114x121, 90 islands up to m=4"
+  "bytes": 593684,
+  "loadMs": 1.57,
+  "describe": "Roboto: 707 characters, pair classes 113x120, 90 islands up to m=4"
  },
  "fontSizeQuantized": false,
+ "hardBreakKerns": true,
  "canary": {
   "probes": 5,
   "maxErrPx": 0.0,
@@ -16,44 +17,44 @@
   "en_docs": {
    "paragraphs": 5170,
    "covered": 5166,
-   "identical": 365378,
+   "identical": 365384,
    "different": 0,
-   "deferred": 6574,
-   "lines": 1524566,
-   "heightIdentical": 365378,
-   "heightChecked": 365378,
+   "deferred": 6568,
+   "lines": 1524632,
+   "heightIdentical": 365384,
+   "heightChecked": 365384,
    "maxHeightErrPx": 0.0,
    "maxSingleLineWidthErrPx": 0.0,
    "perSize": {
     "12.0": [
-     61055,
+     61056,
      0,
-     937
+     936
     ],
     "13.0": [
-     61055,
+     61056,
      0,
-     937
+     936
     ],
     "16.0": [
-     61055,
+     61056,
      0,
-     937
+     936
     ],
     "18.4": [
-     60579,
+     60580,
      0,
-     1413
+     1412
     ],
     "21.3": [
-     60579,
+     60580,
      0,
-     1413
+     1412
     ],
     "24.0": [
-     61055,
+     61056,
      0,
-     937
+     936
     ]
    }
   },
@@ -192,12 +193,12 @@
   "ui_de": {
    "paragraphs": 4000,
    "covered": 3993,
-   "identical": 286413,
+   "identical": 286411,
    "different": 0,
-   "deferred": 1083,
-   "lines": 539191,
-   "heightIdentical": 286413,
-   "heightChecked": 286413,
+   "deferred": 1085,
+   "lines": 539185,
+   "heightIdentical": 286411,
+   "heightChecked": 286411,
    "maxHeightErrPx": 0.0,
    "maxSingleLineWidthErrPx": 0.0,
    "perSize": {
@@ -217,14 +218,14 @@
      162
     ],
     "18.4": [
+     47697,
+     0,
+     219
+    ],
+    "21.3": [
      47698,
      0,
      218
-    ],
-    "21.3": [
-     47699,
-     0,
-     217
     ],
     "24.0": [
      47754,
@@ -431,19 +432,19 @@
    "codeUnits": 870779,
    "size": 16.0,
    "width": 400.0,
-   "textPainterMs": 223.846,
-   "uiParagraphMs": 221.986,
-   "breakFirstMs": 13.506,
-   "wordCacheColdMs": 267.224,
-   "wordCacheWarmMs": 11.512,
+   "textPainterMs": 223.621,
+   "uiParagraphMs": 221.264,
+   "breakFirstMs": 23.709,
+   "wordCacheColdMs": 272.403,
+   "wordCacheWarmMs": 15.067,
    "wordCacheIdentical": 5086,
    "wordCacheChecked": 5089,
-   "textPainterAllMs": 228.65,
-   "breakFirstAllMs": 14.549,
-   "relayoutFlutterMs": 17.715,
-   "relayoutBreakFirstMs": 1.462,
-   "relayoutWordCacheMs": 3.221,
-   "breakFirstNsPerCodeUnit": 15.510250017513055
+   "textPainterAllMs": 229.109,
+   "breakFirstAllMs": 25.051,
+   "relayoutFlutterMs": 17.544,
+   "relayoutBreakFirstMs": 2.17,
+   "relayoutWordCacheMs": 3.239,
+   "breakFirstNsPerCodeUnit": 27.227344710885312
   },
   "chat": {
    "paragraphsAll": 24000,
@@ -451,24 +452,24 @@
    "codeUnits": 1342438,
    "size": 16.0,
    "width": 280.0,
-   "textPainterMs": 568.646,
-   "uiParagraphMs": 563.882,
-   "breakFirstMs": 26.047,
-   "wordCacheColdMs": 408.945,
-   "wordCacheWarmMs": 27.642,
+   "textPainterMs": 559.349,
+   "uiParagraphMs": 555.202,
+   "breakFirstMs": 43.432,
+   "wordCacheColdMs": 397.685,
+   "wordCacheWarmMs": 32.786,
    "wordCacheIdentical": 23733,
    "wordCacheChecked": 23736,
-   "textPainterAllMs": 593.868,
-   "breakFirstAllMs": 26.99,
-   "relayoutFlutterMs": 42.848,
-   "relayoutBreakFirstMs": 5.259,
-   "relayoutWordCacheMs": 5.135,
-   "breakFirstNsPerCodeUnit": 19.402758265186176
+   "textPainterAllMs": 576.906,
+   "breakFirstAllMs": 46.835,
+   "relayoutFlutterMs": 42.677,
+   "relayoutBreakFirstMs": 6.764,
+   "relayoutWordCacheMs": 5.006,
+   "breakFirstNsPerCodeUnit": 32.35307701361255
   },
   "listExtents": {
    "messages": 24000,
-   "breakFirstMs": 35.823,
-   "textPainterMs": 586.644,
+   "breakFirstMs": 57.58,
+   "textPainterMs": 590.748,
    "heightsEqual": 24000,
    "maxScrollOffsetErrPx": 0.0,
    "totalExtentPx": 952831.0

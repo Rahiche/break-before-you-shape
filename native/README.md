@@ -14,28 +14,22 @@ BF_NATIVE_LIB=$PWD/../libbreak_first.dylib build/macos/Build/Products/Release/bf
 
 ## Results
 
-Exactness: the line starts match the Dart breaker in 2,552,760 of 2,552,760 checks (9 corpora, 6 sizes, 12 widths) on
-macOS, and in 194,400 of 194,400 on the Android emulator. CI repeats the check on Linux and macOS
-(`test/native_exact_test.dart`).
+<!-- native -->
+Exactness: the line starts match the Dart breaker in 2,552,760 of 2,552,760 checks (9 corpora, 6 sizes, 12 widths) on macOS, and in 2,552,760 of 2,552,760 on the Android emulator. CI repeats the check on Linux and macOS (`test/native_exact_test.dart`).
 
-Speed: macOS is the median of 3 runs on an Apple M3 ([native_macos.json](../flutter_bench/results/native_macos.json)).
-The Android emulator (arm64, on the same Mac) is one run ([native_android_emu.json](../flutter_bench/results/native_android_emu.json)).
+Speed: macOS is the median of 3 runs on an Apple M3 ([native_macos.json](../flutter_bench/results/native_macos.json)). The Android emulator (arm64, on the same Mac) is 1 run ([native_android_emu.json](../flutter_bench/results/native_android_emu.json)).
 
-| | macOS: Dart → C | Android emulator: Dart → C |
+|  | macOS: Dart → C | Android emulator: Dart → C |
 |---|---|---|
-| Breaker, docs (5,170 paragraphs) | 12.8 → 6.5 ms (2.0×) | 30.3 → 14.7 ms (2.1×) |
-| Breaker, chat (24,000 messages) | 22.2 → 9.7 ms (2.3×) | 22.9 → 9.9 ms (2.3×) |
-| Re-wrap at a new width, docs / chat | 2.9× / 2.4× | 4.5× / 2.9× |
-| Heights end to end, chat (fallbacks to Flutter included) | 2.2× | 2.5× |
-| TextPainter for the same chat heights | 595 ms | 1,100 ms |
+| Breaker, docs (5,170 paragraphs) | 23.3 → 6.7 ms (3.5×) | 24.0 → 7.0 ms (3.4×) |
+| Breaker, chat (24,000 messages) | 40.5 → 10.0 ms (4.0×) | 40.8 → 11.8 ms (3.5×) |
+| Re-wrap at a new width, docs / chat | 4.9× / 3.7× | 6.6× / 2.8× |
+| Heights end to end, chat (fallbacks to Flutter included) | 3.7× | 4.1× |
+| TextPainter for the same chat heights | 570 ms | 1,041 ms |
 
-Copying the text into native memory costs about 0.7 ns per code unit. Calling once per paragraph costs about the same
-as one batched call. In C the width pass takes about 3.5 ns per code unit, finding break opportunities 2.4, and wrapping
-0.5.
+Per code unit on the Mac, the Dart breaker takes 29.6 ns and C 7.3 ns (chat), copying the text into native memory included (0.9 ns). One call per paragraph costs 9.9 ms against 10.0 ms batched.
 
 ## Verdict
 
-The native port is consistently about 2× faster, and exact. But the breaker is already 25–45× cheaper than
-`TextPainter` on the same work. For 24,000 chat messages, C saves about 13 ms on the Mac and about 16 ms on the emulator.
-The package therefore keeps the Dart breaker, which also runs on the web, where `dart:ffi` does not exist. This port
-stays as a measured, exactness-checked option.
+C is 3.5× (docs) and 4.0× (chat) faster than the Dart breaker on the Mac, and exact. The Dart breaker is itself 10× (docs) and 14× (chat) cheaper than `TextPainter` on the same work; for 24,000 chat messages, C saves another 31 ms on the Mac and 36 ms on the emulator. The package keeps the Dart breaker, which runs on the web (no `dart:ffi` there) and in any isolate with no native build per platform. This port stays as a measured, exactness-checked option.
+<!-- /native -->

@@ -83,7 +83,11 @@ Arabic, emoji, and Indic scripts. Text a sidecar does not cover but the device's
 measured once per run through Flutter, which is exact because a change of font is a change of shaping run. Not one layout
 differs. The breaker hands {{mac_deferredPct:.2f}}% of Latin-script layouts back to the engine and computes paragraph
 heights {{=min(t_docs_speedup_tp,t_chat_speedup_tp):.0f}}–{{=max(t_docs_speedup_tp,t_chat_speedup_tp):.0f}}× faster than
-<code>TextPainter</code>.</p></div>
+<code>TextPainter</code>. Because the breaker is plain Dart and the sidecar plain data, it also runs where Flutter's own
+layout cannot, in a background isolate and on a server without Flutter, and on Flutter web, with the same answers; fitting
+text to a box, re-measuring after a text-scale change and re-paginating at a new size get
+{{uc_reuse_lo:.0f}}–{{uc_reuse_hi:.0f}}×
+faster (§6).</p></div>
 
 <h2>1 · Introduction</h2>
 <p>Every mainstream text stack (Chrome, WebKit, Android, Skia's SkParagraph, CoreText, DirectWrite) runs the same order:
@@ -134,8 +138,9 @@ line breaks and heights from a precompiled model, so text that is measured but n
   bidirectional runs, split kerning, shaping runs across fonts) and defers wherever the host's behaviour is
   uncertain.</li>
   <li><b>Evidence.</b> A census of {{census_faces}} font faces, and a Flutter package checked against Flutter's own
-  layout on four platforms, for plain and rich text in Latin, Greek, Cyrillic, Hebrew, Arabic, Chinese, Japanese, Korean
-  and Indic scripts and with emoji.</li>
+  layout on four platforms and the web, for plain and rich text in Latin, Greek, Cyrillic, Hebrew, Arabic, Chinese,
+  Japanese, Korean and Indic scripts and with emoji, and timed in the cases where apps measure text without drawing it
+  (§6).</li>
 </ol>
 
 <h2>2 · Width is local, and can be distilled</h2>
@@ -158,10 +163,13 @@ Flutter's own <code>ui.Paragraph</code>, run under <code>flutter_tester</code> o
   <li>every certificate island alone, and next to every safe neighbour (§3).</li>
 </ul>
 We measure at a font size equal to the font's units per em, so values are font units. All {{build_layouts:,}}
-measurements came back as exact integers, and widths scale linearly with size (§5.5), so <b>one file serves every
+measurements came back as exact integers, and widths scale linearly with size (§5.7), so <b>one file serves every
 size</b>. For Roboto (Latin, Greek and Cyrillic, {{build_characters}} characters), identical rows and columns of the pair
 matrix collapse into {{build_pair_classes}} classes. With {{build_islands}} islands, the file is
-{{=build_bytes/1024:.0f}} KB, {{=build_gzipBytes/1024:.1f}} KB gzipped, and builds in {{=build_buildMs/1000:.1f}} s.</p>
+{{=build_bytes/1024:.0f}} KB, {{=build_gzipBytes/1024:.1f}} KB gzipped, and builds in {{=build_buildMs/1000:.1f}} s. The
+island measurements grow as the island characters to the power <i>m</i>, times the safe characters; when they would
+pass 2.5 million, the build lowers the bound below the certificate's, and a longer run of island characters goes to
+Flutter.</p>
 
 <h2>3 · A certificate from the font's tables</h2>
 <p>Locality is not guaranteed: a contextual substitution can make a glyph depend on text arbitrarily far away. So each
@@ -222,6 +230,13 @@ it, and zeroes the advance of every GDEF mark after positioning. So the certific
 for each mark, its combining class and whether kerning skips it or stops at it (from lookup flags); a rule that can fire
 only on a mark left uncomposed next to certain characters becomes an exclusion the breaker checks, and a context rule
 whose nested lookups only move or swap marks cannot change a width at all.</p>
+<p><b>Common characters by script.</b> Spaces, digits and punctuation belong to no script. They take the script of the
+run they are in, and a run of them alone is shaped with the font's default script, DFLT, whose lookups can differ:
+Euphemia UCAS's space is 1,030 units under DFLT and 608 in Latin text. So for every other script, the certificate
+compares the lookups HarfBuzz selects with the main script's, and lists the Common characters and Common pairs that a
+differing lookup can change. The breaker defers those in a run of that script. When DFLT differs, a string of Common
+characters is measured before a Latin letter the font lacks: a fallback font draws that letter, so the string shares its
+script but not its shaping run.</p>
 
 <h2>4 · Breaking before shaping, the way the host does</h2>
 <p>For each paragraph, one pass builds a width prefix in units, and a second finds break opportunities. Both are
@@ -233,13 +248,15 @@ assuming them (Table 1), and the breaker <b>defers</b> whenever a decision depen
 <tr><th>Flutter (SkParagraph) convention</th><th>How it was established</th><th>Breaker</th></tr>
 <tr><td>Shapes once, breaks on shaped cluster advances; kerning sits on the left glyph</td><td>Exactness against Flutter's breaks</td><td>Pair terms attach to the left character</td></tr>
 <tr><td>Line fits if its width, floored to 1/100 px in float32, ≤ box</td><td>Accepted and rejected widths around the box edge</td><td>Same test, emulated in float32</td></tr>
+<tr><td>A word wider than the box is broken inside, on the line where it starts; the “too long” test compares the word's width with the box without the floor, so a word up to 0.01 px wider than the box fits a line of its own yet is broken</td><td>{{ci_fail_different}} letter-spaced Greek layouts on GitHub's Linux runner (run {{ci_fail_run}}); {{too_long_cases}} constructed words 0.001–0.01 px wider than the box, each broken inside</td><td>Defers when the next word is within 1/100 px of the box, or wider</td></tr>
 <tr><td>Line height = font line height, rounded to whole px</td><td>Every height in Table 2 ({{mac_heightChecked:,}} on macOS)</td><td>lines × rounded height</td></tr>
 <tr><td>No kerning across script runs; spaces join the preceding run</td><td>“Time Machine” inside Russian text</td><td>Pair term 0 at a script change</td></tr>
+<tr><td>Spaces, digits and punctuation take their run's script, and a run of them alone is shaped with the font's default script (DFLT), whose lookups can differ</td><td>Euphemia UCAS's space: 1,030 units alone, 608 in Latin text</td><td>The certificate lists, per script, the characters and pairs whose lookups differ; the breaker defers them there, and the build measures them next to a main-script letter</td></tr>
 <tr><td>UAX #14 with Unicode 15.1 number rules; word-initial dash binds</td><td>Per-class tallies of taken vs refused breaks</td><td>Rule table for the characters it handles</td></tr>
 <tr><td>Sometimes breaks at a space inside an unbreakable segment</td><td>Examples (e.g. <code>self ⏎!= 1.</code>)</td><td>Defers when such a space could end the line</td></tr>
-<tr><td>Positions drift in float32 at some sizes</td><td>Drift by size (§5.5)</td><td>Defers decisions the drift could flip</td></tr>
+<tr><td>Positions drift in float32 at some sizes</td><td>Drift by size (§5.7)</td><td>Defers decisions the drift could flip</td></tr>
 <tr><td>Android truncates the font size to 1/{{android_size_quantum}} px (e.g. {{android_size_ex}} → {{android_size_ex_eff}}); macOS and iOS do not</td><td>Effective size implied by measured widths at {{android_sizes_probed}} sizes, on the emulator</td><td>One probe layout at start-up detects it; sizes are truncated the same way</td></tr>
-<tr><td><code>\n</code>, U+2028 and U+2029 end a line; the break kerns with the character before it as a space does on macOS and iOS, not on Linux or Android</td><td>“LT⏎” loses Roboto's T-space kern on macOS only; CI on Linux</td><td>Mandatory records; a start-up probe decides the kerning</td></tr>
+<tr><td><code>\n</code>, U+2028 and U+2029 end a line; the break kerns with the characters on both sides as a space does on macOS and iOS, not on Linux or Android</td><td>“LT⏎” loses Roboto's T-space kern on macOS only; with split kerning, “⏎A” keeps the A's share (Arial Narrow); CI on Linux</td><td>Mandatory records; a start-up probe decides the kerning</td></tr>
 <tr><td>Letter spacing is added to every glyph advance (half before the first); positive spacing turns ligatures off, negative keeps them</td><td>Widths with spacing against widths with <code>liga</code> off</td><td>A second certificate without ligatures; spacing per glyph cluster</td></tr>
 <tr><td>Word spacing goes on the last space of each run that is a break opportunity, also after a hard break</td><td>Glyph positions with and without spacing</td><td>Counted per record; defers where a space meets a bidi run boundary</td></tr>
 <tr><td>With a height multiplier, a line is round(size × height), size and height taken as float32</td><td>15 × 1.3 gives 19, not 20 (heights in Table 4)</td><td>The same formula</td></tr>
@@ -247,7 +264,7 @@ assuming them (Table 1), and the breaker <b>defers</b> whenever a decision depen
 <tr><td>Bidirectional text: UAX #9 levels; shaping runs split at level changes, and scripts are itemized within each run</td><td>Hebrew and Arabic UI strings</td><td>Each run measured with the sidecar distilled in its direction</td></tr>
 <tr><td>UAX #14 rules LB15c, LB20a, LB21a/b, and LB19a's and LB30's East Asian exceptions; small kana break like ideographs</td><td>Validation mismatches, one rule each</td><td>Rule table extended</td></tr>
 <tr><td>A strut or TextHeightBehavior changes line heights, never line breaks; with one font, all lines but the first and last are alike</td><td>Heights in Table 6</td><td>Heights from three probe layouts per style</td></tr>
-<tr><td>Rich text: a change of font or size starts a shaping run (no kerning or ligature across it), a change of colour or decoration does not; a line is round(max ascent + max descent) of its runs</td><td>“AV” and “fi” across a colour change; widths across a size change</td><td>Runs per font and size; per-style metrics</td></tr>
+<tr><td>Rich text: a change of font or size starts a shaping run (no kerning or ligature across it), a change of colour or decoration does not; scripts are itemized within each span of one style; a line is round(max ascent + max descent) of its runs</td><td>“AV” and “fi” across a colour change; widths across a size change; Euphemia's space next to a letter in another size</td><td>Runs per font and size; scripts per style; per-style metrics</td></tr>
 <tr><td>Font fallback: each character goes to the first font that has it; scripts are itemized over the whole paragraph, across fonts</td><td>A space in Roboto after Chinese text does not kern with the Latin letter after it</td><td>Coverage (cmap) in the sidecar; script carried across runs</td></tr>
 <tr><td>Combining marks: composed when the font has the composite, zero-width otherwise, kerning skips or stops at them; with positive letter spacing an uncomposed mark is spaced like a glyph</td><td>Probes of “e+◌́”, “x+◌́”, “T◌́o”</td><td>Class M, compositions, exclusions; LB9/LB10</td></tr>
 <tr><td>Text from the device's fallback fonts is a shaping run of its own</td><td>Emoji and Devanagari between Roboto words</td><td>Measured once per run through Flutter, cached</td></tr>
@@ -313,6 +330,17 @@ it.</p>
 <p style="font:8.6pt 'Avenir Next',sans-serif;color:var(--muted)"><b>Table 3.</b> The shipped sidecar against Flutter on
 GitHub's machines, default style.</p>
 
+<p><b>Every font on the machine.</b> The census of §5.1 checks the model against HarfBuzz; a second census checks the
+whole package against Flutter. For each of the {{fcensus_faces}} local faces that cover basic Latin, the certificate is
+made with the current analyzer, the sidecar is built through Flutter, and {{fcensus_paragraphs}} paragraphs from the
+corpora are laid out at 3 sizes × 6 widths, then joined with hard breaks and laid out with letter and word spacing at 4
+widths ({{fcensus_checked}} faces; {{fcensus_skipped}} have no certificate or a pair table over the build's budget).
+Of {{fcensus_layouts:,}} layouts, the breaker decides {{=fcensus_identical+fcensus_different:,}}:
+<b>{{fcensus_identical:,}} identical to Flutter, {{fcensus_different}} different</b>, and every height equal. This
+census is what found the last rules in Table 1 (Common characters by script, a hard break's kerning on both sides, scripts
+per style) and two bugs: a ligature skipped when another ligature made the same glyph (“(c)” in Superclarendon), and
+8-bit island numbers in a face with more than 128 island characters.</p>
+
 <p><b>Style options and hard breaks.</b> Each rule in Table 1 was checked on the same corpora, joined one to four
 paragraphs at a time with <code>\n</code> ({{styles_texts:,}} texts), at 6 sizes and 8 widths, against Flutter laid out
 with the same options:</p>
@@ -353,18 +381,22 @@ speedups below differ by at most {{timing_spread_pct:.0f}}% between runs.</p>
   <b>{{t_chat_speedup_tp:.1f}}×</b> (chat) faster than <code>TextPainter</code>.</li>
   <li><b>Re-wrapping at a new width</b> is <b>{{t_docs_speedup_relayout:.1f}}×</b> (docs) and
   <b>{{t_chat_speedup_relayout:.1f}}×</b> (chat) faster than Flutter's re-layout, which already skips reshaping.</li>
-  <li><b>A warm word cache</b> is about as fast, but only after measuring every word once (the cold column), and it
-  still breaks {{t_docs_wc_wrong}} docs and {{t_chat_wc_wrong}} chat paragraphs differently from Flutter.</li>
+  <li><b>A warm word cache</b> sums cached word widths, which is faster still ({{t_docs_wordCacheWarmMs:.0f}} ms against
+  {{t_docs_breakFirstMs:.0f}} ms on docs, {{t_chat_wordCacheWarmMs:.0f}} against {{t_chat_breakFirstMs:.0f}} on chat).
+  But it is warm only after measuring every word once (the cold column, slower than <code>TextPainter</code> on docs),
+  it holds only for the font size and spacing it measured, and it still breaks {{t_docs_wc_wrong}} docs and
+  {{t_chat_wc_wrong}} chat paragraphs differently from Flutter; for other fonts it is wrong far more often (§5.2).</li>
   <li><b>End to end</b>, including paragraphs handed back to Flutter, the gain is {{t_docs_speedup_all:.1f}}× (docs)
   and {{t_chat_speedup_all:.1f}}× (chat).</li>
   <li><b>Android emulator</b>, release, one run: {{a_docs_speedup_tp:.1f}}× (docs) and {{a_chat_speedup_tp:.1f}}× (chat).</li>
   <li><b>On GitHub's machines</b> (median of 3 runs; one on Android): {{ci_macos_docs_speedup:.1f}}× / {{ci_macos_chat_speedup:.1f}}×
   on a virtual M1, {{ci_linux_docs_speedup:.1f}}× / {{ci_linux_chat_speedup:.1f}}× on Linux, and
   {{ci_android_docs_speedup:.1f}}× / {{ci_android_chat_speedup:.1f}}× on the Android emulator (docs / chat).</li>
-  <li><b>Native code</b> does not change the picture. A line-for-line C port called through <code>dart:ffi</code> gives
-  the same line starts in all {{native_checked:,}} checks and is {{native_docs_speedup:.1f}}× (docs) and
-  {{native_chat_speedup:.1f}}× (chat) faster than the Dart breaker, {{native_chat_e2e_speedup:.1f}}× end to end; since
-  the breaker is already a small share of the cost it replaces, the package stays in Dart, which also runs on the web.</li>
+  <li><b>Native code</b> is faster still. A line-for-line C port of the default style, called through
+  <code>dart:ffi</code>, gives the same line starts in all {{native_checked:,}} checks and is
+  {{native_docs_speedup:.1f}}× (docs) and {{native_chat_speedup:.1f}}× (chat) faster than the Dart breaker,
+  {{native_chat_e2e_speedup:.1f}}× end to end. The package stays in Dart, which runs on the web and in any isolate with
+  no native build per platform; the port is a measured option, not a requirement.</li>
 </ul>
 <figure>{{svg:fig_speed.svg}}
 <figcaption><b>Figure 7.</b> Time to compute every paragraph's height. (a) {{t_docs_paragraphs:,}} Python
@@ -411,38 +443,108 @@ measures, all {{=len(mac_sizes)}} sizes in Table 2 had zero mismatches on every 
 <figcaption><b>Figure 9.</b> Largest drift between the model and Flutter, relative to x position, by font size.</figcaption></figure>
 </div>
 
-<h2>6 · Related work</h2>
+<h2>6 · Where it pays</h2>
+<p>Break-first does not make drawing cheaper: a line that is painted is still shaped (§8). It pays wherever an app must
+know how text lays out without drawing it. Table 7 times each such case against what a Flutter app does today, and
+checks every answer against Flutter's (macOS release build, median of {{uc_runs}} runs; the speedups vary by at most
+{{uc_spread_pct:.0f}}% between runs).</p>
+{{uc_table}}
+<p style="font:8.6pt 'Avenir Next',sans-serif;color:var(--muted)"><b>Table 7.</b> Break-first times include the text it hands back to Flutter.
+A paragraph's records depend on neither the width nor the font size, so a resize, a new text scale, a new page size and
+each auto-fit probe re-run only the greedy pass. Keeping records costs memory:
+{{=uc_scale_recordBytes/1e6:.1f}} MB for the {{uc_scale_messages:,}} messages, {{=uc_scale_recordBytes/uc_scale_codeUnits:.1f}}
+bytes per UTF-16 code unit. In a background isolate, Flutter's own layout fails (“{{uc_bg_error}}”);
+the breaker computes the heights there, and the UI isolate lays out only the {{uc_bg_handedBackToUi}} messages it hands
+back. The server row is <code>tool/heights_cli.dart</code> compiled with <code>dart compile exe</code>: no Flutter engine,
+and {{=uc_srv_texts-uc_srv_decided}} messages left to the client. Web rows: Chrome, release build.</p>
+
+<p><b>Who needs it.</b></p>
+<ul>
+  <li><b>Long lists and grids of variable height</b> (chats, feeds, logs, search results, masonry grids): exact extents
+  give an exact scrollbar and an exact jump to any item (§5.6), computed before the items are built, on any isolate, or
+  on the server that sends them.</li>
+  <li><b>Layouts that follow the window or the user:</b> resizing on desktop and the web, rotation, split screen and
+  foldables, and the text scale chosen for accessibility.</li>
+  <li><b>Text fitted to a box:</b> auto-sizing titles and labels, and the “does it fit in <i>n</i> lines” test behind
+  them and behind “read more”.</li>
+  <li><b>Pages:</b> e-readers, print previews, PDF and report generation, re-paginated when the reader picks a size.</li>
+</ul>
+
+<p><b>Flutter web.</b> On the web, Flutter lays text out in {{web_renderers}}; the breaker compiles to JavaScript or
+WebAssembly with the app. The same sidecar, calibrated in the browser ({{web_calibration}}), gives Flutter's line breaks
+and heights in {{web_canvaskit_identical:,}} of {{=web_canvaskit_identical+web_canvaskit_different:,}} decided layouts
+(the {{w_corpora}} corpora, 300 paragraphs each, 3 sizes × 6 widths; {{web_canvaskit_different}} different).</p>
+
+<p><b>Where it does not pay.</b> Text laid out once and drawn at once, such as a label on screen, gains nothing: Flutter
+shapes it to paint it anyway. And each font the app ships needs a sidecar, built in {{=build_buildMs/1000:.0f}} s for
+Roboto and {{=build_gzipBytes/1024:.0f}} KB gzipped.</p>
+
+<h2>7 · Related work</h2>
 <ul>
   <li><b>TeX's TFM lig/kern programs</b> are a hand-made per-font width automaton: the closest ancestor of the model,
-  without contextual forms or a certificate.</li>
+  without contextual forms or a certificate. <code>otftotfm</code> and LuaTeX's base mode compile an OpenType font's
+  simple ligatures and pair kerns into such programs, without checking them against a shaper.</li>
+  <li><b>Engines already read shaping tables</b>, to answer one yes/no question per font or run. Firefox (since 2013) and
+  Blink check whether the space glyph takes part in any lookup, which decides whether shaping word by word is safe.
+  WPF and DirectWrite (<code>GetTextComplexity</code>) check whether any default lookup touches a range of characters,
+  which decides whether nominal advances can be used without shaping.</li>
   <li><b>PDF libraries</b> sum AFM widths and kerning pairs, ignoring substitution.</li>
   <li><b>WebKit's simple text path</b> skips the shaper only when kerning and ligatures are off.</li>
-  <li><b>Android's Minikin and Pretext</b> measure and cache words, which loses context across words (§5.2).</li>
+  <li><b>Android's Minikin and Pretext</b> measure and cache words, which loses context across words (§5.2).
+  uWrap (2025) predicts line counts for list virtualization from canvas measurements, without claiming exactness.</li>
   <li><b>HarfBuzz's <code>UNSAFE_TO_CONCAT</code></b> makes reshaping after breaking cheaper, but keeps the
   shape-first order.</li>
   <li><b><code>typeset</code></b> (2026) computes widths from advances and pair kerning with a HarfBuzz fallback,
   without contextual terms or a proof.</li>
 </ul>
-<p>We found no prior static analysis of shaping tables. This survey is a web search, not an exhaustive review.</p>
+<p>We know of no prior work that classifies characters by their role in a font's lookups, proves that shaped width
+splits into local terms (AAT state machines included), or checks a model made before shaping against a production engine
+line by line. This survey is a web search, not an exhaustive review.</p>
 
-<h2>7 · Limitations</h2>
-<p>Everything outside this list is decided exactly or handed to Flutter; what is listed is handed to Flutter or not
-claimed.</p>
+<h2>8 · Limitations and threats to validity</h2>
+<p>Wherever the breaker decides, it is exact (Tables 2–7). What follows is what a reader should doubt, what remains
+outside a package's reach or needs something this work did not have, and what is handed to Flutter rather than
+decided.</p>
 <ul>
-  <li><b>Scripts.</b> Indic syllables (reordering), Thai, Lao, Khmer and Burmese (dictionary line breaking), vowel and
-  other combining marks, emoji, and letter-spaced Arabic go to Flutter, as does any character a font
-  lacks (fallback fonts differ between devices).</li>
-  <li><b>Styles.</b> A paragraph has one font and size: rich text with several, font features and
-  <code>strutStyle</code> go to Flutter.</li>
-  <li><b>Proof.</b> The trust base in §3; the AAT emulation follows HarfBuzz 15 and is tested, not proven. Fonts with only
-  a <code>mort</code> table, rare <code>kerx</code>/<code>kern</code> formats, and islands beyond the stated bounds are
-  blocked rather than analysed.</li>
-  <li><b>Measurement.</b> Mobile timings come from simulators and emulators, not phones.</li>
-  <li><b>Scope of the gain.</b> The speedup is for measurement and line breaking; painting is unchanged, and lines that
-  are drawn are still shaped.</li>
+  <li><b>Exact against what.</b> The theorem is about HarfBuzz's behaviour as the analyzer models it (AAT as HarfBuzz
+  runs it, not as CoreText does). Agreement with Flutter is measured, not proved: every layout in §5 and §6, none
+  different. Measurement has caught the breaker once since the conventions of Table 1 were complete: GitHub's Linux
+  runner, whose Greek strings are not ours, found {{ci_fail_different}} of {{ci_fail_layouts:,}} letter-spaced layouts
+  different (<a href="https://github.com/Rahiche/break-before-you-shape/actions/runs/{{ci_fail_run}}">run
+  {{ci_fail_run}}</a>), each a word less than 1/100 px wider than the box (Table 1). The breaker now defers those, the
+  package test checks {{too_long_cases}} such words, and every number in this paper was measured again after the fix.
+  On the fix (<a href="https://github.com/Rahiche/break-before-you-shape/actions/runs/{{ci_run}}">run {{ci_run}}</a>)
+  the same runner's layouts are {{ci_fix_identical:,}} identical and none different; {{ci_fix_more_deferred}} more go
+  to Flutter than before.
+  Text unlike the corpora may hold conventions no corpus has shown yet.</li>
+  <li><b>A stale sidecar.</b> If the font changes and its sidecar is not rebuilt, the canary refuses a wholesale change:
+  with every advance 1% wider it is off by {{fs_wider_canaryErrorPx:.1f}} px, and used anyway the stale sidecar would
+  break {{fs_wider_staleDifferent:,}} of {{fs_checked:,}} layouts. One glyph changed (é 60 units wider) passes the canary
+  and would break {{fs_eacute_staleDifferent}}; the sidecar's digest of its font refuses it when the app passes the font's
+  bytes to <code>BreakFirst.load</code>, and rebuilding the sidecar, as the package test does, gives other bytes
+  (<code>flutter_bench/test/failsafe_test.dart</code>).</li>
+  <li><b>Engine updates.</b> A Flutter app carries its own engine, so a shipped app's shaping cannot change under its
+  sidecar. A Flutter upgrade is a new build, in which the package test rebuilds the sidecar and requires the shipped
+  bytes. Fonts that come from the device (emoji, Indic) are never distilled: they are measured on the device.</li>
+  <li><b>Baselines.</b> <code>TextPainter</code> is what apps call. A warm word cache is as fast as break-first but not
+  exact (§5.2, §5.6), and needs a first pass that measures every word.</li>
+  <li><b>Phones.</b> Mobile timings and checks come from simulators and emulators. The benchmark app runs on a phone with
+  one command (<code>tool/run_android.sh</code>), but no phone was available.</li>
+  <li><b>Painting.</b> The gain is for measurement and line breaking. Lines that are drawn are still shaped, because
+  Flutter draws text only through <code>ui.Paragraph</code>; drawing from the model would need an engine API for
+  positioned glyph runs.</li>
+  <li><b>Proof.</b> The certificate rests on the trust base in §3, and its AAT emulation is tested against HarfBuzz, not
+  machine-checked. Fonts with only the pre-2006 <code>mort</code> table are refused: no font on the test machine has
+  one to check an analysis against.</li>
+  <li><b>Handed to Flutter.</b> Characters that no font here or on the device covers; emoji built on symbols of the
+  Basic Multilingual Plane (❤️, ✍️), whose line-break classes vary; Indic, Thai, Lao, Khmer and Burmese set in a
+  bundled font (they are decided when they come from the device's fonts); letter-spaced Arabic (with ligatures off,
+  lam-alef is still a ligature, and the tables for letter-spaced text have no islands); a combining mark left uncomposed
+  next to a character a rule excludes, and marks in AAT fonts. Emoji and the scripts from the device's fonts are measured once
+  per run through Flutter, not distilled.</li>
 </ul>
 
-<h2>8 · Reproducibility</h2>
+<h2>9 · Reproducibility</h2>
 <p>All code and results are in the repository
 (<a href="https://github.com/Rahiche/break-before-you-shape">github.com/Rahiche/break-before-you-shape</a>):</p>
 <ul>
@@ -454,6 +556,9 @@ claimed.</p>
   Tables 3–6; <code>flutter_bench/tool/validate_all.sh</code> runs every local check;</li>
   <li><code>make_corpora.py</code> and <code>make_test_texts.py</code>: the corpora and the texts derived from them,
   rebuilt from the machine's own files rather than shipped;</li>
+  <li><code>flutter_bench/lib/bench.dart</code> (<code>BF_MODE=usecases</code>), <code>lib/web_main.dart</code>,
+  <code>tool/heights_cli.dart</code>, <code>test/use_cases_test.dart</code> and <code>test/failsafe_test.dart</code>: §6
+  and the stale-sidecar check;</li>
   <li><code>native/</code>: the C port; <code>.github/workflows/</code>: the CI that reruns the benchmarks;</li>
   <li><code>paper/make_figures.py</code>: the figures and every number in this paper, read from the result files.</li>
 </ul>

@@ -1,64 +1,64 @@
 {
- "font": "Times New Roman (macOS system font)",
- "characters": 1147,
- "buildMs": 187456,
+ "font": "/System/Library/Fonts/Supplemental/Times New Roman.ttf",
+ "characters": 1303,
+ "buildMs": 9282,
  "canaryErrPx": 0.0,
  "quantized": false,
  "messages": {
-  "texts": 4000,
-  "covered": 1560,
-  "identical": 28077,
+  "texts": 1500,
+  "covered": 660,
+  "identical": 11877,
   "different": 0,
-  "deferred": 43923,
-  "heightsEqual": 28077
+  "deferred": 15123,
+  "heightsEqual": 11877
  },
  "messages joined with hard breaks": {
-  "texts": 1333,
-  "covered": 246,
-  "identical": 4426,
+  "texts": 500,
+  "covered": 116,
+  "identical": 2087,
   "different": 0,
-  "deferred": 19568,
-  "heightsEqual": 4426
+  "deferred": 6913,
+  "heightsEqual": 2087
  },
  "letterSpacing 0.5, wordSpacing 1": {
-  "texts": 4000,
+  "texts": 1500,
   "covered": 0,
   "identical": 0,
   "different": 0,
-  "deferred": 72000,
+  "deferred": 27000,
   "heightsEqual": 0
  },
  "mixed: RTL paragraphs": {
-  "texts": 4000,
-  "covered": 2080,
-  "identical": 37334,
+  "texts": 1500,
+  "covered": 794,
+  "identical": 14248,
   "different": 0,
-  "deferred": 34666,
-  "heightsEqual": 37334
+  "deferred": 12752,
+  "heightsEqual": 14248
  },
  "mixed: RTL paragraphs with hard breaks": {
-  "texts": 1333,
-  "covered": 333,
-  "identical": 5959,
+  "texts": 500,
+  "covered": 130,
+  "identical": 2327,
   "different": 0,
-  "deferred": 18035,
-  "heightsEqual": 5959
+  "deferred": 6673,
+  "heightsEqual": 2327
  },
  "mixed: RTL paragraphs, spaced": {
-  "texts": 4000,
-  "covered": 0,
-  "identical": 0,
+  "texts": 1500,
+  "covered": 12,
+  "identical": 140,
   "different": 0,
-  "deferred": 72000,
-  "heightsEqual": 0
+  "deferred": 26860,
+  "heightsEqual": 140
  },
  "mixed: LTR paragraphs": {
-  "texts": 4000,
-  "covered": 2079,
-  "identical": 37316,
+  "texts": 1500,
+  "covered": 794,
+  "identical": 14248,
   "different": 0,
-  "deferred": 34684,
-  "heightsEqual": 37316
+  "deferred": 12752,
+  "heightsEqual": 14248
  },
  "examples": []
 }

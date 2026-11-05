@@ -1,0 +1,118 @@
+{
+ "platform": "ios",
+ "mode": "styles",
+ "sidecar": {
+  "bytes": 593684,
+  "loadMs": 65.635,
+  "describe": "Roboto: 707 characters, pair classes 113x120, 90 islands up to m=4"
+ },
+ "fontSizeQuantized": false,
+ "hardBreakKerns": true,
+ "canary": {
+  "probes": 5,
+  "maxErrPx": 0.0,
+  "pass": true
+ },
+ "styles": {
+  "hard breaks": {
+   "identical": 125491,
+   "different": 0,
+   "deferred": 4109,
+   "lines": 826508,
+   "heightIdentical": 125491,
+   "heightChecked": 125491
+  },
+  "letterSpacing 0.5": {
+   "identical": 125392,
+   "different": 0,
+   "deferred": 4208,
+   "lines": 869804,
+   "heightIdentical": 125392,
+   "heightChecked": 125392
+  },
+  "letterSpacing -0.3": {
+   "identical": 123199,
+   "different": 0,
+   "deferred": 6401,
+   "lines": 722545,
+   "heightIdentical": 123199,
+   "heightChecked": 123199
+  },
+  "wordSpacing 2": {
+   "identical": 125458,
+   "different": 0,
+   "deferred": 4142,
+   "lines": 851632,
+   "heightIdentical": 125458,
+   "heightChecked": 125458
+  },
+  "height 1.3": {
+   "identical": 125491,
+   "different": 0,
+   "deferred": 4109,
+   "lines": 826508,
+   "heightIdentical": 125491,
+   "heightChecked": 125491
+  },
+  "maxLines 3": {
+   "identical": 125491,
+   "different": 0,
+   "deferred": 4109,
+   "lines": 317800,
+   "heightIdentical": 125491,
+   "heightChecked": 125491
+  },
+  "combined": {
+   "identical": 122563,
+   "different": 0,
+   "deferred": 7037,
+   "lines": 379458,
+   "heightIdentical": 122563,
+   "heightChecked": 122563
+  },
+  "strut 20 px, forced": {
+   "identical": 125491,
+   "different": 0,
+   "deferred": 4109,
+   "lines": 826508,
+   "heightIdentical": 125491,
+   "heightChecked": 125491
+  },
+  "strut height 1.6, leading 0.4": {
+   "identical": 125491,
+   "different": 0,
+   "deferred": 4109,
+   "lines": 826508,
+   "heightIdentical": 125491,
+   "heightChecked": 125491
+  },
+  "height 1.5, no first ascent or last descent": {
+   "identical": 125491,
+   "different": 0,
+   "deferred": 4109,
+   "lines": 826508,
+   "heightIdentical": 125491,
+   "heightChecked": 125491
+  },
+  "height 1.4, even leading": {
+   "identical": 125491,
+   "different": 0,
+   "deferred": 4109,
+   "lines": 826508,
+   "heightIdentical": 125491,
+   "heightChecked": 125491
+  },
+  "texts": {
+   "en_docs": 300,
+   "en_man": 300,
+   "en_legal": 300,
+   "ui_en": 300,
+   "ui_de": 300,
+   "ui_fr": 300,
+   "ui_ru": 300,
+   "ui_uk": 300,
+   "ui_el": 300
+  },
+  "examples": []
+ }
+}

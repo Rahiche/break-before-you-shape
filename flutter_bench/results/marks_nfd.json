@@ -40,10 +40,10 @@
   },
   "ui_fr_nfd, letterSpacing 0.5, wordSpacing 1, hard breaks": {
    "texts": 718,
-   "identical": 5964,
+   "identical": 5960,
    "different": 0,
-   "deferred": 6960,
-   "heightsEqual": 5964
+   "deferred": 6964,
+   "heightsEqual": 5960
   },
   "ui_ru_nfd": {
    "texts": 1589,
@@ -80,10 +80,10 @@
   "canaryErrPx": 0.0,
   "ui_de_nfd": {
    "texts": 1803,
-   "identical": 29856,
+   "identical": 29854,
    "different": 0,
-   "deferred": 2598,
-   "heightsEqual": 29856
+   "deferred": 2600,
+   "heightsEqual": 29854
   },
   "ui_de_nfd, letterSpacing 0.5, wordSpacing 1, hard breaks": {
    "texts": 601,
@@ -94,17 +94,17 @@
   },
   "ui_el_nfd": {
    "texts": 3000,
-   "identical": 51362,
+   "identical": 51361,
    "different": 0,
-   "deferred": 2638,
-   "heightsEqual": 51362
+   "deferred": 2639,
+   "heightsEqual": 51361
   },
   "ui_el_nfd, letterSpacing 0.5, wordSpacing 1, hard breaks": {
    "texts": 1000,
-   "identical": 15737,
+   "identical": 15736,
    "different": 0,
-   "deferred": 2263,
-   "heightsEqual": 15737
+   "deferred": 2264,
+   "heightsEqual": 15736
   },
   "ui_fr_nfd": {
    "texts": 2154,
@@ -122,31 +122,31 @@
   },
   "ui_ru_nfd": {
    "texts": 1589,
-   "identical": 24909,
+   "identical": 18,
    "different": 0,
-   "deferred": 3693,
-   "heightsEqual": 24909
+   "deferred": 28584,
+   "heightsEqual": 18
   },
   "ui_ru_nfd, letterSpacing 0.5, wordSpacing 1, hard breaks": {
    "texts": 529,
-   "identical": 7149,
+   "identical": 0,
    "different": 0,
-   "deferred": 2373,
-   "heightsEqual": 7149
+   "deferred": 9522,
+   "heightsEqual": 0
   },
   "ui_uk_nfd": {
    "texts": 1406,
-   "identical": 22982,
+   "identical": 0,
    "different": 0,
-   "deferred": 2326,
-   "heightsEqual": 22982
+   "deferred": 25308,
+   "heightsEqual": 0
   },
   "ui_uk_nfd, letterSpacing 0.5, wordSpacing 1, hard breaks": {
    "texts": 468,
-   "identical": 6535,
+   "identical": 0,
    "different": 0,
-   "deferred": 1889,
-   "heightsEqual": 6535
+   "deferred": 8424,
+   "heightsEqual": 0
   }
  },
  "examples": []

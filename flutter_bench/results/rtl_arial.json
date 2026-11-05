@@ -1,64 +1,64 @@
 {
- "font": "macOS:Arial.ttf",
- "characters": 671,
- "buildMs": 23684,
+ "font": "/System/Library/Fonts/Supplemental/Arial.ttf",
+ "characters": 831,
+ "buildMs": 29919,
  "canaryErrPx": 0.0,
  "quantized": false,
  "messages": {
-  "texts": 4000,
-  "covered": 2119,
-  "identical": 38112,
+  "texts": 1500,
+  "covered": 795,
+  "identical": 14300,
   "different": 0,
-  "deferred": 33888,
-  "heightsEqual": 38112
+  "deferred": 12700,
+  "heightsEqual": 14300
  },
  "messages joined with hard breaks": {
-  "texts": 1333,
-  "covered": 427,
-  "identical": 7661,
+  "texts": 500,
+  "covered": 164,
+  "identical": 2945,
   "different": 0,
-  "deferred": 16333,
-  "heightsEqual": 7661
+  "deferred": 6055,
+  "heightsEqual": 2945
  },
  "letterSpacing 0.5, wordSpacing 1": {
-  "texts": 4000,
-  "covered": 2119,
-  "identical": 38061,
+  "texts": 1500,
+  "covered": 795,
+  "identical": 14279,
   "different": 0,
-  "deferred": 33939,
-  "heightsEqual": 38061
+  "deferred": 12721,
+  "heightsEqual": 14279
  },
  "mixed: RTL paragraphs": {
-  "texts": 4000,
-  "covered": 3734,
-  "identical": 66857,
+  "texts": 1500,
+  "covered": 1321,
+  "identical": 23687,
   "different": 0,
-  "deferred": 5143,
-  "heightsEqual": 66857
+  "deferred": 3313,
+  "heightsEqual": 23687
  },
  "mixed: RTL paragraphs with hard breaks": {
-  "texts": 1333,
-  "covered": 1093,
-  "identical": 19378,
+  "texts": 500,
+  "covered": 382,
+  "identical": 6783,
   "different": 0,
-  "deferred": 4616,
-  "heightsEqual": 19378
+  "deferred": 2217,
+  "heightsEqual": 6783
  },
  "mixed: RTL paragraphs, spaced": {
-  "texts": 4000,
-  "covered": 3734,
-  "identical": 56926,
+  "texts": 1500,
+  "covered": 1321,
+  "identical": 20761,
   "different": 0,
-  "deferred": 15074,
-  "heightsEqual": 56926
+  "deferred": 6239,
+  "heightsEqual": 20761
  },
  "mixed: LTR paragraphs": {
-  "texts": 4000,
-  "covered": 3734,
-  "identical": 66857,
+  "texts": 1500,
+  "covered": 1386,
+  "identical": 24820,
   "different": 0,
-  "deferred": 5143,
-  "heightsEqual": 66857
+  "deferred": 2180,
+  "heightsEqual": 24820
  },
  "examples": []
 }

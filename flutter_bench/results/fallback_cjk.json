@@ -1,10 +1,10 @@
 {
- "texts": 2400,
+ "texts": 1600,
  "fallback": {
-  "identical": 30674,
+  "identical": 20438,
   "different": 0,
-  "deferred": 5326,
-  "heightsEqual": 30674
+  "deferred": 3562,
+  "heightsEqual": 20438
  },
  "examples": []
 }

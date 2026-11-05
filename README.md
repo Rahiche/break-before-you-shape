@@ -8,9 +8,11 @@ Flutter package: [packages/break_first](packages/break_first).
 
 ![Jumping to message #2,500 in a 10,000-message chat list: stock ListView vs break-first extents](media/list_extents_jump.gif)
 
+<!-- demo -->
 A chat list of 10,000 messages on the Android emulator, release build ([video](media/list_extents_android.mp4)).
-The stock `ListView` asked for #2,500 lands on #1,969, in a 717 ms frame. With break-first extents it lands on #2,500
-in a 22 ms frame. All 10,000 extents equal `TextPainter`'s ([measured log](media/list_extents_android_measured.txt)).
+The stock `ListView` asked for #2,500 lands on #1,969, in a 570 ms frame. With break-first extents it lands on #2,500
+in a 17 ms frame. All 10,000 extents equal `TextPainter`'s ([measured log](media/list_extents_android_measured.txt)).
+<!-- /demo -->
 
 ## The idea
 
@@ -25,20 +27,51 @@ alone. Anything the breaker cannot certify goes back to the engine.
 Measured on one Apple M3 machine (macOS, an iOS 17.5 simulator, an Android API 35 emulator) and on GitHub Actions.
 Every number in the paper is generated from the files in `results/`, `census/` and `flutter_bench/results/`.
 
-| | |
+<!-- results -->
+|  |  |
 |---|---|
-| Font census: 449 local font faces | 5,339,408 of 5,560,372 lines certified (96%), **0 wrong**; 410 faces certify ≥ 99% of lines |
-| Flutter, macOS release: line breaks and heights vs Flutter's own layout | **2,524,902 of 2,524,902** paragraph layouts identical (7,201,290 lines; 9 corpora, 6 languages, 6 font sizes, 12 widths); 0.87% handed back to Flutter |
-| Same sidecar on the iOS simulator / Android emulator | 192,193 of 192,193 / 192,176 of 192,176 identical |
-| On GitHub Actions: Linux, macOS, iOS simulator, Android emulator ([run](flutter_bench/results/ci/run-41614792200)) | **5,529,364** layouts identical, 0 different |
+| Font census (HarfBuzz): 449 local font faces | 5,342,060 of 5,560,372 lines certified (96%), **0 wrong**; 410 faces certify ≥ 99% of lines |
+| Font census (Flutter): 447 faces, each sidecar built through Flutter | **3,869,528** decided layouts identical, 0 different |
+| Flutter, macOS release: line breaks and heights vs Flutter's own layout | **2,524,906 of 2,524,906** paragraph layouts identical (7,201,350 lines; nine corpora, six languages, six font sizes, twelve widths); 0.87% handed back to Flutter |
+| Same sidecar on the iOS simulator / Android emulator | 192,193 of 192,193 / 192,175 of 192,175 identical |
+| On GitHub Actions: Linux, macOS, iOS simulator, Android emulator ([run](flutter_bench/results/ci/run-41971344191)) | **5,526,948** layouts identical, 0 different |
+| Flutter web (CanvasKit and skwasm (WebAssembly), Chrome) | **47,946** layouts identical, 0 different |
 | Letter and word spacing, height multiplier, `maxLines`, hard line breaks (macOS release) | **4,575,628** layouts identical, 0 different |
-| Hebrew and Arabic (alone and mixed with Latin), Japanese, Chinese, Korean; Arial, Times New Roman, Hiragino Sans GB, Apple SD Gothic Neo | **1,357,183** layouts identical, 0 different; the other 946,745 handed to Flutter |
-| Speed vs `TextPainter` (macOS release, median of 3 runs) | **18.5×** (docs), **25.2×** (chat); re-wrap at a new width 11.6× / 9.6× |
-| Speed on GitHub Actions (docs / chat) | 26.0× / 27.6× macOS (virtual M1), 18.9× / 24.7× Linux, 24.5× / 38.6× Android emulator |
-| C port of the breaker through `dart:ffi` | same line starts in all 2,552,760 checks; 2.0× / 2.3× faster than the Dart breaker, so the package stays in Dart |
-| Exact heights for a 24,000-message chat list | 33 ms vs 588 ms (18.0×); every height equal |
-| Sidecar for Roboto (Latin, Greek, Cyrillic) | 590,712 bytes, 10,553 gzipped, one file for every font size and style option |
+| Hebrew and Arabic (alone and mixed with Latin), Japanese, Chinese, Korean | **914,316** layouts identical, 0 different; the other 705,648 handed to Flutter |
+| 15 further checks: struts, font features, rich text, fallback fonts, combining marks, pointed Hebrew, vowelled Arabic, emoji, Indic, Thai, Lao, Khmer, Burmese | **2,498,638** layouts identical, 0 different |
+| Speed vs `TextPainter` (macOS release, median of 3 runs) | **9.7×** (docs), **13.6×** (chat); re-wrap at a new width 8.2× / 7.4× |
+| Speed on GitHub Actions (docs / chat) | 10.4× / 15.0× macOS (virtual M1), 9.4× / 12.0× Linux, 31.8× / 20.0× Android emulator |
+| C port of the breaker through `dart:ffi` | same line starts in all 2,552,760 checks; 3.5× / 4.0× faster than the Dart breaker, so the package stays in Dart |
+| Sidecar for Roboto (Latin, Greek, Cyrillic) | 593,684 bytes, 12,319 gzipped, one file for every font size and style option |
 | Today's shortcuts vs exact ground truth (HarfBuzz) | shape once then break: up to 1.2% of paragraphs wrong; per-word cache: up to 9.6% |
+<!-- /results -->
+
+## Where it pays
+
+Break-first does not make drawing cheaper: a line that is painted is still shaped. It pays wherever an app must know how
+text lays out without drawing it. Each case is timed against what a Flutter app does today and checked answer for answer
+(macOS release build; `BF_MODE=usecases`, `flutter_bench/test/use_cases_test.dart`):
+
+<!-- usecases -->
+| Use case | Flutter today | Break-first | Faster | Same answers |
+|---|---|---|---|---|
+| Exact extents for a 24,000-message chat list | TextPainter: 585 ms | 53 ms | **11.1×** | 24,000 / 24,000 heights |
+| Re-wrap 5,089 laid-out paragraphs at a new width (resize, rotation) | re-layout: 18 ms | 2.1 ms | **8.2×** | Table 2 |
+| Text scale 16 → 20.8 px: every height again (24,000 messages) | TextPainter: 571 ms | 16 ms | **36.4×** | 24,000 / 24,000 heights |
+| Auto-fit: the largest of 41 sizes that keeps a message in 3 lines (3,000 messages) | TextPainter: 425 ms | 11 ms | **40.2×** | 3,000 / 3,000 sizes |
+| Paginate 6,455 paragraphs into 994 pages | TextPainter: 428 ms | 48 ms | **8.9×** | every page break |
+| Re-paginate at 18 px (1,230 pages) | TextPainter: 440 ms | 11 ms | **40.4×** | every page break |
+| Every height in a background isolate (24,000 messages) | not possible | 91 ms off the UI isolate, 4.9 ms on it | — | 24,000 / 24,000 heights |
+| Heights on a server, no Flutter (24,000 messages) | not possible | 40 ms, native executable | — | 23,878 / 23,878 decided |
+| Flutter web (CanvasKit): chat-list extents | TextPainter: 1,134 ms | 82 ms | **13.9×** | 24,000 / 24,000 heights |
+| Flutter web (CanvasKit): auto-fit | TextPainter: 687 ms | 17 ms | **39.7×** | 3,000 / 3,000 sizes |
+| Flutter web (skwasm): chat-list extents | TextPainter: 976 ms | 67 ms | **14.7×** | 24,000 / 24,000 heights |
+| Flutter web (skwasm): auto-fit | TextPainter: 762 ms | 16 ms | **46.9×** | 3,000 / 3,000 sizes |
+<!-- /usecases -->
+
+Flutter's own text layout fails outside the root isolate; the breaker is plain Dart (`package:break_first/model.dart`),
+so it runs in a background isolate, on a server or in a command-line tool. It gains nothing for text laid out once and
+drawn at once.
 
 ## Layout
 
@@ -72,8 +105,11 @@ flutter test test/validate_host_test.dart
 flutter build macos --release --dart-define=BF_MODE=all
 BF_OUT=$PWD/results/macos_release.json build/macos/Build/Products/Release/bf_bench.app/Contents/MacOS/bf_bench
 
-# Paper
-cd ../paper && python3 make_figures.py && python3 build_paper.py
+# Use cases (Table 7 of the paper)
+flutter build macos --release --dart-define=BF_MODE=usecases
+
+# Paper and the README's tables
+cd ../paper && python3 make_figures.py && python3 build_paper.py && python3 build_readme.py
 ```
 
 The benchmarks also run on GitHub Actions, free on a public repository:
@@ -89,6 +125,13 @@ gh workflow run bench.yml
   System fonts are not included either. The census reads them in place.
 - `flutter_bench/assets/Roboto-Regular.ttf` is Roboto, under the Apache License 2.0 (`Roboto_LICENSE.txt`).
 - The macOS benchmark app has the app sandbox disabled, so it can write its results file.
-- Scope: Latin, Greek, Cyrillic, Hebrew, Arabic, Chinese, Japanese and Korean, in either direction, with one font and
-  size per paragraph. Indic and Southeast Asian scripts, vowel marks, emoji, characters a font lacks, letter-spaced
-  Arabic and rich text go to Flutter. Mobile timings come from simulators and emulators, not phones.
+- Scope: Latin, Greek, Cyrillic, Hebrew, Arabic, Chinese, Japanese and Korean from a bundled font, in either direction,
+  in plain and rich text; emoji, Indic, Thai, Lao, Khmer and Burmese from the device's fonts. Characters no font has,
+  letter-spaced Arabic, most Arabic with harakat and Hebrew with points, and Indic or Southeast Asian text in a bundled
+  font go to Flutter. Mobile timings come from simulators and emulators, not phones.
+- Exactness is measured, not proved, and measurement has caught the breaker once: GitHub's Linux runner, on Greek strings
+  that are not this machine's, found 2 letter-spaced layouts different, each a word less than 1/100 px wider than the
+  box ([run 41953508573](flutter_bench/results/ci/run-41953508573)). SkParagraph floors a line's width before the fit
+  test but not before its "too long word" test; the breaker now hands such paragraphs to Flutter, the same runner finds
+  none different on the fix ([run 41971344191](flutter_bench/results/ci/run-41971344191)), and every number above was
+  measured again after the fix.

@@ -1,0 +1,64 @@
+{
+ "font": "/System/Library/Fonts/Supplemental/Arial.ttf",
+ "characters": 1303,
+ "buildMs": 10808,
+ "canaryErrPx": 0.0,
+ "quantized": false,
+ "messages": {
+  "texts": 1000,
+  "covered": 9,
+  "identical": 162,
+  "different": 0,
+  "deferred": 17838,
+  "heightsEqual": 162
+ },
+ "messages joined with hard breaks": {
+  "texts": 333,
+  "covered": 0,
+  "identical": 0,
+  "different": 0,
+  "deferred": 5994,
+  "heightsEqual": 0
+ },
+ "letterSpacing 0.5, wordSpacing 1": {
+  "texts": 1000,
+  "covered": 0,
+  "identical": 0,
+  "different": 0,
+  "deferred": 18000,
+  "heightsEqual": 0
+ },
+ "mixed: RTL paragraphs": {
+  "texts": 1000,
+  "covered": 9,
+  "identical": 150,
+  "different": 0,
+  "deferred": 17850,
+  "heightsEqual": 150
+ },
+ "mixed: RTL paragraphs with hard breaks": {
+  "texts": 333,
+  "covered": 2,
+  "identical": 30,
+  "different": 0,
+  "deferred": 5964,
+  "heightsEqual": 30
+ },
+ "mixed: RTL paragraphs, spaced": {
+  "texts": 1000,
+  "covered": 9,
+  "identical": 111,
+  "different": 0,
+  "deferred": 17889,
+  "heightsEqual": 111
+ },
+ "mixed: LTR paragraphs": {
+  "texts": 1000,
+  "covered": 9,
+  "identical": 150,
+  "different": 0,
+  "deferred": 17850,
+  "heightsEqual": 150
+ },
+ "examples": []
+}

@@ -2,11 +2,13 @@
  "os": "macos",
  "canaryErrorPx": 0.0,
  "fontSizeQuantized": false,
+ "hardBreakKerns": true,
  "build": {
-  "layouts": 614675,
-  "ms": 8667,
+  "layouts": 273446,
+  "ms": 4087,
   "identicalToShipped": true
  },
+ "tooLongWordCases": 42,
  "generated": {
   "layouts": 43200,
   "identical": 42010,

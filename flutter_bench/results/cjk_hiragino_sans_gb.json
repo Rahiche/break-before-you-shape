@@ -1,13 +1,14 @@
 {
- "font": "Hiragino Sans GB W3 (macOS system font, face 0)",
+ "font": "face.otf",
  "characters": 28092,
- "buildMs": 646,
- "sidecarBytes": 506148,
+ "pairsToMeasure": 0,
+ "buildMs": 698,
+ "sidecarBytes": 510400,
  "pairClasses": [
   1,
   1
  ],
- "canaryErrPx": 2.1240234375e-05,
+ "canaryErrPx": 0.000021240234375,
  "quantized": false,
  "ui_ja messages": {
   "texts": 4000,
@@ -52,10 +53,34 @@
  "ui_zh_CN letterSpacing 0.5, wordSpacing 1": {
   "texts": 4000,
   "covered": 3982,
-  "identical": 68932,
+  "identical": 68832,
   "different": 0,
-  "deferred": 3068,
-  "heightsEqual": 68932
+  "deferred": 3168,
+  "heightsEqual": 68832
+ },
+ "ui_ko messages": {
+  "texts": 4000,
+  "covered": 837,
+  "identical": 14877,
+  "different": 0,
+  "deferred": 57123,
+  "heightsEqual": 14877
+ },
+ "ui_ko joined with hard breaks": {
+  "texts": 1333,
+  "covered": 127,
+  "identical": 2223,
+  "different": 0,
+  "deferred": 21771,
+  "heightsEqual": 2223
+ },
+ "ui_ko letterSpacing 0.5, wordSpacing 1": {
+  "texts": 4000,
+  "covered": 837,
+  "identical": 13773,
+  "different": 0,
+  "deferred": 58227,
+  "heightsEqual": 13773
  },
  "examples": []
 }
