@@ -44,6 +44,13 @@ results = [
     (f"{N['beyond_rows']} further checks: struts, font features, rich text, fallback fonts, combining marks, pointed "
      "Hebrew, vowelled Arabic, emoji, Indic, Thai, Lao, Khmer, Burmese",
      f"**{i('beyond_identical')}** layouts identical, {N['beyond_different']} different"),
+    ("`Text('hello').width`, `.height(w)`, `.lineCount(w)`, `.canFit(w)` against the widgets themselves",
+     f"**{i('api_answers')}** answers for {i('api_texts')} `Text` widgets in {N['api_configs']} configurations, "
+     f"{N['api_different']} different"),
+    ("Jetpack Compose: line breaks and heights vs Compose's own layout ([compose_bench](compose_bench), "
+     f"{N['cmp_device']})",
+     f"**{i('cmp_identical')}** decided layouts identical, {N['cmp_different']} different; a chat list's heights "
+     f"{x(N['cmp_speedup'])} faster than `TextMeasurer`"),
     ("Speed vs `TextPainter` (macOS release, median of 3 runs)",
      f"**{x(N['t_docs_speedup_tp'])}** (docs), **{x(N['t_chat_speedup_tp'])}** (chat); re-wrap at a new width "
      f"{x(N['t_docs_speedup_relayout'])} / {x(N['t_chat_speedup_relayout'])}"),

@@ -15,14 +15,14 @@
  },
  "listExtents": {
   "messages": 24000,
-  "textPainterMs": 1134.101,
-  "breakFirstMs": 81.5,
+  "textPainterMs": 1138.965,
+  "breakFirstMs": 49.44,
   "heightsEqual": 24000
  },
  "autoFit": {
   "messages": 3000,
-  "textPainterMs": 686.899,
-  "breakFirstMs": 17.3,
+  "textPainterMs": 682.845,
+  "breakFirstMs": 13.259,
   "sameSize": 3000
  }
 }

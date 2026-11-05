@@ -1,0 +1,86 @@
+{
+ "font": "face.otf",
+ "characters": 33173,
+ "pairsToMeasure": 35828,
+ "buildMs": 2510,
+ "sidecarBytes": 615808,
+ "pairClasses": [
+  62,
+  65
+ ],
+ "canaryErrPx": 0.0,
+ "quantized": true,
+ "ui_ja messages": {
+  "texts": 1000,
+  "covered": 999,
+  "identical": 17292,
+  "different": 0,
+  "deferred": 708,
+  "heightsEqual": 17292
+ },
+ "ui_ja joined with hard breaks": {
+  "texts": 333,
+  "covered": 332,
+  "identical": 5014,
+  "different": 0,
+  "deferred": 980,
+  "heightsEqual": 5014
+ },
+ "ui_ja letterSpacing 0.5, wordSpacing 1": {
+  "texts": 1000,
+  "covered": 999,
+  "identical": 17561,
+  "different": 0,
+  "deferred": 439,
+  "heightsEqual": 17561
+ },
+ "ui_zh_CN messages": {
+  "texts": 1000,
+  "covered": 1000,
+  "identical": 17434,
+  "different": 0,
+  "deferred": 566,
+  "heightsEqual": 17434
+ },
+ "ui_zh_CN joined with hard breaks": {
+  "texts": 333,
+  "covered": 333,
+  "identical": 5285,
+  "different": 0,
+  "deferred": 709,
+  "heightsEqual": 5285
+ },
+ "ui_zh_CN letterSpacing 0.5, wordSpacing 1": {
+  "texts": 1000,
+  "covered": 1000,
+  "identical": 17545,
+  "different": 0,
+  "deferred": 455,
+  "heightsEqual": 17545
+ },
+ "ui_ko messages": {
+  "texts": 1000,
+  "covered": 1000,
+  "identical": 17706,
+  "different": 0,
+  "deferred": 294,
+  "heightsEqual": 17706
+ },
+ "ui_ko joined with hard breaks": {
+  "texts": 333,
+  "covered": 333,
+  "identical": 5682,
+  "different": 0,
+  "deferred": 312,
+  "heightsEqual": 5682
+ },
+ "ui_ko letterSpacing 0.5, wordSpacing 1": {
+  "texts": 1000,
+  "covered": 1000,
+  "identical": 17590,
+  "different": 0,
+  "deferred": 410,
+  "heightsEqual": 17590
+ },
+ "examples": []
+}

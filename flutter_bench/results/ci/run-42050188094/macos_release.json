@@ -1,0 +1,428 @@
+{
+ "platform": "macos",
+ "mode": "validate",
+ "sidecar": {
+  "bytes": 593684,
+  "loadMs": 14.788,
+  "describe": "Roboto: 707 characters, pair classes 113x120, 90 islands up to m=4"
+ },
+ "fontSizeQuantized": false,
+ "hardBreakKerns": true,
+ "canary": {
+  "probes": 5,
+  "maxErrPx": 0.0,
+  "pass": true
+ },
+ "validate": {
+  "en_docs": {
+   "paragraphs": 5296,
+   "covered": 5290,
+   "identical": 374039,
+   "different": 0,
+   "deferred": 6841,
+   "lines": 1556800,
+   "heightIdentical": 374039,
+   "heightChecked": 374039,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     62499,
+     0,
+     981
+    ],
+    "13.0": [
+     62499,
+     0,
+     981
+    ],
+    "16.0": [
+     62499,
+     0,
+     981
+    ],
+    "18.4": [
+     62021,
+     0,
+     1459
+    ],
+    "21.3": [
+     62022,
+     0,
+     1458
+    ],
+    "24.0": [
+     62499,
+     0,
+     981
+    ]
+   }
+  },
+  "en_man": {
+   "paragraphs": 5000,
+   "covered": 4975,
+   "identical": 351371,
+   "different": 0,
+   "deferred": 6829,
+   "lines": 1840389,
+   "heightIdentical": 351371,
+   "heightChecked": 351371,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     58884,
+     0,
+     816
+    ],
+    "13.0": [
+     58736,
+     0,
+     964
+    ],
+    "16.0": [
+     58884,
+     0,
+     816
+    ],
+    "18.4": [
+     57988,
+     0,
+     1712
+    ],
+    "21.3": [
+     57995,
+     0,
+     1705
+    ],
+    "24.0": [
+     58884,
+     0,
+     816
+    ]
+   }
+  },
+  "en_legal": {
+   "paragraphs": 1105,
+   "covered": 1089,
+   "identical": 76712,
+   "different": 0,
+   "deferred": 1696,
+   "lines": 606671,
+   "heightIdentical": 76712,
+   "heightChecked": 76712,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     12907,
+     0,
+     161
+    ],
+    "13.0": [
+     12857,
+     0,
+     211
+    ],
+    "16.0": [
+     12907,
+     0,
+     161
+    ],
+    "18.4": [
+     12569,
+     0,
+     499
+    ],
+    "21.3": [
+     12565,
+     0,
+     503
+    ],
+    "24.0": [
+     12907,
+     0,
+     161
+    ]
+   }
+  },
+  "ui_en": {
+   "paragraphs": 4000,
+   "covered": 3987,
+   "identical": 286793,
+   "different": 0,
+   "deferred": 271,
+   "lines": 473064,
+   "heightIdentical": 286793,
+   "heightChecked": 286793,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     47810,
+     0,
+     34
+    ],
+    "13.0": [
+     47810,
+     0,
+     34
+    ],
+    "16.0": [
+     47810,
+     0,
+     34
+    ],
+    "18.4": [
+     47773,
+     0,
+     71
+    ],
+    "21.3": [
+     47780,
+     0,
+     64
+    ],
+    "24.0": [
+     47810,
+     0,
+     34
+    ]
+   }
+  },
+  "ui_de": {
+   "paragraphs": 4000,
+   "covered": 3988,
+   "identical": 286210,
+   "different": 0,
+   "deferred": 926,
+   "lines": 537758,
+   "heightIdentical": 286210,
+   "heightChecked": 286210,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     47721,
+     0,
+     135
+    ],
+    "13.0": [
+     47721,
+     0,
+     135
+    ],
+    "16.0": [
+     47721,
+     0,
+     135
+    ],
+    "18.4": [
+     47663,
+     0,
+     193
+    ],
+    "21.3": [
+     47663,
+     0,
+     193
+    ],
+    "24.0": [
+     47721,
+     0,
+     135
+    ]
+   }
+  },
+  "ui_fr": {
+   "paragraphs": 4000,
+   "covered": 3993,
+   "identical": 283255,
+   "different": 0,
+   "deferred": 4241,
+   "lines": 455041,
+   "heightIdentical": 283255,
+   "heightChecked": 283255,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     47218,
+     0,
+     698
+    ],
+    "13.0": [
+     47218,
+     0,
+     698
+    ],
+    "16.0": [
+     47218,
+     0,
+     698
+    ],
+    "18.4": [
+     47190,
+     0,
+     726
+    ],
+    "21.3": [
+     47193,
+     0,
+     723
+    ],
+    "24.0": [
+     47218,
+     0,
+     698
+    ]
+   }
+  },
+  "ui_ru": {
+   "paragraphs": 4000,
+   "covered": 3990,
+   "identical": 286650,
+   "different": 0,
+   "deferred": 630,
+   "lines": 556406,
+   "heightIdentical": 286650,
+   "heightChecked": 286650,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     47790,
+     0,
+     90
+    ],
+    "13.0": [
+     47790,
+     0,
+     90
+    ],
+    "16.0": [
+     47790,
+     0,
+     90
+    ],
+    "18.4": [
+     47744,
+     0,
+     136
+    ],
+    "21.3": [
+     47746,
+     0,
+     134
+    ],
+    "24.0": [
+     47790,
+     0,
+     90
+    ]
+   }
+  },
+  "ui_uk": {
+   "paragraphs": 4000,
+   "covered": 3988,
+   "identical": 286584,
+   "different": 0,
+   "deferred": 552,
+   "lines": 534201,
+   "heightIdentical": 286584,
+   "heightChecked": 286584,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     47776,
+     0,
+     80
+    ],
+    "13.0": [
+     47776,
+     0,
+     80
+    ],
+    "16.0": [
+     47776,
+     0,
+     80
+    ],
+    "18.4": [
+     47740,
+     0,
+     116
+    ],
+    "21.3": [
+     47740,
+     0,
+     116
+    ],
+    "24.0": [
+     47776,
+     0,
+     80
+    ]
+   }
+  },
+  "ui_el": {
+   "paragraphs": 4000,
+   "covered": 3989,
+   "identical": 286911,
+   "different": 0,
+   "deferred": 297,
+   "lines": 569385,
+   "heightIdentical": 286911,
+   "heightChecked": 286911,
+   "maxHeightErrPx": 0.0,
+   "maxSingleLineWidthErrPx": 0.0,
+   "perSize": {
+    "12.0": [
+     47834,
+     0,
+     34
+    ],
+    "13.0": [
+     47834,
+     0,
+     34
+    ],
+    "16.0": [
+     47834,
+     0,
+     34
+    ],
+    "18.4": [
+     47786,
+     0,
+     82
+    ],
+    "21.3": [
+     47789,
+     0,
+     79
+    ],
+    "24.0": [
+     47834,
+     0,
+     34
+    ]
+   }
+  },
+  "sizes": [
+   12.0,
+   13.0,
+   16.0,
+   18.4,
+   21.3,
+   24.0
+  ],
+  "widthSteps": 12,
+  "lineStartMethodCheck": {
+   "checked": 23717,
+   "disagree": 0
+  },
+  "mismatchExamples": []
+ }
+}

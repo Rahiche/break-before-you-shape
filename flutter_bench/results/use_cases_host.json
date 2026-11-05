@@ -4,8 +4,8 @@
   "width": 280.0,
   "maxLines": 3,
   "sizes": 41,
-  "textPainterMs": 497.628,
-  "breakFirstMs": 73.245,
+  "textPainterMs": 485.496,
+  "breakFirstMs": 48.776,
   "sameSize": 3000,
   "textPainterLayoutsPerRun": 19824,
   "breakFirstFallbacksPerRun": 125
@@ -15,10 +15,10 @@
   "width": 280.0,
   "fromSize": 16.0,
   "toSize": 20.8,
-  "textPainterMs": 655.567,
-  "breakFirstMs": 27.537,
+  "textPainterMs": 660.964,
+  "breakFirstMs": 16.722,
   "heightsEqual": 24000,
-  "recordBytes": 13981029,
+  "recordBytes": 13032929,
   "codeUnits": 1368951
  },
  "pagination": {
@@ -28,24 +28,24 @@
   "at16": {
    "size": 16.0,
    "pages": 994,
-   "textPainterMs": 509.531,
-   "breakFirstMs": 52.068,
+   "textPainterMs": 445.777,
+   "breakFirstMs": 36.148,
    "samePageBreaks": true,
    "recordsReused": false
   },
   "at18": {
    "size": 18.0,
    "pages": 1230,
-   "textPainterMs": 460.081,
-   "breakFirstMs": 18.376,
+   "textPainterMs": 453.189,
+   "breakFirstMs": 18.914,
    "samePageBreaks": true,
    "recordsReused": true
   }
  },
  "backgroundIsolate": {
   "messages": 24000,
-  "workerMs": 114.845,
-  "uiIsolateMs": 4.952,
+  "workerMs": 93.239,
+  "uiIsolateMs": 5.341,
   "handedBackToUi": 122,
   "heightsEqual": 24000,
   "textPainterInBackgroundIsolate": "error: UI actions are only available on root isolate."
@@ -54,7 +54,7 @@
   "texts": 24000,
   "decided": 23878,
   "heightsEqual": 23878,
-  "cliMedianMs": 39.749,
-  "cliLoadMs": 1.567
+  "cliMedianMs": 22.491,
+  "cliLoadMs": 1.732
  }
 }

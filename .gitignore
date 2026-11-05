@@ -20,6 +20,7 @@ __pycache__/
 /census/certs/
 *_log.txt
 /flutter_bench/results/*.log
+/flutter_bench/results/*.logcat
 /flutter_bench/results/android_logcat.txt
 
 # Tooling

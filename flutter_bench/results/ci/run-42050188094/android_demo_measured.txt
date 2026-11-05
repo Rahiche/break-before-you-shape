@@ -1,0 +1,7 @@
+DEMO extents first size=15.0 width=142.0 breakFirstMs=42.215999999999994 flutterMs=8.178 toFlutter=481
+DEMO jump stock to=2500 at=1969 frameMs=552.88
+DEMO jump breakFirst to=2500 at=2500 frameMs=12.952
+DEMO jump stock to=300 at=246 frameMs=487.245
+DEMO jump breakFirst to=300 at=300 frameMs=20.799
+DEMO extents re-wrap size=18.0 width=142.0 breakFirstMs=6.255000000000001 flutterMs=13.176 toFlutter=522
+DEMO verify size=18.0 equal=10000 of 10000 textPainterMs=576.958

@@ -679,6 +679,49 @@ assert not fs["wider"]["canaryPasses"] and fs["eacute"]["canaryPasses"] and not 
 assert fs["same"]["loadsWithFontBytes"] and fs["same"]["staleDifferent"] == 0
 N["fs_checked"] = fs["eacute"]["staleIdentical"] + fs["eacute"]["staleDifferent"]
 
+# §5.6 compares a warm word cache with break-first: about as fast on docs, slower on chat.
+assert N["t_docs_wordCacheWarmMs"] < N["t_docs_breakFirstMs"] * 1.1 and N["t_chat_wordCacheWarmMs"] > N["t_chat_breakFirstMs"]
+
+# Text(...).width and friends against the widgets (flutter_bench/test/text_api_test.dart).
+api = load("text_api.json")
+cfg = [v for v in api.values() if isinstance(v, dict)]
+N["api_configs"] = len(cfg)
+N["api_texts"] = sum(v["texts"] for v in cfg)
+N["api_answers"] = sum(v["heightEqual"] + v["canFitEqual"] + v["lineCountEqual"] + v.get("widthEqual", 0) for v in cfg)
+N["api_different"] = api["different"]
+N["api_lines_pct"] = 100 * sum(v["linesFromSidecar"] for v in cfg) / N["api_texts"]
+N["api_width_pct"] = 100 * sum(v["widthFromSidecar"] for v in cfg if "widthFromSidecar" in v) / sum(
+    v["texts"] for v in cfg if "widthFromSidecar" in v)
+N["api_locales"] = sum(1 for k in api if " / locale " in k and k.endswith("/ unbounded"))
+assert N["api_different"] == 0
+
+# Jetpack Compose (compose_bench/).
+CR = os.path.join(ROOT, "compose_bench", "results")
+ce = json.load(open(os.path.join(CR, "compose_exactness.json")))
+sizes = [v for k, v in ce.items() if k.endswith(" px") and isinstance(v, dict)]
+N["cmp_texts"] = ce["texts"]
+N["cmp_layouts"] = ce["layouts"]
+N["cmp_identical"] = ce["identical"]
+N["cmp_different"] = ce["different"]
+N["cmp_sizes_n"] = WORDS[len(sizes)]
+N["cmp_sizes"] = ", ".join(k[:-3].removesuffix(".0") for k in ce if k.endswith(" px"))
+N["cmp_measurements"] = sum(v["measurements"] for v in sizes)
+N["cmp_off_quantum"] = sum(v["offQuantum"] for v in sizes)
+N["cmp_per_size"] = sizes[0]["measurements"]
+assert all(v["measurements"] == N["cmp_per_size"] for v in sizes)
+N["cmp_heights_equal"] = sum(w["heightsEqual"] for v in sizes for w in v["widths"].values())
+N["cmp_device"] = f"Android {ce['device']['release']} emulator (API {ce['device']['sdk']})"
+assert N["cmp_different"] == 0 and N["cmp_off_quantum"] == 0 and N["cmp_heights_equal"] == N["cmp_identical"]
+cs = json.load(open(os.path.join(CR, "compose_speed.json")))
+N["cmp_speed_messages"] = cs["messages"]
+N["cmp_speed_decided"] = cs["decidedByBreakFirst"]
+N["cmp_tm_ms"] = cs["composeMedianMs"]
+N["cmp_bf_ms"] = cs["breakFirstMedianMs"]
+N["cmp_back_ms"] = cs["handedBackMedianMs"]
+N["cmp_speedup"] = cs["speedup"]
+N["cmp_speed_reps"] = len(cs["composeTextMeasurerMs"])
+assert cs["lineStartsDifferent"] == 0 and cs["lineStartsIdentical"] == cs["decidedByBreakFirst"]
+
 with open(os.path.join(HERE, "numbers.json"), "w") as fp:
     json.dump(N, fp, indent=1, ensure_ascii=False)
 print("figures and numbers written:", len(N), "numbers")

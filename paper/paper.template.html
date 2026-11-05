@@ -60,7 +60,7 @@
 
 <h1>Break Before You Shape</h1>
 <p class="subtitle">Exact line breaking from a precompiled, certified width model</p>
-<p class="meta">Raouf Rahiche · Version 1.0 · {{date}} ·
+<p class="meta">Raouf Rahiche · Version 1.1 · {{date}} ·
 <a href="https://github.com/Rahiche/break-before-you-shape">github.com/Rahiche/break-before-you-shape</a><br>
 Every number in this paper is read from result files produced on one Apple M3 machine and on GitHub Actions.</p>
 
@@ -87,7 +87,10 @@ heights {{=min(t_docs_speedup_tp,t_chat_speedup_tp):.0f}}–{{=max(t_docs_speedu
 layout cannot, in a background isolate and on a server without Flutter, and on Flutter web, with the same answers; fitting
 text to a box, re-measuring after a text-scale change and re-paginating at a new size get
 {{uc_reuse_lo:.0f}}–{{uc_reuse_hi:.0f}}×
-faster (§6).</p></div>
+faster (§6). The method is not tied to Flutter: against Jetpack Compose, whose text goes through Android's own shaping
+and line breaker, a sidecar distilled from Compose's widths reproduces Compose's line breaks and heights in all
+{{cmp_identical:,}} layouts it decides, and computes a chat list's heights {{cmp_speedup:.1f}}× faster than Compose's
+<code>TextMeasurer</code> (§5.8).</p></div>
 
 <h2>1 · Introduction</h2>
 <p>Every mainstream text stack (Chrome, WebKit, Android, Skia's SkParagraph, CoreText, DirectWrite) runs the same order:
@@ -381,9 +384,10 @@ speedups below differ by at most {{timing_spread_pct:.0f}}% between runs.</p>
   <b>{{t_chat_speedup_tp:.1f}}×</b> (chat) faster than <code>TextPainter</code>.</li>
   <li><b>Re-wrapping at a new width</b> is <b>{{t_docs_speedup_relayout:.1f}}×</b> (docs) and
   <b>{{t_chat_speedup_relayout:.1f}}×</b> (chat) faster than Flutter's re-layout, which already skips reshaping.</li>
-  <li><b>A warm word cache</b> sums cached word widths, which is faster still ({{t_docs_wordCacheWarmMs:.0f}} ms against
-  {{t_docs_breakFirstMs:.0f}} ms on docs, {{t_chat_wordCacheWarmMs:.0f}} against {{t_chat_breakFirstMs:.0f}} on chat).
-  But it is warm only after measuring every word once (the cold column, slower than <code>TextPainter</code> on docs),
+  <li><b>A warm word cache</b> sums cached word widths: about as fast as break-first on docs
+  ({{t_docs_wordCacheWarmMs:.1f}} ms against {{t_docs_breakFirstMs:.1f}} ms) and slower on chat
+  ({{t_chat_wordCacheWarmMs:.1f}} against {{t_chat_breakFirstMs:.1f}} ms).
+  It is warm only after measuring every word once (the cold column, slower than <code>TextPainter</code> on docs),
   it holds only for the font size and spacing it measured, and it still breaks {{t_docs_wc_wrong}} docs and
   {{t_chat_wc_wrong}} chat paragraphs differently from Flutter; for other fonts it is wrong far more often (§5.2).</li>
   <li><b>End to end</b>, including paragraphs handed back to Flutter, the gain is {{t_docs_speedup_all:.1f}}× (docs)
@@ -443,6 +447,38 @@ measures, all {{=len(mac_sizes)}} sizes in Table 2 had zero mismatches on every 
 <figcaption><b>Figure 9.</b> Largest drift between the model and Flutter, relative to x position, by font size.</figcaption></figure>
 </div>
 
+<h3>5.8 · Another framework: Jetpack Compose</h3>
+<p>Nothing in the method belongs to Flutter: the sidecar is distilled from whatever the engine measures, and only the
+line-fit rules are the engine's. To test that, we ran it against Jetpack Compose (<code>compose_bench/</code>), whose
+<code>Text</code> lays out through Android's <code>StaticLayout</code> and Minikin, not SkParagraph. A harness app
+measures through Compose's <code>TextMeasurer</code>, which lays text out as the <code>Text</code> composable does
+({{cmp_device}}, Compose BOM 2026.09.00, Roboto, Compose's default style). The same distillation, fed Compose's widths,
+needed {{cmp_per_size:,}} measurements per size; the
+measurement then showed where Compose differs from Flutter:</p>
+<ul>
+  <li><b>Hinted text.</b> In all {{cmp_measurements:,}} widths measured at {{cmp_sizes_n}} sizes, every advance is a whole
+  pixel and every kern a multiple of 1/256 px. Widths are not linear in the font size, so a Compose sidecar holds one
+  pixel size; at 64 units per pixel it stores every width exactly, and a line's width is an exact float32 sum.</li>
+  <li><b>No kerning across a space.</b> Minikin shapes word by word. The sidecar measures that through Compose and
+  needs no special case; a kern belongs to the first character of its pair, in Minikin's widths as in the prefix.</li>
+  <li><b>No break after a hyphen-minus or an en dash inside a word</b>, where UAX #14 and Flutter allow one: Minikin
+  keeps those breaks for hyphenation, which is off by default.</li>
+  <li><b>Email addresses and URLs</b> get Minikin's own break rules. A run with an <code>@</code> or <code>://</code>
+  goes back to Compose unless those rules cannot change it (a placeholder such as <code>%@</code> between spaces).</li>
+</ul>
+<p>With Minikin's greedy fit (Compose's default, <code>LineBreak.Simple</code>), a line fits when its width without
+trailing spaces is at most the box, a whole number of pixels. Break-first then reproduces Compose's line starts and
+heights in <b>{{cmp_identical:,}} of {{cmp_identical:,}}</b> decided layouts ({{cmp_texts:,}} paragraphs: the nine corpora
+and messages joined by hard breaks; {{cmp_sizes}} px, the last two being 16 and 14 sp on a 420 dpi phone; three
+widths each), {{cmp_different}} different. {{=100*(cmp_layouts-cmp_identical)/cmp_layouts:.1f}}% go back to Compose,
+mostly words wider than the narrowest box and the URLs of the docs.</p>
+<p>For the heights of {{cmp_speed_messages:,}} chat messages at 16 sp, 280 dp wide, Compose's <code>TextMeasurer</code>
+takes {{cmp_tm_ms:.0f}} ms. Break-first takes {{cmp_bf_ms:.0f}} ms for the {{cmp_speed_decided:,}} messages it decides,
+all with Compose's line starts, and <code>TextMeasurer</code> {{cmp_back_ms:.0f}} ms for the rest:
+<b>{{cmp_speedup:.1f}}×</b> in all (median of {{cmp_speed_reps}} runs, both apps compiled ahead of time). Dart cannot
+build a plain Android executable, so the breaker ran as the same Dart code in a Flutter release app on the same
+emulator.</p>
+
 <h2>6 · Where it pays</h2>
 <p>Break-first does not make drawing cheaper: a line that is painted is still shaped (§8). It pays wherever an app must
 know how text lays out without drawing it. Table 7 times each such case against what a Flutter app does today, and
@@ -474,6 +510,25 @@ and {{=uc_srv_texts-uc_srv_decided}} messages left to the client. Web rows: Chro
 WebAssembly with the app. The same sidecar, calibrated in the browser ({{web_calibration}}), gives Flutter's line breaks
 and heights in {{web_canvaskit_identical:,}} of {{=web_canvaskit_identical+web_canvaskit_different:,}} decided layouts
 (the {{w_corpora}} corpora, 300 paragraphs each, 3 sizes × 6 widths; {{web_canvaskit_different}} different).</p>
+
+<p><b>Asking a Text its size.</b> The package answers these questions for a widget directly:
+<code>Text('hello').width</code>, <code>.height(w)</code>, <code>.lineCount(w)</code> and <code>.canFit(w)</code>; with
+a <code>BuildContext</code>, the Text is resolved as <code>Text.build</code> resolves it there (DefaultTextStyle, text
+scaling, bold text, MediaQuery's spacing overrides, locale). Each answer comes from the sidecar when the breaker
+decides, and otherwise from a <code>TextPainter</code> set up as the widget sets up its own. A width from the sidecar is
+Flutter's <code>maxIntrinsicWidth</code> bit for bit when glyph positions are exact in float32, with or without letter
+spacing. Against the widgets themselves (<code>test/text_api_test.dart</code>), {{api_answers:,}} answers for
+{{api_texts:,}} <code>Text</code> widgets in {{api_configs}} configurations, from six font sizes and {{api_locales}}
+locales to a Material 3 theme, are {{api_different}} different; the sidecar decides {{api_lines_pct:.0f}}% of the
+heights and fits and {{api_width_pct:.0f}}% of the widths.</p>
+
+<p><b>Inside the engine (not measured).</b> Every engine we read shapes during layout: SkParagraph shapes the whole
+paragraph and paints every line, Blink shapes every item of the paragraph, Minikin every word, and a change of font size
+reshapes in all three. An engine that broke first could shape only the lines it paints, re-measure after a size change
+or an auto-fit probe without shaping, and run optimal or balanced breaking over prefix sums, which Chrome limits to the
+last four lines of <code>text-wrap: pretty</code> for its cost. These are hypotheses, with the risks they carry (pixel
+parity when lines are shaped alone, APIs that need glyphs); <code>research/ENGINE.md</code> gives the source references
+and the experiments that would measure them.</p>
 
 <p><b>Where it does not pay.</b> Text laid out once and drawn at once, such as a label on screen, gains nothing: Flutter
 shapes it to paint it anyway. And each font the app ships needs a sidecar, built in {{=build_buildMs/1000:.0f}} s for
@@ -526,8 +581,11 @@ decided.</p>
   <li><b>Engine updates.</b> A Flutter app carries its own engine, so a shipped app's shaping cannot change under its
   sidecar. A Flutter upgrade is a new build, in which the package test rebuilds the sidecar and requires the shipped
   bytes. Fonts that come from the device (emoji, Indic) are never distilled: they are measured on the device.</li>
-  <li><b>Baselines.</b> <code>TextPainter</code> is what apps call. A warm word cache is as fast as break-first but not
-  exact (§5.2, §5.6), and needs a first pass that measures every word.</li>
+  <li><b>Baselines.</b> <code>TextPainter</code> is what apps call. A warm word cache is about as fast as break-first on
+  docs and slower on chat, is not exact (§5.2, §5.6), and needs a first pass that measures every word.</li>
+  <li><b>Compose.</b> The Compose results come from one emulator image and one Compose version, with Roboto and
+  Compose's default style. The breaker ran there as Dart in a Flutter release app: a Compose app would need a Kotlin
+  port, which was not measured.</li>
   <li><b>Phones.</b> Mobile timings and checks come from simulators and emulators. The benchmark app runs on a phone with
   one command (<code>tool/run_android.sh</code>), but no phone was available.</li>
   <li><b>Painting.</b> The gain is for measurement and line breaking. Lines that are drawn are still shaped, because
@@ -560,6 +618,7 @@ decided.</p>
   <code>tool/heights_cli.dart</code>, <code>test/use_cases_test.dart</code> and <code>test/failsafe_test.dart</code>: §6
   and the stale-sidecar check;</li>
   <li><code>native/</code>: the C port; <code>.github/workflows/</code>: the CI that reruns the benchmarks;</li>
+  <li><code>compose_bench/</code>: §5.8, the Compose harness app, the Minikin fit and its checks;</li>
   <li><code>paper/make_figures.py</code>: the figures and every number in this paper, read from the result files.</li>
 </ul>
 <p>Environment: Flutter 3.47.5 (Dart 3.13.4), HarfBuzz 15.0.0, macOS on an Apple M3, iOS 17.5 simulator, an Android

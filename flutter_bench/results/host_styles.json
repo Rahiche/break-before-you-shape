@@ -3,7 +3,7 @@
  "mode": "styles",
  "sidecar": {
   "bytes": 593684,
-  "loadMs": 55.2,
+  "loadMs": 26.108,
   "describe": "Roboto: 707 characters, pair classes 113x120, 90 islands up to m=4"
  },
  "fontSizeQuantized": false,

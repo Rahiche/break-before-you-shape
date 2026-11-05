@@ -7,8 +7,8 @@
    "width": 280.0,
    "maxLines": 3,
    "sizes": 41,
-   "textPainterMs": 424.613,
-   "breakFirstMs": 10.559,
+   "textPainterMs": 418.814,
+   "breakFirstMs": 6.877,
    "sameSize": 3000,
    "textPainterLayoutsPerRun": 19824,
    "breakFirstFallbacksPerRun": 125
@@ -18,10 +18,10 @@
    "width": 280.0,
    "fromSize": 16.0,
    "toSize": 20.8,
-   "textPainterMs": 571.001,
-   "breakFirstMs": 15.692,
+   "textPainterMs": 568.2,
+   "breakFirstMs": 12.66,
    "heightsEqual": 24000,
-   "recordBytes": 13981029,
+   "recordBytes": 13032929,
    "codeUnits": 1368951
   },
   "pagination": {
@@ -31,24 +31,24 @@
    "at16": {
     "size": 16.0,
     "pages": 994,
-    "textPainterMs": 428.219,
-    "breakFirstMs": 47.9,
+    "textPainterMs": 425.511,
+    "breakFirstMs": 30.07,
     "samePageBreaks": true,
     "recordsReused": false
    },
    "at18": {
     "size": 18.0,
     "pages": 1230,
-    "textPainterMs": 439.712,
-    "breakFirstMs": 10.89,
+    "textPainterMs": 436.272,
+    "breakFirstMs": 8.987,
     "samePageBreaks": true,
     "recordsReused": true
    }
   },
   "backgroundIsolate": {
    "messages": 24000,
-   "workerMs": 91.017,
-   "uiIsolateMs": 4.869,
+   "workerMs": 64.816,
+   "uiIsolateMs": 4.812,
    "handedBackToUi": 122,
    "heightsEqual": 24000,
    "textPainterInBackgroundIsolate": "error: UI actions are only available on root isolate."
@@ -61,8 +61,8 @@
     "width": 280.0,
     "maxLines": 3,
     "sizes": 41,
-    "textPainterMs": 428.169,
-    "breakFirstMs": 10.823,
+    "textPainterMs": 426.574,
+    "breakFirstMs": 6.932,
     "sameSize": 3000,
     "textPainterLayoutsPerRun": 19824,
     "breakFirstFallbacksPerRun": 125
@@ -72,10 +72,10 @@
     "width": 280.0,
     "fromSize": 16.0,
     "toSize": 20.8,
-    "textPainterMs": 575.528,
-    "breakFirstMs": 15.692,
+    "textPainterMs": 578.049,
+    "breakFirstMs": 12.66,
     "heightsEqual": 24000,
-    "recordBytes": 13981029,
+    "recordBytes": 13032929,
     "codeUnits": 1368951
    },
    "pagination": {
@@ -85,24 +85,24 @@
     "at16": {
      "size": 16.0,
      "pages": 994,
-     "textPainterMs": 428.219,
-     "breakFirstMs": 45.706,
+     "textPainterMs": 425.511,
+     "breakFirstMs": 31.542,
      "samePageBreaks": true,
      "recordsReused": false
     },
     "at18": {
      "size": 18.0,
      "pages": 1230,
-     "textPainterMs": 439.712,
-     "breakFirstMs": 10.89,
+     "textPainterMs": 436.272,
+     "breakFirstMs": 8.987,
      "samePageBreaks": true,
      "recordsReused": true
     }
    },
    "backgroundIsolate": {
     "messages": 24000,
-    "workerMs": 91.017,
-    "uiIsolateMs": 4.914,
+    "workerMs": 94.525,
+    "uiIsolateMs": 5.156,
     "handedBackToUi": 122,
     "heightsEqual": 24000,
     "textPainterInBackgroundIsolate": "error: UI actions are only available on root isolate."
@@ -114,8 +114,8 @@
     "width": 280.0,
     "maxLines": 3,
     "sizes": 41,
-    "textPainterMs": 424.613,
-    "breakFirstMs": 10.512,
+    "textPainterMs": 418.814,
+    "breakFirstMs": 6.852,
     "sameSize": 3000,
     "textPainterLayoutsPerRun": 19824,
     "breakFirstFallbacksPerRun": 125
@@ -125,10 +125,10 @@
     "width": 280.0,
     "fromSize": 16.0,
     "toSize": 20.8,
-    "textPainterMs": 569.555,
-    "breakFirstMs": 15.098,
+    "textPainterMs": 564.44,
+    "breakFirstMs": 12.573,
     "heightsEqual": 24000,
-    "recordBytes": 13981029,
+    "recordBytes": 13032929,
     "codeUnits": 1368951
    },
    "pagination": {
@@ -138,24 +138,24 @@
     "at16": {
      "size": 16.0,
      "pages": 994,
-     "textPainterMs": 425.208,
-     "breakFirstMs": 48.991,
+     "textPainterMs": 421.553,
+     "breakFirstMs": 29.478,
      "samePageBreaks": true,
      "recordsReused": false
     },
     "at18": {
      "size": 18.0,
      "pages": 1230,
-     "textPainterMs": 437.849,
-     "breakFirstMs": 10.905,
+     "textPainterMs": 434.683,
+     "breakFirstMs": 8.897,
      "samePageBreaks": true,
      "recordsReused": true
     }
    },
    "backgroundIsolate": {
     "messages": 24000,
-    "workerMs": 89.999,
-    "uiIsolateMs": 4.861,
+    "workerMs": 62.986,
+    "uiIsolateMs": 4.81,
     "handedBackToUi": 122,
     "heightsEqual": 24000,
     "textPainterInBackgroundIsolate": "error: UI actions are only available on root isolate."
@@ -167,8 +167,8 @@
     "width": 280.0,
     "maxLines": 3,
     "sizes": 41,
-    "textPainterMs": 424.601,
-    "breakFirstMs": 10.559,
+    "textPainterMs": 417.788,
+    "breakFirstMs": 6.877,
     "sameSize": 3000,
     "textPainterLayoutsPerRun": 19824,
     "breakFirstFallbacksPerRun": 125
@@ -178,10 +178,10 @@
     "width": 280.0,
     "fromSize": 16.0,
     "toSize": 20.8,
-    "textPainterMs": 571.001,
-    "breakFirstMs": 16.363,
+    "textPainterMs": 568.2,
+    "breakFirstMs": 12.761,
     "heightsEqual": 24000,
-    "recordBytes": 13981029,
+    "recordBytes": 13032929,
     "codeUnits": 1368951
    },
    "pagination": {
@@ -191,24 +191,24 @@
     "at16": {
      "size": 16.0,
      "pages": 994,
-     "textPainterMs": 442.731,
-     "breakFirstMs": 47.9,
+     "textPainterMs": 426.915,
+     "breakFirstMs": 30.07,
      "samePageBreaks": true,
      "recordsReused": false
     },
     "at18": {
      "size": 18.0,
      "pages": 1230,
-     "textPainterMs": 443.224,
-     "breakFirstMs": 10.857,
+     "textPainterMs": 437.242,
+     "breakFirstMs": 9.027,
      "samePageBreaks": true,
      "recordsReused": true
     }
    },
    "backgroundIsolate": {
     "messages": 24000,
-    "workerMs": 99.634,
-    "uiIsolateMs": 4.869,
+    "workerMs": 64.816,
+    "uiIsolateMs": 4.812,
     "handedBackToUi": 122,
     "heightsEqual": 24000,
     "textPainterInBackgroundIsolate": "error: UI actions are only available on root isolate."
@@ -216,10 +216,10 @@
   }
  ],
  "speedupSpreadAcrossRuns": {
-  "autoFit": 0.020693757718374856,
-  "textScale": 0.07710676634059405,
-  "pagination/at16": 0.07461796630366915,
-  "pagination/at18": 0.016657388554142137
+  "autoFit": 0.012850174176548525,
+  "textScale": 0.025241953212986605,
+  "pagination/at16": 0.05707382750374476,
+  "pagination/at18": 0.00865432183299519
  },
  "note": "median of 3 app runs; each run reports the median of its passes per method"
 }
