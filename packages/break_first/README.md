@@ -26,7 +26,8 @@ checked against `TextPainter`: 10,000 of 10,000 equal.
 
 ```dart
 final bytes = (await rootBundle.load('assets/roboto.bfw')).buffer.asUint8List();
-final bf = BreakFirst.load(bytes, fontFamily: 'RobotoSidecar'); // null if this device's font differs
+final font = (await rootBundle.load('assets/Roboto-Regular.ttf')).buffer.asUint8List();
+final bf = BreakFirst.load(bytes, fontFamily: 'RobotoSidecar', font: font); // null if the font or engine differs
 
 final h = bf!.height(text, fontSize: 16, maxWidth: 280);          // always equal to Flutter's height
 final starts = bf.lineStarts(text, fontSize: 16, maxWidth: 280);  // null when Flutter must decide
@@ -57,7 +58,13 @@ each such run once through Flutter on the device, which is exact because a chang
 Lay the text out with `bf.style(fontSize, options)` (plus a colour) and `TextScaler.noScaling`; pass the scaled size
 yourself. Hard line breaks (`\n`, U+2028, U+2029) are handled.
 `BreakFirst.load` checks the sidecar against this device's text engine: it calibrates how the engine rounds font sizes
-(Android truncates them to 1/64 px) and measures five canary strings. It returns null if any width is off.
+(Android truncates them to 1/64 px) and measures five canary strings. It returns null if any width is off, and, given
+the font's bytes, if they are not the font the sidecar was built from: a font updated without rebuilding its sidecar can
+pass the canary (only é 60 units wider does, and would break 37 of 17,860 layouts; `flutter_bench/test/failsafe_test.dart`).
+
+Without Flutter (a background isolate, a server, a command-line tool), import `package:break_first/model.dart`: the
+breaker is plain Dart. Set `quantizeFontSize` and `hardBreakKerns` to what `BreakFirst.load` calibrated on the target
+platform.
 
 ## Build a sidecar
 
@@ -72,7 +79,7 @@ final md = buildSidecar(fontFamily: 'MyFont', font: font, certificate: File('myf
 File('assets/myfont.bfw').writeAsBytesSync(md.encode());
 ```
 
-For Roboto this takes 273,446 layouts and gives 593,652 bytes (12,285 gzipped). One file serves every font size.
+For Roboto this takes 273,446 layouts and gives 593,684 bytes (12,319 gzipped). One file serves every font size.
 With font features, certify with `CERTIFY_FEATURES_ON=...` and pass the same `fontFeatures` to `buildSidecar` and
 `BreakFirst.load`. The package tests rebuild Roboto's sidecar on the machine running them and require the exact bytes that ship.
 

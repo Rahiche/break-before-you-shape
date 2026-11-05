@@ -316,6 +316,7 @@ WidthModel buildSidecar({
             .round(),
   );
   md.coverage = cmapRanges(font);
+  md.fontDigest = fontDigest(font);
   return md;
 }
 

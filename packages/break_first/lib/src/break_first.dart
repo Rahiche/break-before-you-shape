@@ -79,9 +79,14 @@ class BreakFirst {
   /// when the canary fails, that is when the sidecar does not describe the font
   /// loaded under [fontFamily] on this device; then lay everything out with
   /// Flutter. A sidecar built with font features is loaded with the same
-  /// [fontFeatures]; the canary is measured with them.
-  static BreakFirst? load(Uint8List sidecar, {required String fontFamily, List<FontFeature>? fontFeatures}) {
+  /// [fontFeatures]; the canary is measured with them. With [font], the bytes
+  /// loaded under [fontFamily], it also returns null when they are not the font
+  /// the sidecar was built from (a font updated without rebuilding its sidecar,
+  /// which the canary strings may not show).
+  static BreakFirst? load(Uint8List sidecar,
+      {required String fontFamily, List<FontFeature>? fontFeatures, Uint8List? font}) {
     final md = WidthModel.decode(sidecar);
+    if (font != null && md.fontDigest != null && md.fontDigest != fontDigest(font)) return null;
     calibrateEngine(md, fontFamily, fontFeatures: fontFeatures);
     final err = canaryError(md, fontFamily, fontFeatures: fontFeatures);
     return err < 1e-3 ? BreakFirst._(md, fontFamily, err, fontFeatures) : null;

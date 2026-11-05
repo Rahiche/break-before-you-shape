@@ -20,10 +20,16 @@
   line's first glyph keeps its share (Arial Narrow, Chalkduster, Times New Roman, spaced text after `\n`).
 - Rich text: scripts are itemized within each span of one style (measured: Common characters next to a letter in
   another size keep script Common), across its fallback fonts.
+- The sidecar records a digest of its font file (`fontDigest`), and `BreakFirst.load(font:)` refuses a sidecar whose font
+  differs: a font changed in one glyph that no canary string has passes the canary.
+- `package:break_first/model.dart`: the width model and breaker without Flutter, for background isolates, servers and
+  command-line tools (Flutter's own text layout fails outside the root isolate).
+- Flutter web: pair keys are arithmetic, not shifts (which truncate to 32 bits there); checked against CanvasKit.
 - Fixes: the hard-break calibration probes the character with the largest kern against a space; font-size calibration
   works without canary strings; a face with more than 128 island characters no longer hangs or misreads its
   letter-spaced pairs (island digits were 8-bit; Trattatello); certify.py counts every ligature, also one whose glyph
-  another ligature already makes ("(c)" and "(C)" in Superclarendon).
+  another ligature already makes ("(c)" and "(C)" in Superclarendon); a Thai or Lao run that starts with AM
+  (after a space) goes to Flutter, which starts the line at that space.
 
 ## 0.2.0
 

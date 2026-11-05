@@ -24,7 +24,9 @@ const padH = 10.0, padV = 8.0, gap = 6.0, listPad = 8.0;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final data = await rootBundle.load('assets/roboto.bfw');
-  final bf = BreakFirst.load(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes), fontFamily: family);
+  final font = await rootBundle.load('assets/Roboto-Regular.ttf'); // the font behind [family]
+  final bf = BreakFirst.load(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+      fontFamily: family, font: font.buffer.asUint8List(font.offsetInBytes, font.lengthInBytes));
   runApp(DemoApp(demo: Demo(bf, chatMessages(count))));
 }
 

@@ -3,6 +3,7 @@
 // and timing against TextPainter, ui.Paragraph and a per-word cache. Every
 // result goes into one JSON map.
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:ui' as ui;
 
 import 'package:break_first/break_first.dart';
@@ -688,6 +689,244 @@ Future<void> _nativeTiming(WidthModel md, NativeBreaker nb, Map<String, Object?>
   if (chat.isNotEmpty) await runOn('chat', chat, 16.0, 280.0);
 }
 
+/// Use cases besides list extents, each timed against what an app does today and
+/// checked against it answer for answer. Every break-first time includes the
+/// paragraphs it hands back to Flutter.
+Future<Map<String, Object?>> useCases(WidthModel md, Uint8List sidecar, {int reps = 5}) async {
+  final out = <String, Object?>{};
+  final chat = <String>[for (final c in chatCorpora) ...await loadCorpus(c)];
+  final book = [...await loadCorpus('en_legal'), ...await loadCorpus('en_docs')];
+  TextPainter painter(String s, double size, double w, {int? maxLines}) =>
+      TextPainter(text: TextSpan(text: s, style: TextStyle(fontFamily: family, fontSize: size)),
+          textDirection: TextDirection.ltr, maxLines: maxLines)
+        ..layout(maxWidth: w);
+  double flutterHeight(String s, double size, double w) {
+    final p = paragraph(s, w, size);
+    final h = p.height;
+    p.dispose();
+    return h;
+  }
+
+  (T, double) timed<T>(T Function() f) {
+    final runs = <(T, double)>[];
+    for (var k = 0; k < reps; k++) {
+      final sw = Stopwatch()..start();
+      final r = f();
+      runs.add((r, sw.elapsedMicroseconds / 1000));
+    }
+    runs.sort((a, b) => a.$2.compareTo(b.$2));
+    return runs[reps ~/ 2];
+  }
+
+  // 1. Auto-fit: the largest font size from 10 to 30 px (0.5 px steps) at which a
+  // message fits three lines of 280 px, by binary search, as auto-sizing text
+  // widgets do with TextPainter(maxLines:).didExceedMaxLines. Break-first builds
+  // its records once per message; they hold for every size.
+  {
+    const w = 280.0, maxLines = 3;
+    final sizes = [for (var k = 0; k <= 40; k++) 10 + k * 0.5];
+    final msgs = [for (var i = 0; i < chat.length; i += 8) chat[i]];
+    double fit(bool Function(double) fits) {
+      var lo = 0, hi = sizes.length - 1;
+      if (!fits(sizes[lo])) return sizes[lo];
+      while (lo < hi) {
+        final mid = (lo + hi + 1) ~/ 2;
+        if (fits(sizes[mid])) {
+          lo = mid;
+        } else {
+          hi = mid - 1;
+        }
+      }
+      return sizes[lo];
+    }
+
+    var tpLayouts = 0, bfFallbacks = 0;
+    final (tpSizes, tpMs) = timed(() => [
+          for (final m in msgs)
+            fit((s) {
+              tpLayouts++;
+              final tp = painter(m, s, w, maxLines: maxLines);
+              final ok = !tp.didExceedMaxLines;
+              tp.dispose();
+              return ok;
+            })
+        ]);
+    final (bfSizes, bfMs) = timed(() => [
+          for (final m in msgs)
+            () {
+              final r = buildRecords(md, m);
+              return fit((s) {
+                final n = r?.lineCount(w, scaleFor(md, s)) ?? -1;
+                if (n >= 0) return n <= maxLines;
+                bfFallbacks++;
+                final tp = painter(m, s, w, maxLines: maxLines);
+                final ok = !tp.didExceedMaxLines;
+                tp.dispose();
+                return ok;
+              });
+            }()
+        ]);
+    var same = 0;
+    for (var i = 0; i < msgs.length; i++) {
+      if (tpSizes[i] == bfSizes[i]) same++;
+    }
+    out['autoFit'] = {'messages': msgs.length, 'width': w, 'maxLines': maxLines, 'sizes': sizes.length,
+        'textPainterMs': tpMs, 'breakFirstMs': bfMs, 'sameSize': same,
+        'textPainterLayoutsPerRun': tpLayouts ~/ reps, 'breakFirstFallbacksPerRun': bfFallbacks ~/ reps};
+  }
+
+  // 2. A text-scale change: every message's height was known at 16 px; the user
+  // sets text to 130%, and the list needs every height again (as a SliverList of
+  // known extents does). Flutter lays every message out again; break-first keeps
+  // its records and re-runs the greedy pass at the new scale.
+  {
+    const w = 280.0, size0 = 16.0, size1 = 16.0 * 1.3;
+    final recs = [for (final m in chat) buildRecords(md, m)];
+    final (tpH, tpMs) = timed(() => [
+          for (final m in chat)
+            () {
+              final tp = painter(m, size1, w);
+              final h = tp.height;
+              tp.dispose();
+              return h;
+            }()
+        ]);
+    final scale = scaleFor(md, size1), lh = lineHeightPx(md, size1);
+    final (bfH, bfMs) = timed(() => [
+          for (var i = 0; i < chat.length; i++)
+            () {
+              final n = recs[i]?.lineCount(w, scale) ?? -1;
+              return n >= 0 ? n * lh : flutterHeight(chat[i], size1, w);
+            }()
+        ]);
+    var equal = 0;
+    for (var i = 0; i < chat.length; i++) {
+      if ((tpH[i] - bfH[i]).abs() < 1e-3) equal++;
+    }
+    out['textScale'] = {'messages': chat.length, 'width': w, 'fromSize': size0, 'toSize': size1,
+        'textPainterMs': tpMs, 'breakFirstMs': bfMs, 'heightsEqual': equal};
+  }
+
+  // 3. Pagination: a long document (license texts, then Python documentation) on
+  // 360 x 600 px pages at 16 px, then again at 18 px (the reader picks a larger
+  // size). Paragraphs split across pages at line boundaries; a page break is the
+  // (paragraph, line) that starts the page.
+  {
+    const w = 360.0, pageH = 600.0;
+    List<(int, int)> paginate(List<int> lines, double lh) {
+      final perPage = (pageH / lh).floor();
+      final starts = <(int, int)>[(0, 0)];
+      var used = 0;
+      for (var p = 0; p < lines.length; p++) {
+        for (var l = 0; l < lines[p]; l++) {
+          if (used == perPage) {
+            starts.add((p, l));
+            used = 0;
+          }
+          used++;
+        }
+      }
+      return starts;
+    }
+
+    int tpLines(String s, double size) {
+      final tp = painter(s, size, w);
+      final n = tp.computeLineMetrics().length;
+      tp.dispose();
+      return n;
+    }
+
+    int flutterLines(String s, double size) {
+      final p = paragraph(s, w, size);
+      final n = p.computeLineMetrics().length;
+      p.dispose();
+      return n;
+    }
+
+    final row = <String, Object?>{'paragraphs': book.length, 'pageWidth': w, 'pageHeight': pageH};
+    List<Records?>? recs;
+    for (final (label, size, cold) in [('at16', 16.0, true), ('at18', 18.0, false)]) {
+      final lh = lineHeightPx(md, size), scale = scaleFor(md, size);
+      final (tpPages, tpMs) = timed(() => paginate([for (final s in book) tpLines(s, size)], lh));
+      final (bfPages, bfMs) = timed(() {
+        final rs = cold ? [for (final s in book) buildRecords(md, s)] : recs!;
+        if (cold) recs = rs;
+        return paginate([
+          for (var i = 0; i < book.length; i++)
+            () {
+              final n = rs[i]?.lineCount(w, scale) ?? -1;
+              return n >= 0 ? n : flutterLines(book[i], size);
+            }()
+        ], lh);
+      });
+      var same = tpPages.length == bfPages.length;
+      for (var k = 0; same && k < tpPages.length; k++) {
+        same = tpPages[k] == bfPages[k];
+      }
+      row[label] = {'size': size, 'pages': tpPages.length, 'textPainterMs': tpMs, 'breakFirstMs': bfMs,
+          'samePageBreaks': same, 'recordsReused': !cold};
+    }
+    out['pagination'] = row;
+  }
+
+  // 4. Off the UI isolate: the sidecar is plain data and the breaker plain Dart, so
+  // a background isolate can compute the heights (here every chat message at
+  // 16 px, 280 px), leaving the UI isolate only what it hands back. Flutter's own
+  // text layout is tried in a background isolate too.
+  {
+    const w = 280.0, size = 16.0;
+    final main = [for (final m in chat) flutterHeight(m, size, w)];
+    final sw = Stopwatch()..start();
+    final bg = await Isolate.run(() => _heightsOffMain((sidecar, chat, size, w, quantizeFontSize, hardBreakKerns)));
+    final workerMs = sw.elapsedMicroseconds / 1000;
+    sw.reset();
+    var handedBack = 0;
+    for (var i = 0; i < chat.length; i++) {
+      if (bg[i].isNaN) {
+        bg[i] = flutterHeight(chat[i], size, w);
+        handedBack++;
+      }
+    }
+    final uiMs = sw.elapsedMicroseconds / 1000;
+    var equal = 0;
+    for (var i = 0; i < chat.length; i++) {
+      if ((main[i] - bg[i]).abs() < 1e-3) equal++;
+    }
+    String? flutterInIsolate;
+    try {
+      final h = await Isolate.run(() {
+        final tp = TextPainter(text: const TextSpan(text: 'Hello', style: TextStyle(fontSize: 16)),
+            textDirection: TextDirection.ltr)
+          ..layout();
+        return tp.height;
+      });
+      flutterInIsolate = 'ok: height $h';
+    } catch (e) {
+      flutterInIsolate = 'error: ${'$e'.split('\n').first}';
+    }
+    out['backgroundIsolate'] = {'messages': chat.length, 'workerMs': workerMs, 'uiIsolateMs': uiMs,
+        'handedBackToUi': handedBack, 'heightsEqual': equal, 'textPainterInBackgroundIsolate': flutterInIsolate};
+  }
+  return out;
+}
+
+/// Heights in a background isolate: decode the sidecar, take the engine settings
+/// calibrated on the UI isolate, break. NaN where Flutter must lay the text out.
+List<double> _heightsOffMain((Uint8List, List<String>, double, double, bool, bool) a) {
+  final (sidecar, texts, size, w, quantize, breakKerns) = a;
+  quantizeFontSize = quantize;
+  hardBreakKerns = breakKerns;
+  final md = WidthModel.decode(sidecar);
+  final scale = scaleFor(md, size), lh = lineHeightPx(md, size);
+  return [
+    for (final t in texts)
+      () {
+        final n = buildRecords(md, t)?.lineCount(w, scale) ?? -1;
+        return n >= 0 ? n * lh : double.nan;
+      }()
+  ];
+}
+
 Future<Map<String, Object?>> runApp({String mode = 'all', int sample = 100000}) async {
   final result = <String, Object?>{'platform': Platform.operatingSystem, 'mode': mode};
   await loadFont();
@@ -703,6 +942,7 @@ Future<Map<String, Object?>> runApp({String mode = 'all', int sample = 100000}) 
   if (mode == 'all' || mode == 'validate') result['validate'] = await validate(md, sample: sample);
   if (mode == 'all' || mode == 'timing') result['timing'] = await timing(md);
   if (mode == 'styles') result['styles'] = await validateStyles(md, sample: sample);
+  if (mode == 'usecases') result['useCases'] = await useCases(md, bytes);
   if (mode == 'native') {
     // On Android the library ships in the APK (jniLibs) and opens by name.
     final lib = Platform.environment['BF_NATIVE_LIB'] ?? (Platform.isAndroid ? 'libbreak_first.so' : null);

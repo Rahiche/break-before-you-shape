@@ -109,6 +109,26 @@ const int certM = 4;
 
 /// SkParagraph's line-fit test, emulated in float32: a line fits when its width,
 /// floored to 1/100 px (1/10 px from 10,000 px), is not greater than the box width.
+/// A key for a pair of code points: arithmetic, not shifts, because shifts
+/// truncate to 32 bits on the web.
+const _pairBase = 0x200000;
+int pairKey(int a, int b) => a * _pairBase + b;
+
+/// A fingerprint of a font file: its length and two 32-bit FNV-1a hashes of its
+/// bytes (32-bit arithmetic only, so the web gives the same digest). A sidecar
+/// records the digest of the font it was built from.
+String fontDigest(Uint8List font) {
+  var a = 0x811C9DC5, b = 0x050C5D1F;
+  for (final x in font) {
+    a ^= x;
+    a = (((a << 24) & 0xFFFFFFFF) + a * 0x193) & 0xFFFFFFFF;
+    b ^= x ^ 0x5A;
+    b = (((b << 24) & 0xFFFFFFFF) + b * 0x193) & 0xFFFFFFFF;
+  }
+  String hex(int v) => v.toRadixString(16).padLeft(8, '0');
+  return '${font.length}:${hex(a)}${hex(b)}';
+}
+
 /// Measured first as "+0.01 px" with box widths that are multiples of 0.1 px,
 /// where the two agree; arbitrary box widths showed the floor.
 final Float32List _f32 = Float32List(1);
@@ -210,17 +230,17 @@ class _CertRows {
   // Marks (class M): code point -> (combining class, kerning stops at it,
   // characters next to which it must not be left uncomposed).
   final marks = <int, (int, bool, Set<int>)>{};
-  // HarfBuzz's compositions the font has: (base << 21 | mark) -> composite.
+  // HarfBuzz's compositions the font has: pairKey(base, mark) -> composite.
   final compose = <int, int>{};
   // Scripts whose lookups differ from the main script's on Common characters:
-  // breaker script -> (characters, pairs as a << 21 | b).
+  // breaker script -> (characters, pairs as pairKey(a, b)).
   final scriptVariant = <int, (Set<int>, Set<int>)>{};
 
   _CertRows(String certText) {
     for (final line in certText.split('\n')) {
       if (line.startsWith('# compose ')) {
         final x = line.substring(10).trim().split(' ').map((h) => int.parse(h, radix: 16)).toList();
-        compose[x[0] << 21 | x[1]] = x[2];
+        compose[pairKey(x[0], x[1])] = x[2];
         continue;
       }
       if (line.startsWith('# script ')) {
@@ -230,7 +250,7 @@ class _CertRows {
         final cs = {for (final h in w.sublist(2, at)) if (h != '-') int.parse(h, radix: 16)};
         final ps = {
           for (final h in w.sublist(at + 1))
-            if (h != '-') int.parse(h.split(':')[0], radix: 16) << 21 | int.parse(h.split(':')[1], radix: 16),
+            if (h != '-') pairKey(int.parse(h.split(':')[0], radix: 16), int.parse(h.split(':')[1], radix: 16)),
         };
         for (final sc in _scriptsOfTag[w[0]] ?? const <int>[]) {
           scriptVariant[sc] = (cs, ps);
@@ -331,14 +351,14 @@ class WidthModel {
   Map<int, (int, bool, Set<int>)> marks = const {};
 
   /// HarfBuzz's compositions of a base and a mark that the font has:
-  /// (base << 21 | mark) -> composite.
+  /// pairKey(base, mark) -> composite.
   Map<int, int> compose = const {};
 
   /// Common characters (spaces, digits, punctuation) take the script of their run,
   /// and some fonts give a script lookups of its own over them. The sidecar holds
   /// their widths under the main script (Latin, or Hebrew or Arabic for a
   /// right-to-left one); for every other script whose lookups can change them
-  /// (certify.py): the characters, and the pairs (a << 21 | b), that the breaker
+  /// (certify.py): the characters, and the pairs (pairKey(a, b)), that the breaker
   /// hands to Flutter in a run of that script ([scCommon]: a run of Common
   /// characters alone).
   Map<int, (Set<int>, Set<int>)> scriptVariant = const {};
@@ -347,6 +367,10 @@ class WidthModel {
   /// certified or not: Flutter's font fallback picks the first font that has a
   /// character. Null for sidecars built without it.
   List<int>? coverage;
+
+  /// [fontDigest] of the font file the sidecar was built from, or null for
+  /// sidecars built without it.
+  String? fontDigest;
 
   /// Whether the font has [cp], or null when the sidecar does not say.
   bool? hasCodePoint(int cp) {
@@ -525,7 +549,7 @@ class WidthModel {
         // neither composes with nor is excluded next to; otherwise not modelled.
         final info = rows.marks[cps[id]]!;
         final base = [0x30, 0x78, 0x71].firstWhere(
-          (b) => rows.compose[b << 21 | cps[id]] == null && !info.$3.contains(b),
+          (b) => rows.compose[pairKey(b, cps[id])] == null && !info.$3.contains(b),
           orElse: () => -1,
         );
         final b = String.fromCharCode(base);
@@ -758,11 +782,12 @@ class WidthModel {
         if (noLigaRowRight != null) 'splitNoLiga': true,
         if (noLigaCert != null) 'noLiga': true,
         if (coverage != null) 'coverage': coverage,
+        if (fontDigest != null) 'font': fontDigest,
         if (marks.isNotEmpty)
           'marks': [
             for (final e in marks.entries) [e.key, e.value.$1, e.value.$2 ? 1 : 0, e.value.$3.toList()..sort()],
           ],
-        if (compose.isNotEmpty) 'compose': [for (final e in compose.entries) ...[e.key >> 21, e.key & 0x1FFFFF, e.value]],
+        if (compose.isNotEmpty) 'compose': [for (final e in compose.entries) ...[e.key ~/ _pairBase, e.key % _pairBase, e.value]],
         if (scriptVariant.isNotEmpty)
           'scripts': [
             for (final e in scriptVariant.entries) [e.key, e.value.$1.toList()..sort(), e.value.$2.toList()..sort()],
@@ -900,6 +925,7 @@ class WidthModel {
     );
     md.rtl = meta['direction'] == 'rtl';
     if (meta['coverage'] != null) md.coverage = (meta['coverage'] as List).cast<int>();
+    md.fontDigest = meta['font'] as String?;
     if (meta['marks'] != null) {
       md.marks = {
         for (final e in (meta['marks'] as List).cast<List>())
@@ -908,7 +934,7 @@ class WidthModel {
     }
     if (meta['compose'] != null) {
       final c = (meta['compose'] as List).cast<int>();
-      md.compose = {for (var i = 0; i + 2 < c.length; i += 3) c[i] << 21 | c[i + 1]: c[i + 2]};
+      md.compose = {for (var i = 0; i + 2 < c.length; i += 3) pairKey(c[i], c[i + 1]): c[i + 2]};
     }
     if (meta['scripts'] != null) {
       md.scriptVariant = {
@@ -1743,7 +1769,10 @@ bool isCombiningMark(int cu) =>
       while (j < t.length && isComplexContext(t.codeUnitAt(j))) {
         j++;
       }
-      if (isComplexContextMark(cu)) return null;
+      // Thai and Lao AM join the character before them too (GB9a; HarfBuzz moves
+      // AM's nikhahit onto it): a space before AM is in its cluster (measured:
+      // Flutter starts the line at that space).
+      if (isComplexContextMark(cu) || cu == 0x0E33 || cu == 0x0EB3) return null;
       final br = dictionaryBreaks(t, i, j);
       if (br == null || br.any((p) => breakMayBeInsideGrapheme(t, p))) return null;
       extra.addAll(br);
@@ -2049,7 +2078,7 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
       final kept = <int>[];
       for (final k in order) {
         final cc = info[k]!.$1;
-        final comp = md.compose[starter << 21 | ms[k]];
+        final comp = md.compose[pairKey(starter, ms[k])];
         if (comp != null && (kept.isEmpty || lastKept < cc)) {
           starter = comp;
           composed++;
@@ -2090,7 +2119,7 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
       }
       var before = q >= start ? t.codeUnitAt(q) : -1;
       if (before >= 0 && isHardBreak(before)) before = hardBreakKerns ? 0x20 : -1;
-      if (s == scCommon && (sv.$1.contains(cu) || (before >= 0 && sv.$2.contains(before << 21 | cu)))) return false;
+      if (s == scCommon && (sv.$1.contains(cu) || (before >= 0 && sv.$2.contains(pairKey(before, cu))))) return false;
       for (var k = i + 1; k < mEnd; k++) {
         if (sv.$1.contains(t.codeUnitAt(k))) return false;
       }
