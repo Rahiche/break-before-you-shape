@@ -4,20 +4,20 @@ Exact line breaks and paragraph heights for Flutter, computed **before** shaping
 (the *sidecar*) built once at build time. When it can't be sure, it hands the paragraph back to Flutter, so its
 answers equal Flutter's own layout.
 
-![Jumping to message #2,500 in a 10,000-message chat list](../../media/list_extents_jump.gif)
+![Jumping to message #2,500 in a 10,000-message chat list](https://raw.githubusercontent.com/Rahiche/break-before-you-shape/v0.3.0/media/list_extents_jump.gif)
 
-The [example](example/) is a chat list with 10,000 messages. A stock `ListView` (left) learns heights only by laying
+The [example](https://github.com/Rahiche/break-before-you-shape/tree/v0.3.0/packages/break_first/example) is a chat list with 10,000 messages. A stock `ListView` (left) learns heights only by laying
 items out, so it can only estimate where message #2,500 is. It also has to lay out every message between the current
 position and the target. With extents from break-first (right), the list knows every height and its total height before
-anything is laid out. Android emulator, release build, one run ([full video](../../media/list_extents_android.mp4),
-[measured log](../../media/list_extents_android_measured.txt)):
+anything is laid out. Android emulator, release build, one run ([full video](https://github.com/Rahiche/break-before-you-shape/blob/v0.3.0/media/list_extents_android.mp4),
+[measured log](https://github.com/Rahiche/break-before-you-shape/blob/v0.3.0/media/list_extents_android_measured.txt)):
 
 | | Stock `ListView` | break-first extents |
 |---|---|---|
-| Jump to #2,500 | lands on #1,969, 717 ms frame | lands on #2,500, 22 ms frame |
-| Jump back to #300 | lands on #246, 724 ms frame | lands on #300, 19 ms frame |
+| Jump to #2,500 | lands on #1,969, 570 ms frame | lands on #2,500, 17 ms frame |
+| Jump back to #300 | lands on #246, 432 ms frame | lands on #300, 17 ms frame |
 | Total height | estimated, changes while scrolling | exact |
-| All 10,000 extents | — | 99 ms (+17 ms for 481 messages sent to Flutter); TextPainter: 444 ms |
+| All 10,000 extents | — | 61 ms (+7 ms for 481 messages sent to Flutter); TextPainter: 420 ms |
 
 Every bubble the right-hand list lays out is checked against its predicted height. At the end, all 10,000 extents are
 checked against `TextPainter`: 10,000 of 10,000 equal.
@@ -68,8 +68,8 @@ platform.
 
 ## Build a sidecar
 
-1. Certify the font's layout tables: `python3 certify.py MyFont.ttf myfont.cert 4` (from the repository root; needs
-   fontTools).
+1. Certify the font's layout tables with [`certify.py`](https://github.com/Rahiche/break-before-you-shape/blob/v0.3.0/certify.py)
+   from the repository (needs fontTools): `python3 certify.py MyFont.ttf myfont.cert 4`.
 2. Under `flutter test`, load the font and distil the sidecar by measuring Flutter's own text stack:
 
 ```dart
@@ -126,4 +126,4 @@ points), Arabic (per joining form, with harakat), Chinese, Japanese and Korean t
 right to left, and `buildBidiRecords` combines a left-to-right and a right-to-left sidecar for mixed-direction text.
 Emoji and Brahmic scripts come from the device's fonts, measured once per run. What the breaker cannot decide exactly
 (a character no font here has, a word wider than the line, a decision within float error) goes to Flutter, so heights
-always equal Flutter's. See the [paper](../../paper/paper.pdf) for the method, its proofs and the checks.
+always equal Flutter's. See the [paper](https://github.com/Rahiche/break-before-you-shape/blob/v0.3.0/paper/paper.pdf) for the method, its proofs and the checks.
