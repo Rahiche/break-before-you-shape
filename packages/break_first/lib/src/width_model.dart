@@ -1549,7 +1549,6 @@ class Records {
     this.riskyEnds,
     this.riskyNexts,
     this.mandatory,
-    this.spaceCount,
     this.clusterLoss,
   );
 
@@ -1572,7 +1571,14 @@ class Records {
   final Uint8List mandatory;
   // Word spacing goes on the last space of every run of spaces that is a break
   // opportunity (measured): spaceCount[j] counts those among records 0..j-1.
-  final Int32List spaceCount;
+  // Built on first use, with word spacing.
+  late final Int32List spaceCount = () {
+    final c = Int32List(count + 1);
+    for (var j = 0; j < count; j++) {
+      c[j + 1] = c[j] + (ends[j] < nexts[j] && mandatory[j] == 0 && j < count - 1 ? 1 : 0);
+    }
+    return c;
+  }();
   // Characters before position i that share a glyph cluster with an earlier one
   // (ligatures): letter spacing counts clusters. Null when there are none.
   final Int32List? clusterLoss;
@@ -1586,33 +1592,30 @@ class Records {
   /// SkParagraph adds it to each glyph's advance; build the records with the same
   /// spacing's sign), [wordSpacing] at every space break inside it.
   Int32List? lineStarts(double maxWidth, double scale, {double letterSpacing = 0, double wordSpacing = 0}) {
-    if (wordSpacing != 0 && wordSpacingUnsure) return null;
+    final out = <int>[0];
+    return _breakLines(maxWidth, scale, letterSpacing, wordSpacing, out) < 0 ? null : Int32List.fromList(out);
+  }
+
+  /// The number of [lineStarts], or -1 when Flutter must decide.
+  int lineCount(double maxWidth, double scale, {double letterSpacing = 0, double wordSpacing = 0}) =>
+      _breakLines(maxWidth, scale, letterSpacing, wordSpacing, null);
+
+  /// [lineStarts]: the number of lines, or -1. With [out], adds the start of each
+  /// line after the first to it.
+  int _breakLines(double maxWidth, double scale, double letterSpacing, double wordSpacing, List<int>? out) {
+    if (wordSpacing != 0 && wordSpacingUnsure) return -1;
     final maxF = _toF32(maxWidth);
     final ls = letterSpacing, ws = wordSpacing;
+    // Without word spacing, the counts of spaces only multiply 0: zeros will do.
+    final spaces = ws != 0 ? spaceCount : _zeros(count + 1);
     final len = prefix.length - 1;
     final rel =
-        !inexact && exactPositions(scale, prefix[len] * scale + ls.abs() * len + ws.abs() * spaceCount[count], ls, ws)
+        !inexact && exactPositions(scale, prefix[len] * scale + ls.abs() * len + ws.abs() * spaces[count], ls, ws)
         ? 0.0
         : driftPerPx;
     var unsure = false;
-    // Far from the edge: decide in doubles. Near it: SkParagraph's float32 test,
-    // and with drift, refuse decisions the margin could flip. [extraW] is the
-    // spacing in the line, [extraX] the spacing before its end (for the margin).
-    bool fits(double startUnits, double endUnits, double extraW, double extraX) {
-      final w = (endUnits - startUnits) * scale + extraW;
-      final margin = 0.02 + rel * 2 * endUnits * scale + rel * 2 * extraX;
-      if (w <= maxWidth - margin) return true;
-      if (w >= maxWidth + margin) return false;
-      final f = fitsLine(w, maxF);
-      if (rel > 0) {
-        final d = rel * 2 * endUnits * scale + rel * 2 * extraX + 1e-4;
-        if (fitsLine(w - d, maxF) != fitsLine(w + d, maxF)) unsure = true;
-      }
-      return f;
-    }
-
     final spaced = ls != 0 || ws != 0;
-    final out = <int>[0];
+    var lines = 1;
     var s = 0, k = 0;
     for (;;) {
       var best = -1;
@@ -1620,60 +1623,68 @@ class Records {
       final lead = k > 0 && mandatory[k - 1] & 2 != 0 ? ws : 0.0;
       for (var j = k; j < count; j++) {
         final e = ends[j];
-        final ok = spaced
-            ? fits(
-                p0,
+        final f = spaced
+            ? _fit(
+                prefix[e] - p0,
                 prefix[e],
-                ls * _clusters(s, e) + ws * (spaceCount[j] - spaceCount[k]) + lead,
-                ls.abs() * e + ws.abs() * spaceCount[j],
+                ls * _clusters(s, e) + ws * (spaces[j] - spaces[k]) + lead,
+                ls.abs() * e + ws.abs() * spaces[j],
+                scale,
+                maxWidth,
+                maxF,
+                rel,
               )
-            : fits(p0, prefix[e], 0, 0);
-        if (!ok) break;
+            : _fit(prefix[e] - p0, prefix[e], 0, 0, scale, maxWidth, maxF, rel);
+        if (f & _unsure != 0) unsure = true;
+        if (f & _fits == 0) break;
         best = j;
         if (mandatory[j] != 0) break;
       }
-      if (best < 0 || unsure) return null;
+      if (best < 0 || unsure) return -1;
       if (riskyEnds.isNotEmpty && mandatory[best] == 0) {
         final from = nexts[best], to = best + 1 < count ? nexts[best + 1] : 1 << 30;
         for (var q = 0; q < riskyEnds.length; q++) {
           final e = riskyEnds[q];
-          if (riskyNexts[q] > from &&
-              riskyNexts[q] < to &&
-              (spaced
-                  ? fits(
-                      p0,
-                      prefix[e],
-                      ls * _clusters(s, e) + ws * (spaceCount[best + 1] - spaceCount[k]) + lead,
-                      ls.abs() * e + ws.abs() * spaceCount[best + 1],
-                    )
-                  : fits(p0, prefix[e], 0, 0))) {
-            return null;
-          }
+          if (riskyNexts[q] <= from || riskyNexts[q] >= to) continue;
+          final f = spaced
+              ? _fit(
+                  prefix[e] - p0,
+                  prefix[e],
+                  ls * _clusters(s, e) + ws * (spaces[best + 1] - spaces[k]) + lead,
+                  ls.abs() * e + ws.abs() * spaces[best + 1],
+                  scale,
+                  maxWidth,
+                  maxF,
+                  rel,
+                )
+              : _fit(prefix[e] - p0, prefix[e], 0, 0, scale, maxWidth, maxF, rel);
+          if (f & _unsure != 0) unsure = true;
+          if (f & _fits != 0) return -1;
         }
-        if (unsure) return null;
+        if (unsure) return -1;
       }
-      if (best == count - 1) return Int32List.fromList(out);
+      if (best == count - 1) return lines;
       // A word wider than the box by less than the 1/100 px floor fits a line of
       // its own, but SkParagraph tests a word for "too long" without the floor
       // and then breaks it inside, on this line (measured): Flutter decides.
       if (mandatory[best] == 0) {
         final a = nexts[best], b = ends[best + 1];
         final word = (prefix[b] - prefix[a]) * scale + ls * _clusters(a, b);
-        if (word > maxF - 1e-4 - rel * 2 * (prefix[b] * scale + ls.abs() * b)) return null;
+        if (word > maxF - 1e-4 - rel * 2 * (prefix[b] * scale + ls.abs() * b)) return -1;
       }
       s = nexts[best];
-      out.add(s);
+      out?.add(s);
+      lines++;
       k = best + 1;
     }
   }
-
-  int lineCount(double maxWidth, double scale, {double letterSpacing = 0, double wordSpacing = 0}) =>
-      lineStarts(maxWidth, scale, letterSpacing: letterSpacing, wordSpacing: wordSpacing)?.length ?? -1;
 }
 
 // Scratch buffers shared by all calls (the breaker runs on one isolate).
 Int32List _ends = Int32List(1024), _nexts = Int32List(1024), _rEnds = Int32List(256), _rNexts = Int32List(256);
 Uint8List _mand = Uint8List(1024);
+Int32List _zeroCounts = Int32List(256);
+Int32List _zeros(int n) => _zeroCounts.length >= n ? _zeroCounts : (_zeroCounts = Int32List(n * 2));
 
 /// Hard line breaks (measured: \n, U+2028 and U+2029 end a line; a lone \r does not).
 bool isHardBreak(int cu) => cu == 0x0A || cu == 0x2028 || cu == 0x2029;
@@ -1730,7 +1741,7 @@ int emojiClusterEnd(String t, int i) {
 bool isCombiningMark(int cu) => cu < 0x3000 ? _markBelow3000[cu] == 1 : _isCombiningMark(cu);
 
 // Characters that take the slower path of [_opportunities]: marks, surrogates, ZWJ,
-// VS16, and the scripts measured as runs. [_specialBelow3000]: the same as a table.
+// VS16, and the scripts measured as runs.
 bool _special(int cu) =>
     isCombiningMark(cu) ||
     (cu >= 0xD800 && cu < 0xDC00) ||
@@ -1739,13 +1750,37 @@ bool _special(int cu) =>
     isBrahmic(cu) ||
     isComplexContext(cu);
 
-final Uint8List _specialBelow3000 = () {
+// What the passes ask of every character, as a table below U+3000: the script
+// ([scriptOf]) in the low four bits, and flags.
+const int _fScript = 0xF,
+    _fSlow = 0x10, // pass A's slower path: a hard break, a joining letter, a combining mark, or from U+3000
+    _fStrongR = 0x20, // [_strongR]
+    _fStrongLOrNumber = 0x40, // [_strongLOrNumber]
+    _fSpecial = 0x80; // [_special]
+final Uint8List _infoBelow3000 = () {
   final m = Uint8List(0x3000);
   for (var c = 0; c < 0x3000; c++) {
-    if (_special(c)) m[c] = 1;
+    m[c] =
+        scriptOf(c) |
+        (isHardBreak(c) || _joining(c) > 0 || isCombiningMark(c) ? _fSlow : 0) |
+        (_strongR(c) ? _fStrongR : 0) |
+        (_strongLOrNumber(c) ? _fStrongLOrNumber : 0) |
+        (_special(c) ? _fSpecial : 0);
   }
   return m;
 }();
+
+/// The flags of t[start, end) together (from U+3000: [_fSlow], and [_fSpecial]
+/// where it applies).
+int _flagsOf(String t, int start, int end) {
+  final info = _infoBelow3000;
+  var any = 0;
+  for (var i = start; i < end; i++) {
+    final cu = t.codeUnitAt(i);
+    any |= cu < 0x3000 ? info[cu] : (_special(cu) ? _fSlow | _fSpecial : _fSlow);
+  }
+  return any;
+}
 
 // [_isCombiningMark] as a table below U+3000, where it is asked about nearly every character.
 final Uint8List _markBelow3000 = () {
@@ -1782,14 +1817,11 @@ bool _isCombiningMark(int cu) =>
 
 /// Break opportunities with combining marks: LB9 (X CM* is X) is UAX #14 on the
 /// text without its marks, positions mapped back; a mark after a space, a hard
-/// break or nothing (LB10) sends the paragraph to Flutter.
-(int, int)? _opportunities(String t) {
-  var marks = false;
-  for (var i = 0; i < t.length && !marks; i++) {
-    final cu = t.codeUnitAt(i);
-    marks = cu < 0x3000 ? _specialBelow3000[cu] == 1 : _special(cu);
-  }
-  if (!marks) return _opportunitiesNoMarks(t);
+/// break or nothing (LB10) sends the paragraph to Flutter. [flags]: [_flagsOf] the
+/// whole text, when the caller has them.
+(int, int)? _opportunities(String t, [int? flags]) {
+  final any = flags ?? _flagsOf(t, 0, t.length);
+  if (any & _fSpecial == 0) return _opportunitiesNoMarks(t, hardBreaks: any & _fSlow != 0);
   final b = StringBuffer(), at = <int>[], extra = <int>[];
   for (var i = 0; i < t.length; i++) {
     final cu = t.codeUnitAt(i);
@@ -1881,7 +1913,8 @@ bool _isCombiningMark(int cu) =>
   return (ends.length, nr);
 }
 
-(int, int)? _opportunitiesNoMarks(String t) {
+/// [hardBreaks]: false when [t] has none.
+(int, int)? _opportunitiesNoMarks(String t, {bool hardBreaks = true}) {
   final len = t.length;
   if (_ends.length < len + 2) {
     _ends = Int32List(len * 2 + 2);
@@ -1890,7 +1923,7 @@ bool _isCombiningMark(int cu) =>
   }
   var n = 0, nr = 0, start = 0;
   for (;;) {
-    var end = start;
+    var end = hardBreaks ? start : len;
     while (end < len && !isHardBreak(t.codeUnitAt(end))) {
       end++;
     }
@@ -1912,6 +1945,7 @@ bool _isCombiningMark(int cu) =>
 
 /// The records of t[start, end), a text without hard breaks, appended at n.
 (int, int)? _segment(String t, int start, int len, int n, int nr) {
+  final lb = _lb, ends = _ends, nexts = _nexts, mand = _mand; // the caller sized them
   var spaceStart = -1, lastNonSpace = -1;
   // LB25 context: is t[i-1] inside NU (NU|SY|IS)*, and was the character before a
   // closing bracket inside one?
@@ -1920,7 +1954,7 @@ bool _isCombiningMark(int cu) =>
   if (ca == lbXX) return null;
   for (var i = start + 1; i < len; i++) {
     final x = t.codeUnitAt(i);
-    final cx = lbClass(x);
+    final cx = lb[x]; // lbClass(x)
     if (cx == lbXX) return null;
     final wasNumber = inNumber;
     inNumber = ca == lbNU || (inNumber && (ca == lbSY || ca == lbIS));
@@ -1951,9 +1985,9 @@ bool _isCombiningMark(int cu) =>
           }
         }
         if (ok) {
-          _ends[n] = spaceStart;
-          _mand[n] = 0;
-          _nexts[n++] = i;
+          ends[n] = spaceStart;
+          mand[n] = 0;
+          nexts[n++] = i;
         } else {
           if (nr == _rEnds.length) {
             _rEnds = Int32List(nr * 2)..setRange(0, nr, _rEnds);
@@ -1967,6 +2001,10 @@ bool _isCombiningMark(int cu) =>
       continue;
     }
     var allowed = !_noBreak[ca * nLB + cx];
+    if (!allowed && cx != lbOP) {
+      ca = cx;
+      continue; // the rules below only take breaks away, but for LB30
+    }
     // LB30 (Unicode 15.1) keeps letters and digits with an opening bracket only if
     // it is not East Asian: a fullwidth （ allows a break (measured: "Format|（PDF）").
     if (!allowed && cx == lbOP && (ca == lbAL || ca == lbNU) && _isEA(x)) allowed = true;
@@ -1982,16 +2020,18 @@ bool _isCombiningMark(int cu) =>
       final q = t.codeUnitAt(i - 1);
       if (!(_isPf(q) && _isEA(x) && i - 2 >= start && _isEA(t.codeUnitAt(i - 2)))) allowed = false;
     }
-    // LB20a: no break after a word-initial hyphen (HY, U+2010) or en dash (measured:
-    // Flutter treats the en dash like the hyphen here, but not other BA, e.g. "|").
-    final dash = ca == lbHY || t.codeUnitAt(i - 1) == 0x2010 || t.codeUnitAt(i - 1) == 0x2013;
     // LB21b: SY × HL (measured: Flutter keeps "ולהסתיר/להציג" together).
     if (allowed && ca == lbSY && _isHL(x)) allowed = false;
     // LB21a: HL (HY | BA) × [^HL].
     if (allowed && (ca == lbHY || ca == lbBA) && i - start >= 2 && _isHL(t.codeUnitAt(i - 2)) && !_isHL(x)) {
       allowed = false;
     }
-    if (allowed && dash && cx == lbAL && (i - start < 2 || t.codeUnitAt(i - 2) == 0x20)) {
+    // LB20a: no break after a word-initial hyphen (HY, U+2010) or en dash (measured:
+    // Flutter treats the en dash like the hyphen here, but not other BA, e.g. "|").
+    if (allowed &&
+        cx == lbAL &&
+        (ca == lbHY || t.codeUnitAt(i - 1) == 0x2010 || t.codeUnitAt(i - 1) == 0x2013) &&
+        (i - start < 2 || t.codeUnitAt(i - 2) == 0x20)) {
       allowed = false;
     }
     if (allowed) {
@@ -2003,9 +2043,9 @@ bool _isCombiningMark(int cu) =>
       if ((inNumber || closedNumber) && (cx == lbPO || cx == lbPR)) allowed = false;
     }
     if (allowed) {
-      _ends[n] = i;
-      _mand[n] = 0;
-      _nexts[n++] = i;
+      ends[n] = i;
+      mand[n] = 0;
+      nexts[n++] = i;
     }
     ca = cx;
   }
@@ -2013,9 +2053,9 @@ bool _isCombiningMark(int cu) =>
   while (end > start && t.codeUnitAt(end - 1) == 0x20) {
     end--;
   }
-  _ends[n] = end;
-  _mand[n] = 0;
-  _nexts[n++] = len;
+  ends[n] = end;
+  mand[n] = 0;
+  nexts[n++] = len;
   return (n, nr);
 }
 
@@ -2034,6 +2074,7 @@ class _Pass {
   double p = 0;
   int run = scCommon; // script of the current run
   List<int>? lossEnds, lossDelta;
+  int? flags; // [_flagsOf] the whole text, when pass A has them
 }
 
 /// Pass A over t[start, end) with [md], continuing [pass]: the width prefix. False
@@ -2041,6 +2082,17 @@ class _Pass {
 /// [gate], a character of the other direction than [md]'s fails the paragraph.
 bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate = true}) {
   final ligatures = pass.ligatures, clusters = pass.clusters, prefix = pass.prefix;
+  // Most text, without letter spacing, needs none of the cases below but
+  // characters, islands and script runs: [_widthsPlain] first.
+  if (ligatures &&
+      !clusters &&
+      md.clsRight == null &&
+      md.islandLRight == null &&
+      md.islandRRight == null &&
+      md.scriptVariant.isEmpty) {
+    final plain = _widthsPlain(md, t, start, end, pass, _fSlow | (gate ? (md.rtl ? _fStrongLOrNumber : _fStrongR) : 0));
+    if (plain != null) return plain;
+  }
   final cert = ligatures ? md.cert : md.noLigaCert;
   if (cert == null) return false;
   final idOf = md.idOf, adv = md.adv, fc = md.fc, sc = md.sc, cls = md.cls, n1 = md.n1;
@@ -2248,6 +2300,96 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
   return true;
 }
 
+/// [_widths] where it has nothing but characters, islands and script runs to do
+/// (no letter spacing, split kerning or script lookups over Common characters):
+/// the same widths, from a loop the compiler keeps small. Null at the first
+/// character with a flag in [slow] or from U+3000, with [pass] where it was but
+/// for prefix entries: the caller then goes the general way, which writes them
+/// all again. Over the whole text, it leaves the text's flags in [pass] for pass B.
+bool? _widthsPlain(WidthModel md, String t, int start, int end, _Pass pass, int slow) {
+  final prefix = pass.prefix, cert = md.cert, idOf = md.idOf, adv = md.adv, fc = md.fc, sc = md.sc, cls = md.cls;
+  final n1 = md.n1, digit = md.islandDigit, base = md.keyBase, ofKey = md.islandOfKey, m = md.m;
+  final islandL = md.islandL, islandR = md.islandR, islandW = md.islandW, info = _infoBelow3000;
+  var p = pass.p, run = pass.run, prevId = 0, prevIsland = -1, any = 0;
+  var i = start;
+  while (i < end) {
+    final cu = t.codeUnitAt(i);
+    if (cu >= 0x3000) return null;
+    final f = info[cu];
+    if (f & slow != 0) return null;
+    any |= f;
+    final id = idOf[cu];
+    if (id == 0) return false;
+    final c = cert[id];
+    if (c == certU || c == certM) return false;
+    final s = f & _fScript;
+    if (s != scCommon && s != run) {
+      run = s; // a new script run: no pair adjustment across it
+      prevId = 0;
+      prevIsland = -1;
+    }
+    if (c != certS) {
+      // A P/K run: find its end, and whether it has a primer.
+      var j = i, key = 0, primer = false;
+      while (j < end) {
+        final cj = t.codeUnitAt(j);
+        if (cj >= 0x3000 || info[cj] & slow != 0) return null;
+        final q = idOf[cj];
+        final dj = digit[q];
+        if (q == 0 || dj < 0) break;
+        any |= info[cj];
+        primer = primer || cert[q] == certP;
+        if (j - i < m) key = key * base + dj + 1;
+        j++;
+      }
+      if (j == i) return false; // not in the island alphabet
+      if (primer) {
+        if (j - i > m) return false;
+        final isl = ofKey[key];
+        if (isl < 0) return false;
+        if (prevId != 0) p += islandL[isl * n1 + prevId];
+        prefix[i] = p;
+        for (var q = i + 1; q < j; q++) {
+          prefix[q] = double.nan; // never a break position
+        }
+        p += islandW[isl];
+        prevId = 0;
+        prevIsland = isl;
+        i = j;
+        continue;
+      }
+      // No primer: substitution leaves these characters alone.
+      for (; i < j; i++) {
+        final q = idOf[t.codeUnitAt(i)];
+        if (prevId != 0) {
+          p += cls[fc[prevId] + sc[q]];
+        } else if (prevIsland >= 0) {
+          p += islandR[prevIsland * n1 + q];
+        }
+        prefix[i] = p;
+        p += adv[q];
+        prevId = q;
+        prevIsland = -1;
+      }
+      continue;
+    }
+    if (prevId != 0) {
+      p += cls[fc[prevId] + sc[id]];
+    } else if (prevIsland >= 0) {
+      p += islandR[prevIsland * n1 + id];
+    }
+    prefix[i] = p;
+    p += adv[id];
+    prevId = id;
+    prevIsland = -1;
+    i++;
+  }
+  pass.p = p;
+  pass.run = run;
+  if (start == 0 && end == t.length) pass.flags = any;
+  return true;
+}
+
 _Pass _start(String t, double letterSpacing) {
   final pass = _Pass(Float64List(t.length + 1), letterSpacing <= 0, letterSpacing < 0);
   for (var q = 0; q < t.length && pass.run == scCommon; q++) {
@@ -2389,7 +2531,7 @@ Records? _finish(String t, _Pass pass) {
   final len = t.length, prefix = pass.prefix, lossEnds = pass.lossEnds, lossDelta = pass.lossDelta;
   prefix[len] = pass.p;
 
-  final o = _opportunities(t);
+  final o = _opportunities(t, pass.flags);
   if (o == null) return null;
   final (n, nr) = o;
   for (var j = 0; j < n; j++) {
@@ -2406,19 +2548,47 @@ Records? _finish(String t, _Pass pass) {
       clusterLoss[x] = loss;
     }
   }
-  final spaceCount = Int32List(n + 1);
-  for (var j = 0; j < n; j++) {
-    spaceCount[j + 1] = spaceCount[j] + (_ends[j] < _nexts[j] && _mand[j] == 0 && j < n - 1 ? 1 : 0);
-  }
   return Records(
     prefix,
-    Int32List.fromList(Int32List.sublistView(_ends, 0, n)),
-    Int32List.fromList(Int32List.sublistView(_nexts, 0, n)),
+    Int32List(n)..setRange(0, n, _ends),
+    Int32List(n)..setRange(0, n, _nexts),
     n,
-    Int32List.fromList(Int32List.sublistView(_rEnds, 0, nr)),
-    Int32List.fromList(Int32List.sublistView(_rNexts, 0, nr)),
-    Uint8List.fromList(Uint8List.sublistView(_mand, 0, n)),
-    spaceCount,
+    nr == 0 ? _noRisky : (Int32List(nr)..setRange(0, nr, _rEnds)),
+    nr == 0 ? _noRisky : (Int32List(nr)..setRange(0, nr, _rNexts)),
+    Uint8List(n)..setRange(0, n, _mand),
     clusterLoss,
   );
 }
+
+// [_fit]'s answer: bits.
+const int _fits = 1, _unsure = 2;
+
+/// [Records.lineStarts]'s test for a line [units] wide that ends at [endUnits]:
+/// [_fits] when it fits, and [_unsure] when float drift ([rel]) could flip that.
+/// Far from the edge: decided in doubles. Near it: SkParagraph's float32 test, and
+/// with drift, the margin either way. [extraW] is the spacing in the line, [extraX]
+/// the spacing before its end (for the margin).
+int _fit(
+  double units,
+  double endUnits,
+  double extraW,
+  double extraX,
+  double scale,
+  double maxWidth,
+  double maxF,
+  double rel,
+) {
+  final w = units * scale + extraW;
+  final margin = 0.02 + rel * 2 * endUnits * scale + rel * 2 * extraX;
+  if (w <= maxWidth - margin) return _fits;
+  if (w >= maxWidth + margin) return 0;
+  final f = fitsLine(w, maxF) ? _fits : 0;
+  if (rel > 0) {
+    final d = rel * 2 * endUnits * scale + rel * 2 * extraX + 1e-4;
+    if (fitsLine(w - d, maxF) != fitsLine(w + d, maxF)) return f | _unsure;
+  }
+  return f;
+}
+
+// Shared by the records of every paragraph without risky spaces (most).
+final Int32List _noRisky = Int32List(0);
