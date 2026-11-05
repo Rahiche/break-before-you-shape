@@ -301,7 +301,7 @@ class WidthModel {
     n1 = cps.length;
     idOf = Uint16List(0x10000);
     formIdOf = Uint16List(0x400);
-    islandDigit = Int8List(n1)..fillRange(0, n1, -1);
+    islandDigit = Int32List(n1)..fillRange(0, n1, -1);
     for (var id = 1; id < n1; id++) {
       final v = cps[id] - _vBase;
       if (v < 0) {
@@ -383,7 +383,7 @@ class WidthModel {
   late final Uint16List idOf;
   // (Arabic letter - 0x600) * 4 + joining form -> id (certify.py's virtual characters).
   late final Uint16List formIdOf;
-  late final Int8List islandDigit;
+  late final Int32List islandDigit; // id -> island digit, or -1
 
   // Text the engine shapes without ligatures (letter spacing switches them off):
   // each character's class under a certificate computed with liga, clig and calt
@@ -2107,6 +2107,7 @@ bool _widths(WidthModel md, String t, int start, int end, _Pass pass, {bool gate
         if (j - i < m) key = key * base + dj + 1;
         j++;
       }
+      if (j == i) return false; // not in the island alphabet
       if (primer) {
         if (j - i > m) return false;
         final isl = ofKey[key];

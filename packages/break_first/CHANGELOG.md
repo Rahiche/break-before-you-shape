@@ -21,7 +21,9 @@
 - Rich text: scripts are itemized within each span of one style (measured: Common characters next to a letter in
   another size keep script Common), across its fallback fonts.
 - Fixes: the hard-break calibration probes the character with the largest kern against a space; font-size calibration
-  works without canary strings.
+  works without canary strings; a face with more than 128 island characters no longer hangs or misreads its
+  letter-spaced pairs (island digits were 8-bit; Trattatello); certify.py counts every ligature, also one whose glyph
+  another ligature already makes ("(c)" and "(C)" in Superclarendon).
 
 ## 0.2.0
 

@@ -1340,12 +1340,16 @@ def run_round():
                         else:
                             ot_ligs.append((head, comps, lig.LigGlyph))
     present = {g for cp in live for g in reach_of(cp)}
+    # Each ligature on its own: two can make the same glyph ("(C)" and "(c)" both
+    # make the copyright sign in Superclarendon).
     formed = []
+    done = set()
     changed = True
     while changed:
         changed = False
-        for head, comps, out in ot_ligs:
-            if out not in outputs and head in present | outputs and all(c in present | outputs for c in comps):
+        for k, (head, comps, out) in enumerate(ot_ligs):
+            if k not in done and head in present | outputs and all(c in present | outputs for c in comps):
+                done.add(k)
                 outputs.add(out)
                 formed.append((head, comps, out))
                 changed = True
