@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shape the Line, Not the Paragraph</title>
+{{style}}
+<style>
+  /* Wide tables scroll on their own on a narrow screen; the page does not. */
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .scroll table { min-width: 520px; }
+</style>
+</head>
+<body>
+
+<h1>Shape the Line, Not the Paragraph</h1>
+<p class="subtitle">Drawing text line by line from a certified width model: the same pixels, exact positions, and a cost
+that follows what changes</p>
+<p class="meta">Raouf Rahiche · Version 1.0 · {{date}} ·
+<a href="https://github.com/Rahiche/break-before-you-shape">github.com/Rahiche/break-before-you-shape</a><br>
+A companion to <i>Break Before You Shape</i> (<code>paper/paper.html</code>). Every number here is read from result
+files produced on one {{cpu}} machine and an Android emulator on it.</p>
+
+<div class="abstract"><p><b>Abstract.</b>
+Flutter shapes a paragraph as one long line, cuts that line into lines, and paints every line. A certified per-font
+width model (the sidecar of the companion paper) gives Flutter's exact line breaks before anything is shaped. We test
+what that allows at drawing time: laying out and drawing each line as its own one-line paragraph, at the position the
+model gives. In Flutter {{flutter_version}} on macOS, drawing line by line gave the same pixels as Flutter's own
+paragraph in {{px_identical:,}} of {{px_cases:,}} comparisons ({{px_share:.1f}}%), and at 16&nbsp;px in every comparison
+under all three renderers we tried (Impeller and Skia on macOS, Impeller on an Android emulator). Where they differ,
+the paragraph is the less exact of the two: at 18.4&nbsp;px a line drawn alone is within {{drift_18_4_maxAloneErrPx:.5f}}&nbsp;px of the exact positions, the same line in its paragraph up to
+{{drift_18_4_maxWholeErrPx:.4f}}&nbsp;px away. In long text the paragraph's coordinates move line breaks: in a {{long_200k_chars:,}}-character text Flutter breaks
+{{long_200k_paragraphsWhereTheWholeTextBreaksDifferently}} paragraphs differently from the same paragraphs laid out
+alone, and past a million pixels along its shaped line it starts new lines up to {{long_short_max:.1f}}&nbsp;px before
+a {{long_width:.0f}}&nbsp;px box is full. Drawn line by line, all {{long_paragraphs_all}} paragraphs match Flutter's
+layout of the paragraph alone. The cost then follows what changes: a streamed answer costs
+{{stream_line_late_min:.0f}}–{{stream_line_late_max:.0f}}&nbsp;µs per token at its end, from {{s500_chars:,.0f}} to
+{{s8000_chars:,.0f}} characters, where one <code>Text</code> costs {{s8000_wholeText_late_us:,.0f}}&nbsp;µs per token at
+{{s8000_chars:,.0f}}; and the first frame of a {{long_200k_chars:,}}-character text takes
+{{long_200k_firstFrameLineByLineMs:.1f}}&nbsp;ms instead of {{long_200k_firstFrameWholeMs:.1f}}&nbsp;ms.</p></div>
+
+<h2>1 · Introduction</h2>
+<p>Read in its source (the companion repository's <code>research/ENGINE.md</code>, §2), Flutter's text engine,
+SkParagraph, does three things in order. <code>ParagraphImpl::layout</code> shapes the whole paragraph as one endless
+line (<code>shapeTextIntoEndlessLine</code>). <code>breakShapedTextIntoLines</code> then cuts that line into lines by
+summing cluster widths. <code>ParagraphImpl::paint</code> paints every line, whether it is on screen or not. Three
+consequences follow, and they are the subject of this paper.</p>
+<ul>
+  <li><b>Cost follows the paragraph, not the change.</b> Any change to the text makes a new paragraph, and Flutter's
+  paragraph cache is keyed by the whole text: a streamed answer is shaped again, whole, at every token.</li>
+  <li><b>Cost follows the paragraph, not the screen.</b> A long text is shaped and laid out in full before its first
+  frame, and every line is painted.</li>
+  <li><b>Positions come from one long line.</b> A line's glyphs are placed from the paragraph-wide shaping, sliced
+  where the line starts. Skia's coordinates are float32 (<code>SkScalar</code>), which have coarse steps far along a
+  long paragraph; §5–6 measure what that does.</li>
+</ul>
+<p>The companion paper builds a per-font width model, distilled from Flutter itself and certified from the font's
+tables, that gives Flutter's line breaks and heights before any shaping. Once the breaks are known, nothing forces the
+engine to shape a paragraph as one line: each line can be laid out as its own one-line paragraph and drawn where the
+model says. This paper measures what that changes.</p>
+
+<figure>
+<svg class="pipe" viewBox="0 0 820 150" role="img" aria-label="Two ways to draw a paragraph">
+  <defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+    <path d="M0,0 L8,4 L0,8 z" fill="#6e7781"/></marker></defs>
+  <text x="0" y="16" class="lbl">One paragraph (today)</text>
+  <rect class="box" x="0" y="24" width="120" height="40" rx="6"/><text x="60" y="49" text-anchor="middle">text + style</text>
+  <rect class="hot" x="150" y="24" width="190" height="40" rx="6"/><text x="245" y="42" text-anchor="middle">shape as one long line</text>
+  <text x="245" y="57" text-anchor="middle" style="font-size:9px;fill:#9a6700">all of it, at every change</text>
+  <rect class="box" x="370" y="24" width="150" height="40" rx="6"/><text x="445" y="49" text-anchor="middle">cut into lines</text>
+  <rect class="hot" x="550" y="24" width="150" height="40" rx="6"/><text x="625" y="42" text-anchor="middle">paint every line</text>
+  <text x="625" y="57" text-anchor="middle" style="font-size:9px;fill:#9a6700">float32 along the long line</text>
+  <path class="arrow" d="M120,44 H148"/><path class="arrow" d="M340,44 H368"/><path class="arrow" d="M520,44 H548"/>
+  <text x="0" y="96" class="lbl">Line by line</text>
+  <rect class="box" x="0" y="104" width="120" height="40" rx="6"/><text x="60" y="129" text-anchor="middle">text + style</text>
+  <rect class="new" x="150" y="104" width="190" height="40" rx="6"/><text x="245" y="122" text-anchor="middle">breaks + heights, from the model</text>
+  <text x="245" y="137" text-anchor="middle" style="font-size:9px;fill:#0969da">no shaping</text>
+  <rect class="new" x="370" y="104" width="330" height="40" rx="6"/><text x="535" y="122" text-anchor="middle">lay out and paint each needed line alone</text>
+  <text x="535" y="137" text-anchor="middle" style="font-size:9px;fill:#0969da">visible or changed lines only · positions from 0</text>
+  <path class="arrow" d="M120,124 H148"/><path class="arrow" d="M340,124 H368"/>
+</svg>
+<figcaption><b>Figure 1.</b> Today a paragraph is shaped as one long line and cut into lines. With the breaks known
+first, each line is laid out alone, and only the lines that are needed.</figcaption>
+</figure>
+
+<p><b>Contributions.</b></p>
+<ol>
+  <li><b>Line-by-line drawing</b> for Flutter, from the sidecar's breaks: per-paragraph hand-backs, a streaming variant
+  that re-breaks only the end of a growing text, and a long-text variant that lays out only the viewport.</li>
+  <li><b>The same pixels.</b> A byte-for-byte comparison with Flutter's own paragraph across three renderers, four
+  sizes, three alignments and three pixel ratios, with a control that proves the comparison can see a 1/8&nbsp;px
+  shift.</li>
+  <li><b>A precision finding.</b> Where the two differ, the paragraph is the one that is off: its glyph positions drift
+  with their distance along the shaped line, and in long text Flutter's own line breaks degrade with it, to lines
+  started tens of pixels early.</li>
+  <li><b>Costs.</b> Streaming and long-text timings against one <code>Text</code> and against one <code>Text</code>
+  per paragraph.</li>
+</ol>
+
+<h2>2 · Drawing line by line</h2>
+<h3>2.1 · Lines, and what goes back to Flutter</h3>
+<p>For a text, a font size and a width, the sidecar returns the start of every line, or hands the text back when it
+cannot be sure (a word as wide as the line, a fit decided within float error, a character it does not certify). A long
+text is split at its hard breaks, and each paragraph is decided on its own, with its hard break kept: on Apple
+platforms the character before a hard break kerns with it (measured in the companion paper). A paragraph handed back
+is laid out by Flutter as usual, and only that paragraph.</p>
+<h3>2.2 · Drawing</h3>
+<p>Line <i>i</i>'s text runs from its start to the next line's start, with its trailing spaces and without the hard
+break that ends it. It is laid out by Flutter as a paragraph of its own, in the same style, width and alignment, and
+painted at <i>y</i>&nbsp;=&nbsp;<i>i</i>&nbsp;×&nbsp;<i>h</i>, where <i>h</i> is the model's line height (Flutter's
+heights are lines × <i>h</i> for one font: measured, companion paper §4). The line alone is shaped from position 0.
+For certified text the companion paper shows a line's width is the sum of its characters' advances and in-line pair
+adjustments, so shaping it alone gives it the same advances; §4 checks the pixels.</p>
+<h3>2.3 · Streaming</h3>
+<p>A streamed answer grows at its end. Under greedy breaking, appending text can only move the breaks of the last
+lines: a line ends at the last opportunity that fits, and every earlier line's fit is decided by words that are
+already complete. The streaming variant therefore re-breaks the text from the start of its second-to-last line at each
+token (records for that tail only, then the greedy pass), lays out the lines whose text changed, and keeps every line
+before the second-to-last as final. Final lines are recorded into a picture, 16 at a time, so a token paints the
+picture and the last lines. If the sidecar hands the tail back, Flutter lays out the whole text, as it does today.
+§7.1 checks this against Flutter at every token.</p>
+<h3>2.4 · Long text</h3>
+<p>For a long text the sidecar gives every line start and the exact total height (arithmetic over the width prefix,
+plus Flutter's layout of any paragraph handed back), and only the lines in the viewport are laid out and painted. A
+scroll lays out the lines that come into view.</p>
+
+<h2>3 · Setup</h2>
+<p><b>Machine.</b> {{cpu}}, {{os}}; Flutter {{flutter_version}}; release builds. Android: an emulator
+({{android_emulator}}) on the same machine; there is no phone in this study.</p>
+<p><b>Renderers.</b> macOS with Impeller on Metal (Flutter's default here), macOS with Skia on Metal (Impeller turned
+off in the built app), and the Android emulator with Impeller on OpenGL ES. Each run logs the backend it used.</p>
+<p><b>Texts.</b> The companion paper's corpora, built from this machine's files: Python docstrings, man pages, licence
+texts, and macOS interface strings in English, German, French, Russian, Ukrainian and Greek. Roboto Regular, with the
+companion paper's sidecar for it.</p>
+<p><b>Pixels.</b> For each text, size (px), width (150, 240 and 330&nbsp;px) and configuration (start, centre and end
+alignment at 1×, start alignment at 2× and 3×), the paragraph and its lines are each drawn into a picture, rasterized
+with <code>Picture.toImage</code>, and compared byte for byte (RGBA). Control: in every start-aligned 1× case the lines
+are drawn again 1/8&nbsp;px to the right, and that image must differ from the paragraph's.</p>
+<p><b>Timing.</b> The UI thread's work: laying out, and recording the paint into a picture. Rasterization runs on
+another thread and is not measured. Medians of 5 passes (streaming) or 7 (long text); every timed layout misses
+Flutter's paragraph cache.</p>
+
+<h2>4 · The same pixels</h2>
+<table>
+  <tr><th>Renderer</th><th class="n">Comparisons</th><th class="n">Identical</th><th class="n">Share</th>
+      <th class="n">Differ at 16&nbsp;px</th><th class="n">Control seen</th></tr>
+  <tr><td>macOS, Impeller (Metal)</td><td class="n">{{px_cases:,}}</td><td class="n">{{px_identical:,}}</td>
+      <td class="n">{{px_share:.2f}}%</td><td class="n">{{px_diff_16}}</td><td class="n">{{px_controls_seen:,}} of {{px_controls:,}}</td></tr>
+  <tr><td>macOS, Skia (Metal)</td><td class="n">{{skia_cases:,}}</td><td class="n">{{skia_identical:,}}</td>
+      <td class="n">{{skia_share:.2f}}%</td><td class="n">{{skia_diff_16}}</td><td class="n">{{skia_controls_seen:,}} of {{skia_controls:,}}</td></tr>
+  <tr><td>Android emulator, Impeller (OpenGL ES)</td><td class="n">{{emu_cases:,}}</td><td class="n">{{emu_identical:,}}</td>
+      <td class="n">{{emu_share:.2f}}%</td><td class="n">{{emu_diff_16}}</td><td class="n">{{emu_controls_seen:,}} of {{emu_controls:,}}</td></tr>
+</table>
+<p class="k" style="font-size:8.6pt;color:var(--muted)"><b>Table 1.</b> Line-by-line drawing against Flutter's
+paragraph, byte for byte. Sizes: {{px_sizes}}&nbsp;px on macOS Impeller (200 texts per corpus), {{skia_sizes}}&nbsp;px
+under Skia and on the emulator (100 per corpus). In every comparison, the sidecar's line starts and heights equal
+Flutter's, and no line wraps when laid out alone.</p>
+
+<table>
+  <tr><th>macOS, Impeller</th><th class="n">12&nbsp;px</th><th class="n">14&nbsp;px</th><th class="n">16&nbsp;px</th><th class="n">18.4&nbsp;px</th></tr>
+  <tr><td>Comparisons</td><td class="n">{{px_cases_12:,}}</td><td class="n">{{px_cases_14:,}}</td><td class="n">{{px_cases_16:,}}</td><td class="n">{{px_cases_18_4:,}}</td></tr>
+  <tr><td>Identical</td><td class="n">{{px_identical_12:,}}</td><td class="n">{{px_identical_14:,}}</td><td class="n">{{px_identical_16:,}}</td><td class="n">{{px_identical_18_4:,}}</td></tr>
+  <tr><td>Where a differing comparison's first differing line starts (px along the shaped line)</td>
+      <td class="n">{{px_far_12}}</td><td class="n">{{px_far_14}}</td><td class="n">{{px_far_16}}</td><td class="n">{{px_far_18_4}}</td></tr>
+</table>
+<p class="k" style="font-size:8.6pt;color:var(--muted)"><b>Table 2.</b> By size, macOS Impeller. The last row: the
+distance along the paragraph's one shaped line at which the first differing line of every differing comparison
+starts, in steps of 2,048, 4,096 and 8,192&nbsp;px.</p>
+
+<p>At 16&nbsp;px every comparison is identical, under all three renderers. At the other sizes a small share differs;
+where it does, the largest difference in any channel of any pixel is {{px_max_channel}} of 255 on macOS.</p>
+
+<h2>5 · Where they differ, the paragraph is the one that is off</h2>
+<p>We measured characters' left edges in both layouts (<code>getBoxesForRange</code>, every fourth character of each
+line and its last) and compared them with the exact positions: the model's width prefix, in doubles. The texts are
+{{drift_paragraphs}} paragraphs of over 600 characters, {{drift_width:.0f}}&nbsp;px wide.</p>
+<table>
+  <tr><th></th><th class="n">12&nbsp;px</th><th class="n">14&nbsp;px</th><th class="n">16&nbsp;px</th><th class="n">18.4&nbsp;px</th></tr>
+  <tr><td>Lines measured</td><td class="n">{{drift_12_lines:,}}</td><td class="n">{{drift_14_lines:,}}</td><td class="n">{{drift_16_lines:,}}</td><td class="n">{{drift_18_4_lines:,}}</td></tr>
+  <tr><td>Farthest line start (px along the shaped line)</td><td class="n">{{drift_12_farthestLineStartPx:,.0f}}</td><td class="n">{{drift_14_farthestLineStartPx:,.0f}}</td><td class="n">{{drift_16_farthestLineStartPx:,.0f}}</td><td class="n">{{drift_18_4_farthestLineStartPx:,.0f}}</td></tr>
+  <tr><td>Largest error, in its paragraph (px)</td><td class="n">{{drift_12_maxWholeErrPx:.5f}}</td><td class="n">{{drift_14_maxWholeErrPx:.5f}}</td><td class="n">{{drift_16_maxWholeErrPx:.5f}}</td><td class="n">{{drift_18_4_maxWholeErrPx:.5f}}</td></tr>
+  <tr><td>Largest error, drawn alone (px)</td><td class="n">{{drift_12_maxAloneErrPx:.5f}}</td><td class="n">{{drift_14_maxAloneErrPx:.5f}}</td><td class="n">{{drift_16_maxAloneErrPx:.5f}}</td><td class="n">{{drift_18_4_maxAloneErrPx:.5f}}</td></tr>
+</table>
+<p class="k" style="font-size:8.6pt;color:var(--muted)"><b>Table 3.</b> Reported character positions against the exact
+ones.</p>
+<p>At 12, 14 and 16&nbsp;px both layouts report exact positions on every line. At 18.4&nbsp;px a line drawn alone stays
+within {{drift_18_4_maxAloneErrPx:.5f}}&nbsp;px of exact (Flutter's advances are fixed point, 1/65536&nbsp;px), while
+the same line in its paragraph drifts with its distance along the shaped line, up to
+{{drift_18_4_maxWholeErrPx:.4f}}&nbsp;px, in steps that rise with float32's resolution at that distance (Figure 2).</p>
+<figure>
+{{svg:fig_drift.svg}}
+<figcaption><b>Figure 2.</b> Each line's largest position error against where it starts along the paragraph's one
+shaped line, at 18.4&nbsp;px. In its paragraph, the error grows with the distance. Drawn alone, the line starts at 0,
+and its error stays at most {{drift_18_4_maxAloneErrPx:.5f}}&nbsp;px.</figcaption>
+</figure>
+<p>The pixel differences have the same geography (Table 2). At 18.4&nbsp;px they occur at every distance. At 14&nbsp;px
+every differing comparison's first differing line starts beyond 4,096&nbsp;px along the shaped line, at 12&nbsp;px
+beyond 8,192&nbsp;px, and at 16&nbsp;px there are none. At 12 and 14&nbsp;px the reported positions are exact in both
+layouts, so those differences arise when the glyphs are drawn far along the line; we have not traced them inside the
+renderers. The pattern is consistent with float32 coordinates measured from the start of the shaped line: a float32
+near <i>x</i> moves in steps of 2<sup>⌊log₂&nbsp;<i>x</i>⌋&nbsp;−&nbsp;23</sup>, 1/2048&nbsp;px beyond 4,096&nbsp;px and
+1/1024&nbsp;px beyond 8,192&nbsp;px, and at 16&nbsp;px Roboto's font units scale by 2<sup>−7</sup>&nbsp;px, a power of two.
+A line drawn alone has its coordinates start at 0 and never goes far.</p>
+
+<h2>6 · Long text: the rounding moves Flutter's own line breaks</h2>
+<p>In a long <code>Text</code> the distances along the shaped line pass 100,000&nbsp;px, where a float32 step is
+1/128&nbsp;px or more. The measurements below show that Flutter's line breaking sees them: a paragraph wraps
+differently depending on how much text comes before it.</p>
+<table>
+  <tr><th>Text</th><th class="n">Lines</th><th class="n">Paragraphs</th><th class="n">Handed back</th>
+      <th class="n">Same as Flutter, paragraph alone</th><th class="n">Whole text breaks differently</th></tr>
+  <tr><td>{{long_10k_chars:,}} characters</td><td class="n">{{long_10k_lines:,}}</td><td class="n">{{long_10k_paragraphs}}</td>
+      <td class="n">{{long_10k_paragraphsHandedBack}}</td><td class="n">{{long_10k_paragraphsSameAsFlutterAlone}}</td>
+      <td class="n">{{long_10k_paragraphsWhereTheWholeTextBreaksDifferently}}</td></tr>
+  <tr><td>{{long_50k_chars:,}} characters</td><td class="n">{{long_50k_lines:,}}</td><td class="n">{{long_50k_paragraphs}}</td>
+      <td class="n">{{long_50k_paragraphsHandedBack}}</td><td class="n">{{long_50k_paragraphsSameAsFlutterAlone}}</td>
+      <td class="n">{{long_50k_paragraphsWhereTheWholeTextBreaksDifferently}}</td></tr>
+  <tr><td>{{long_200k_chars:,}} characters</td><td class="n">{{long_200k_lines:,}}</td><td class="n">{{long_200k_paragraphs}}</td>
+      <td class="n">{{long_200k_paragraphsHandedBack}}</td><td class="n">{{long_200k_paragraphsSameAsFlutterAlone}}</td>
+      <td class="n">{{long_200k_paragraphsWhereTheWholeTextBreaksDifferently}}</td></tr>
+</table>
+<p class="k" style="font-size:8.6pt;color:var(--muted)"><b>Table 4.</b> Line breaks of long texts (paragraphs joined by
+hard breaks; {{long_size:g}}&nbsp;px, {{long_width:.0f}}&nbsp;px wide). "Same as Flutter, paragraph alone": the
+line-by-line breaks equal Flutter's layout of that paragraph on its own. "Whole text breaks differently": Flutter's
+layout of the whole text breaks that paragraph otherwise.</p>
+<p>In each of the {{long_200k_paragraphsWhereTheWholeTextBreaksDifferently}} paragraphs that the
+{{long_200k_chars:,}}-character text breaks differently, Flutter laying out the paragraph alone agrees with the
+sidecar. We measured, with the sidecar's exact widths, the line the whole text made where it first departs
+({{long_differs_measured}} paragraphs; {{long_differs_handed_back}} more is one the sidecar hands back, so it has no
+widths):</p>
+<ul>
+  <li>The nearest starts {{long_differs_nearest:,.0f}}&nbsp;px along the shaped line, where a float32 step is
+  1/{{long_first_step_inv:.0f}}&nbsp;px. There the whole text accepted a line {{long_first_excess:.5f}}&nbsp;px wider
+  than the box: one step.</li>
+  <li>In all, {{long_wide}} of these lines are wider than the box, by up to {{long_wide_max:.3f}}&nbsp;px, and
+  {{long_short}}, all from {{long_short_nearest:,.0f}}&nbsp;px on, are narrower: there the whole text moved to the next
+  line a word that fits.</li>
+  <li>Past 1,000,000&nbsp;px all {{long_far}} lines are short, by {{long_far_short_min:.1f}} to
+  {{long_short_max:.1f}}&nbsp;px of a {{long_width:.0f}}&nbsp;px box, and the whole text's height no longer equals
+  the paragraphs' heights summed.</li>
+</ul>
+<p>A <code>Text</code> holding a long document therefore wraps a paragraph one way, and the same paragraph shown on its
+own another, and the error grows with the length of the document. Drawn line by line, every paragraph is laid out from
+its own start, and its breaks do not depend on what precedes it.</p>
+
+<h2>7 · Costs</h2>
+<h3>7.1 · Streaming</h3>
+<p><b>Exactness.</b> {{stream_answers}} answers ({{stream_characters:,}} characters) were appended token by token;
+tokens are a word's leading spaces with up to four of its characters. At every one of the {{stream_steps:,}} steps
+the line starts and the height equal Flutter's layout of the text so far; Flutter decided {{stream_stepsFlutterDecided}}
+steps.</p>
+<div class="two">
+<figure>
+{{svg:fig_stream.svg}}
+<figcaption><b>Figure 3.</b> Cost of a token in the last tenth of an answer, by answer length
+({{stream_size:g}}&nbsp;px, {{stream_width:.0f}}&nbsp;px wide).</figcaption>
+</figure>
+<figure>
+{{svg:fig_long.svg}}
+<figcaption><b>Figure 4.</b> First frame of a long text: one <code>Text</code>, or the sidecar's breaks and the
+{{long_visible}} lines of an {{long_viewport:.0f}}&nbsp;px viewport.</figcaption>
+</figure>
+</div>
+<table>
+  <tr><th>Answers</th><th class="n">Paragraph</th><th class="n">One Text</th><th class="n">One Text per paragraph</th>
+      <th class="n">Line by line</th><th class="n">vs one Text</th><th class="n">vs per paragraph</th></tr>
+  <tr><td>{{s500_chars:,.0f}} characters</td><td class="n">{{s500_para_chars:.0f}}</td><td class="n">{{s500_wholeText_us:.0f}} ({{s500_wholeText_late_us:.0f}})</td>
+      <td class="n">{{s500_perParagraph_us:.0f}} ({{s500_perParagraph_late_us:.0f}})</td><td class="n">{{s500_lineByLine_us:.0f}} ({{s500_lineByLine_late_us:.0f}})</td>
+      <td class="n">{{s500_x_whole:.1f}}×</td><td class="n">{{s500_x_para:.1f}}×</td></tr>
+  <tr><td>{{s2000_chars:,.0f}} characters</td><td class="n">{{s2000_para_chars:.0f}}</td><td class="n">{{s2000_wholeText_us:.0f}} ({{s2000_wholeText_late_us:.0f}})</td>
+      <td class="n">{{s2000_perParagraph_us:.0f}} ({{s2000_perParagraph_late_us:.0f}})</td><td class="n">{{s2000_lineByLine_us:.0f}} ({{s2000_lineByLine_late_us:.0f}})</td>
+      <td class="n">{{s2000_x_whole:.1f}}×</td><td class="n">{{s2000_x_para:.1f}}×</td></tr>
+  <tr><td>{{s8000_chars:,.0f}} characters</td><td class="n">{{s8000_para_chars:.0f}}</td><td class="n">{{s8000_wholeText_us:.0f}} ({{s8000_wholeText_late_us:,.0f}})</td>
+      <td class="n">{{s8000_perParagraph_us:.0f}} ({{s8000_perParagraph_late_us:.0f}})</td><td class="n">{{s8000_lineByLine_us:.0f}} ({{s8000_lineByLine_late_us:.0f}})</td>
+      <td class="n">{{s8000_x_whole:.1f}}×</td><td class="n">{{s8000_x_para:.1f}}×</td></tr>
+  <tr><td>One paragraph of {{sone_chars:,.0f}}</td><td class="n">{{sone_para_chars:,.0f}}</td><td class="n">{{sone_wholeText_us:.0f}} ({{sone_wholeText_late_us:.0f}})</td>
+      <td class="n">{{sone_perParagraph_us:.0f}} ({{sone_perParagraph_late_us:.0f}})</td><td class="n">{{sone_lineByLine_us:.0f}} ({{sone_lineByLine_late_us:.0f}})</td>
+      <td class="n">{{sone_x_whole:.1f}}×</td><td class="n">{{sone_x_para:.1f}}×</td></tr>
+</table>
+<p class="k" style="font-size:8.6pt;color:var(--muted)"><b>Table 5.</b> Streaming, µs per token over the whole answer
+(in brackets: in its last tenth). "Paragraph": mean characters between blank lines. "One Text per paragraph" is how a
+Markdown view builds an answer, with finished paragraphs recorded once. Speed-ups compare whole streams.</p>
+<p>One <code>Text</code> lays out everything streamed so far at every token, so its cost per token grows with the answer.
+One <code>Text</code> per paragraph bounds the cost by the current paragraph, and with this corpus's short paragraphs
+it is within {{s8000_x_para:.1f}}× of line by line. Line by line bounds it by the last two lines: it is the only one
+of the three whose cost does not grow with a long paragraph.</p>
+<h3>7.2 · Long text</h3>
+<table>
+  <tr><th>Text</th><th class="n">One Text</th><th class="n">Line by line</th><th class="n">of which breaks</th>
+      <th class="n">Speed-up</th><th class="n">Jump to the middle: one Text</th><th class="n">line by line</th></tr>
+  <tr><td>{{long_10k_chars:,}} characters</td><td class="n">{{long_10k_firstFrameWholeMs:.2f}}</td><td class="n">{{long_10k_firstFrameLineByLineMs:.2f}}</td>
+      <td class="n">{{long_10k_ofWhichBreakingMs:.2f}}</td><td class="n">{{long_10k_firstFrameSpeedup:.1f}}×</td>
+      <td class="n">{{long_10k_jumpToMiddleWholeMs:.2f}}</td><td class="n">{{long_10k_jumpToMiddleLineByLineMs:.2f}}</td></tr>
+  <tr><td>{{long_50k_chars:,}} characters</td><td class="n">{{long_50k_firstFrameWholeMs:.2f}}</td><td class="n">{{long_50k_firstFrameLineByLineMs:.2f}}</td>
+      <td class="n">{{long_50k_ofWhichBreakingMs:.2f}}</td><td class="n">{{long_50k_firstFrameSpeedup:.1f}}×</td>
+      <td class="n">{{long_50k_jumpToMiddleWholeMs:.2f}}</td><td class="n">{{long_50k_jumpToMiddleLineByLineMs:.2f}}</td></tr>
+  <tr><td>{{long_200k_chars:,}} characters</td><td class="n">{{long_200k_firstFrameWholeMs:.2f}}</td><td class="n">{{long_200k_firstFrameLineByLineMs:.2f}}</td>
+      <td class="n">{{long_200k_ofWhichBreakingMs:.2f}}</td><td class="n">{{long_200k_firstFrameSpeedup:.1f}}×</td>
+      <td class="n">{{long_200k_jumpToMiddleWholeMs:.2f}}</td><td class="n">{{long_200k_jumpToMiddleLineByLineMs:.2f}}</td></tr>
+</table>
+<p class="k" style="font-size:8.6pt;color:var(--muted)"><b>Table 6.</b> Long text, ms. First frame: layout and the
+paint of the top of the text. "Of which breaks": the sidecar's breaks and heights for the whole text, including
+Flutter's layout of the paragraphs handed back. Jump: one <code>Text</code> paints its laid-out paragraph again,
+moved; line by line lays out the {{long_visible}} lines that come into view.</p>
+<p>The first frame gains less than streaming, because the breaks themselves are a pass over the whole text and the
+paragraphs handed back are laid out in full. A jump is cheaper for one <code>Text</code> on short texts, which has
+nothing left to lay out; at {{long_200k_chars:,}} characters painting all its lines again costs more than laying out a
+screen of new ones. A real list would keep painted lines in a layer; neither number includes rasterization.</p>
+
+<h2>8 · Related work</h2>
+<p>Lazy text layout is common, with estimated sizes: TextKit&nbsp;2 lays out the viewport and estimates the rest, and
+Chrome's <code>content-visibility</code> skips layout of off-screen content and uses a placeholder size
+(<code>research/ENGINE.md</code>, §4–5). Line by line is lazy with exact sizes, because the breaks and heights come
+from a certified model rather than an estimate. Android's Minikin measures text per word through a cache and splits
+words at spaces, so it never shapes across a line end; SkParagraph shapes the paragraph as one line and never reshapes
+at line ends (§2 of the same note). Streaming chat interfaces commonly render Markdown, one widget per block, which is
+the per-paragraph baseline of §7.1.</p>
+
+<h2>9 · Limitations</h2>
+<ul>
+  <li><b>One font, one direction.</b> Roboto Regular, left to right. Text the sidecar does not certify (other fonts as
+  fallback, complex scripts, emoji sequences) is handed back, and drawn by Flutter as today.</li>
+  <li><b>Not a widget yet.</b> The measurements use <code>dart:ui</code> paragraphs directly. A widget would also need
+  selection across lines, caret and hit testing, a single semantics node for screen readers, and justification
+  (a one-line paragraph is its own last line, so <code>TextAlign.justify</code> does not stretch it); none is
+  implemented. Ellipsis is not covered.</li>
+  <li><b>UI thread only.</b> Raster time, GPU memory and memory for many small paragraphs are not measured.</li>
+  <li><b>No phone.</b> Android results come from an emulator; timings are from the Mac.</li>
+  <li><b>Corpora.</b> Machine-generated from local files; streaming answers are corpus paragraphs, not model output,
+  and tokens are approximated.</li>
+  <li><b>Float rounding is engine behaviour.</b> §5–6 describe SkParagraph in Flutter {{flutter_version}}; another
+  version that keeps positions relative to each line would remove the differences, and with them §6's effect.</li>
+</ul>
+
+<h2>10 · Reproducibility</h2>
+<ul>
+  <li><code>flutter_bench/lib/ideas.dart</code> and <code>lib/ideas_main.dart</code>: every experiment here
+  (<code>IDEA=pixels</code>, <code>drift</code>, <code>long</code>, <code>streaming</code>); for example
+  <code>flutter build macos --release -t lib/ideas_main.dart --dart-define=IDEA=streaming</code>, then run the app
+  with <code>BF_OUT</code> set; <code>tool/run_android.sh</code> on the emulator;</li>
+  <li><code>flutter_bench/results/ideas_*.json</code>: the results; <code>ideas_machine.txt</code>: the machine;</li>
+  <li><code>paper/lines/make_numbers.py</code>: every number and figure, read from those files, with the claims of the
+  text asserted; <code>paper/lines/build.py</code>: this page.</li>
+</ul>
+</body>
+</html>

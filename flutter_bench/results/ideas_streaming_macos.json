@@ -1,0 +1,117 @@
+{
+ "platform": "macos",
+ "idea": "streaming",
+ "flags": {
+  "fontSizeQuantized": false,
+  "hardBreakKerns": true
+ },
+ "streaming": {
+  "fontSize": 16.0,
+  "width": 330.0,
+  "exactness": {
+   "answers": 86,
+   "characters": 215423,
+   "steps": 57699,
+   "sameLineStarts": 57699,
+   "different": 0,
+   "heightsEqual": 57699,
+   "stepsFlutterDecided": 84,
+   "examples": []
+  },
+  "timing": {
+   "docs 500": {
+    "answers": 8,
+    "meanChars": 651.0,
+    "tokens": 1389,
+    "meanParagraphChars": 151.64705882352942,
+    "wholeText": {
+     "streamMs": 103.68707,
+     "usPerToken": 74.6487185025198,
+     "usPerTokenInLastTenth": 129.4666814814815
+    },
+    "perParagraph": {
+     "streamMs": 49.798504,
+     "usPerToken": 35.85205471562275,
+     "usPerTokenInLastTenth": 54.05428148148148
+    },
+    "lineByLine": {
+     "streamMs": 35.853818,
+     "usPerToken": 25.812683945284377,
+     "usPerTokenInLastTenth": 26.43854074074074
+    },
+    "speedupOverWholeText": 2.8919394302721124,
+    "speedupOverPerParagraph": 1.38893168922763
+   },
+   "docs 2000": {
+    "answers": 8,
+    "meanChars": 2088.125,
+    "tokens": 4467,
+    "meanParagraphChars": 154.2710280373832,
+    "wholeText": {
+     "streamMs": 930.855896,
+     "usPerToken": 208.38502261025297,
+     "usPerTokenInLastTenth": 386.1915033860045
+    },
+    "perParagraph": {
+     "streamMs": 173.466658,
+     "usPerToken": 38.832920976046566,
+     "usPerTokenInLastTenth": 48.66009029345372
+    },
+    "lineByLine": {
+     "streamMs": 129.083968,
+     "usPerToken": 28.897239310499216,
+     "usPerTokenInLastTenth": 32.66199548532731
+    },
+    "speedupOverWholeText": 7.2112432738355245,
+    "speedupOverPerParagraph": 1.3438280577182133
+   },
+   "docs 8000": {
+    "answers": 3,
+    "meanChars": 8241.0,
+    "tokens": 6647,
+    "meanParagraphChars": 168.5448275862069,
+    "wholeText": {
+     "streamMs": 5297.748031,
+     "usPerToken": 797.0133941627803,
+     "usPerTokenInLastTenth": 1509.3939081325302
+    },
+    "perParagraph": {
+     "streamMs": 306.161091,
+     "usPerToken": 46.06004077027231,
+     "usPerTokenInLastTenth": 52.11859487951808
+    },
+    "lineByLine": {
+     "streamMs": 237.497591,
+     "usPerToken": 35.73004227471039,
+     "usPerTokenInLastTenth": 42.1947078313253
+    },
+    "speedupOverWholeText": 22.306533757641358,
+    "speedupOverPerParagraph": 1.2891124061969959
+   },
+   "one paragraph": {
+    "answers": 5,
+    "meanChars": 2448.6,
+    "tokens": 3272,
+    "meanParagraphChars": 2448.6,
+    "wholeText": {
+     "streamMs": 805.53485,
+     "usPerToken": 246.1903575794621,
+     "usPerTokenInLastTenth": 455.62140184049076
+    },
+    "perParagraph": {
+     "streamMs": 814.902,
+     "usPerToken": 249.05317848410758,
+     "usPerTokenInLastTenth": 461.2143527607362
+    },
+    "lineByLine": {
+     "streamMs": 101.51423,
+     "usPerToken": 31.025131418092908,
+     "usPerTokenInLastTenth": 33.99322085889571
+    },
+    "speedupOverWholeText": 7.935191450499108,
+    "speedupOverPerParagraph": 8.02746570603944
+   }
+  }
+ },
+ "seconds": 73.992
+}

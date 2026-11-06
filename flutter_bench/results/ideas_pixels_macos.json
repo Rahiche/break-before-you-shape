@@ -1,0 +1,495 @@
+{
+ "platform": "macos",
+ "idea": "pixels",
+ "flags": {
+  "fontSizeQuantized": false,
+  "hardBreakKerns": true
+ },
+ "pixels": {
+  "cases": 105775,
+  "identical": 104600,
+  "different": 1175,
+  "deferredParagraphs": 445,
+  "linesPerConfig": 94264,
+  "sidecarStartsDifferFromFlutter": 0,
+  "heightsDiffer": 0,
+  "lineWrappedWhenAlone": 0,
+  "maxChannelDiff": 100,
+  "controlEighthPxShift": {
+   "cases": 21155,
+   "seenAsDifferent": 21155
+  },
+  "characterBoxes": {
+   "identicalImages": {
+    "zero": 3434,
+    "below1e-3": 736,
+    "atLeast1e-3": 9
+   },
+   "differentImages": {
+    "zero": 27,
+    "below1e-3": 890,
+    "atLeast1e-3": 258
+   }
+  },
+  "linesByDistanceAlongShapedLine": {
+   "12.0px <2048": 88655,
+   "12.0px 2048-4096": 6895,
+   "12.0px 4096-8192": 2970,
+   "14.0px <2048": 99005,
+   "14.0px 2048-4096": 9575,
+   "14.0px 4096-8192": 3575,
+   "16.0px <2048": 109420,
+   "16.0px 2048-4096": 12210,
+   "16.0px 4096-8192": 4820,
+   "16.0px 8192+": 1865,
+   "18.4px <2048": 114735,
+   "18.4px 2048-4096": 12615,
+   "18.4px 4096-8192": 3400,
+   "18.4px 8192+": 320,
+   "12.0px 8192+": 695,
+   "14.0px 8192+": 565
+  },
+  "firstDifferentLineByDistance": {
+   "14.0px 4096-8192": 19,
+   "18.4px <2048": 893,
+   "18.4px 4096-8192": 108,
+   "18.4px 2048-4096": 144,
+   "18.4px 8192+": 3,
+   "14.0px 8192+": 5,
+   "12.0px 8192+": 3
+  },
+  "perConfig": {
+   "left@1.0x": {
+    "cases": 21155,
+    "identical": 20971
+   },
+   "center@1.0x": {
+    "cases": 21155,
+    "identical": 20992
+   },
+   "right@1.0x": {
+    "cases": 21155,
+    "identical": 20965
+   },
+   "left@2.0x": {
+    "cases": 21155,
+    "identical": 20854
+   },
+   "left@3.0x": {
+    "cases": 21155,
+    "identical": 20818
+   }
+  },
+  "perSize": {
+   "12.0": {
+    "cases": 26765,
+    "identical": 26762
+   },
+   "14.0": {
+    "cases": 26630,
+    "identical": 26606
+   },
+   "16.0": {
+    "cases": 26540,
+    "identical": 26540
+   },
+   "18.4": {
+    "cases": 25840,
+    "identical": 24692
+   }
+  },
+  "examples": [
+   {
+    "corpus": "en_docs",
+    "size": 14.0,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 112,
+    "line": 43,
+    "lines": 50,
+    "maxBoxDiffPx": 0.0,
+    "lastLineStartsAtPx": 6388.388671875,
+    "text": "SEQUENCE is a string of concatenated event patterns. An event pattern is of the form <MODIFIER-MODIFIER-TYPE-DETAIL> whe"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 14.0,
+    "width": 330.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 448,
+    "line": 17,
+    "lines": 21,
+    "maxBoxDiffPx": 0.0,
+    "lastLineStartsAtPx": 6260.529296875,
+    "text": "SEQUENCE is a string of concatenated event patterns. An event pattern is of the form <MODIFIER-MODIFIER-TYPE-DETAIL> whe"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 58,
+    "line": 12,
+    "lines": 37,
+    "maxBoxDiffPx": 0.0009918212890625,
+    "lastLineStartsAtPx": 4279.518359375,
+    "text": "The warning specified by *category* will be emitted at runtime on use of deprecated objects. For functions, that happens"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 116,
+    "line": 35,
+    "lines": 37,
+    "maxBoxDiffPx": 0.0009918212890625,
+    "lastLineStartsAtPx": 4279.518359375,
+    "text": "The warning specified by *category* will be emitted at runtime on use of deprecated objects. For functions, that happens"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 342,
+    "line": 6,
+    "lines": 37,
+    "maxBoxDiffPx": 0.0009918212890625,
+    "lastLineStartsAtPx": 4279.518359375,
+    "text": "The warning specified by *category* will be emitted at runtime on use of deprecated objects. For functions, that happens"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 66,
+    "line": 3,
+    "lines": 9,
+    "maxBoxDiffPx": 0.0001220703125,
+    "lastLineStartsAtPx": 995.6394531249999,
+    "text": "If this thread does not yet have a context, returns a new context and sets this thread's context. New contexts are copie"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 197,
+    "line": 6,
+    "lines": 9,
+    "maxBoxDiffPx": 0.0001220703125,
+    "lastLineStartsAtPx": 995.6394531249999,
+    "text": "If this thread does not yet have a context, returns a new context and sets this thread's context. New contexts are copie"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 54,
+    "line": 5,
+    "lines": 13,
+    "maxBoxDiffPx": 0.0003509521484375,
+    "lastLineStartsAtPx": 1517.2363281249998,
+    "text": "- all three arguments must be integral - other must be nonnegative - either self or other (or both) must be nonzero - mo"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 159,
+    "line": 5,
+    "lines": 13,
+    "maxBoxDiffPx": 0.0003509521484375,
+    "lastLineStartsAtPx": 1517.2363281249998,
+    "text": "- all three arguments must be integral - other must be nonnegative - either self or other (or both) must be nonzero - mo"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "center",
+    "dpr": 1.0,
+    "bytesDifferent": 59,
+    "line": 6,
+    "lines": 12,
+    "maxBoxDiffPx": 0.00019073486328125,
+    "lastLineStartsAtPx": 1342.9664062499999,
+    "text": "A buffered reader object and buffered writer object put together to form a sequential IO object that can read and write."
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 30,
+    "line": 9,
+    "lines": 20,
+    "maxBoxDiffPx": 0.00042724609375,
+    "lastLineStartsAtPx": 2391.1554687499997,
+    "text": "offset tells from where to start reading the file. If specified, count is the total number of bytes to transmit as oppos"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 86,
+    "line": 9,
+    "lines": 20,
+    "maxBoxDiffPx": 0.00042724609375,
+    "lastLineStartsAtPx": 2391.1554687499997,
+    "text": "offset tells from where to start reading the file. If specified, count is the total number of bytes to transmit as oppos"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "center",
+    "dpr": 1.0,
+    "bytesDifferent": 65,
+    "line": 6,
+    "lines": 12,
+    "maxBoxDiffPx": 0.000152587890625,
+    "lastLineStartsAtPx": 1427.45546875,
+    "text": "Create and return a new event loop object according to this policy's rules. If there's need to set this loop as the even"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 16,
+    "line": 11,
+    "lines": 12,
+    "maxBoxDiffPx": 0.0002899169921875,
+    "lastLineStartsAtPx": 1427.45546875,
+    "text": "Create and return a new event loop object according to this policy's rules. If there's need to set this loop as the even"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "right",
+    "dpr": 1.0,
+    "bytesDifferent": 58,
+    "line": 11,
+    "lines": 14,
+    "maxBoxDiffPx": 0.0003204345703125,
+    "lastLineStartsAtPx": 1701.6046875,
+    "text": "Wake up all tasks waiting on this condition. This method acts like notify(), but wakes up all waiting tasks instead of o"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 233,
+    "line": 2,
+    "lines": 13,
+    "maxBoxDiffPx": 0.0005340576171875,
+    "lastLineStartsAtPx": 1542.985546875,
+    "text": "Buffered data will be flushed asynchronously. No more data will be received. After all buffered data is flushed, the pro"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 152,
+    "line": 3,
+    "lines": 15,
+    "maxBoxDiffPx": 0.0004425048828125,
+    "lastLineStartsAtPx": 1755.0886718749998,
+    "text": "When creating a breakpoint, its associated filename should be in canonical form. If funcname is defined, a breakpoint hi"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 76,
+    "line": 5,
+    "lines": 10,
+    "maxBoxDiffPx": 0.0001068115234375,
+    "lastLineStartsAtPx": 924.4921874999999,
+    "text": "The 'completedefault' method may be overridden to intercept completions for commands that have no complete_ method."
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 228,
+    "line": 5,
+    "lines": 10,
+    "maxBoxDiffPx": 0.0001068115234375,
+    "lastLineStartsAtPx": 924.4921874999999,
+    "text": "The 'completedefault' method may be overridden to intercept completions for commands that have no complete_ method."
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 64,
+    "line": 6,
+    "lines": 7,
+    "maxBoxDiffPx": 0.0001068115234375,
+    "lastLineStartsAtPx": 766.466015625,
+    "text": "Reader, Writer must be factory functions or classes providing the StreamReader, StreamWriter interface resp."
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 187,
+    "line": 6,
+    "lines": 7,
+    "maxBoxDiffPx": 0.0001068115234375,
+    "lastLineStartsAtPx": 766.466015625,
+    "text": "Reader, Writer must be factory functions or classes providing the StreamReader, StreamWriter interface resp."
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "center",
+    "dpr": 1.0,
+    "bytesDifferent": 106,
+    "line": 10,
+    "lines": 13,
+    "maxBoxDiffPx": 0.00018310546875,
+    "lastLineStartsAtPx": 1588.221875,
+    "text": "Iterate on the list *fs*, yielding finished futures one by one in reverse order. Before yielding a future, *waiter* is r"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 49,
+    "line": 10,
+    "lines": 12,
+    "maxBoxDiffPx": 0.00042724609375,
+    "lastLineStartsAtPx": 1429.8093749999998,
+    "text": "The optional mode argument is the UNIX mode of the file, used only when the database has to be created. It defaults to o"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 146,
+    "line": 10,
+    "lines": 12,
+    "maxBoxDiffPx": 0.00042724609375,
+    "lastLineStartsAtPx": 1429.8093749999998,
+    "text": "The optional mode argument is the UNIX mode of the file, used only when the database has to be created. It defaults to o"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 49,
+    "line": 2,
+    "lines": 5,
+    "maxBoxDiffPx": 0.000030517578125,
+    "lastLineStartsAtPx": 514.9753906249999,
+    "text": "Read a binary file and parse its contents into a Message object model."
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 81,
+    "line": 10,
+    "lines": 18,
+    "maxBoxDiffPx": 0.0003509521484375,
+    "lastLineStartsAtPx": 2176.096484375,
+    "text": "defect should be a Defect subclass, but in any case must be an Exception subclass. obj is the object on which the defect"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 29,
+    "line": 9,
+    "lines": 18,
+    "maxBoxDiffPx": 0.0004119873046875,
+    "lastLineStartsAtPx": 2224.6929687499996,
+    "text": "The elements of the returned list are 2-tuples of key/value pairs, as split on the '=' sign. The left hand side of the '"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 126,
+    "line": 9,
+    "lines": 18,
+    "maxBoxDiffPx": 0.0004119873046875,
+    "lastLineStartsAtPx": 2224.6929687499996,
+    "text": "The elements of the returned list are 2-tuples of key/value pairs, as split on the '=' sign. The left hand side of the '"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 162,
+    "line": 17,
+    "lines": 20,
+    "maxBoxDiffPx": 0.00030517578125,
+    "lastLineStartsAtPx": 2406.276171875,
+    "text": "+ If the value has a 'name' attribute, it is returned to unmodified. Otherwise the name and the value with any linesep c"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 135,
+    "line": 33,
+    "lines": 40,
+    "maxBoxDiffPx": 0.0012664794921875,
+    "lastLineStartsAtPx": 5104.41875,
+    "text": "If given, *abcs* is a list of abstract base classes that should be inserted into the resulting MRO. Unrelated ABCs are i"
+   }
+  ]
+ },
+ "seconds": 850.634
+}

@@ -1,0 +1,471 @@
+{
+ "platform": "macos",
+ "idea": "pixels",
+ "flags": {
+  "fontSizeQuantized": false,
+  "hardBreakKerns": true
+ },
+ "pixels": {
+  "cases": 39530,
+  "identical": 38994,
+  "different": 536,
+  "deferredParagraphs": 194,
+  "linesPerConfig": 35391,
+  "sidecarStartsDifferFromFlutter": 0,
+  "heightsDiffer": 0,
+  "lineWrappedWhenAlone": 0,
+  "maxChannelDiff": 100,
+  "controlEighthPxShift": {
+   "cases": 7906,
+   "seenAsDifferent": 7906
+  },
+  "characterBoxes": {
+   "identicalImages": {
+    "zero": 1191,
+    "below1e-3": 354,
+    "atLeast1e-3": 2
+   },
+   "differentImages": {
+    "below1e-3": 439,
+    "atLeast1e-3": 89,
+    "zero": 8
+   }
+  },
+  "linesByDistanceAlongShapedLine": {
+   "14.0px <2048": 48300,
+   "14.0px 2048-4096": 3855,
+   "16.0px <2048": 53205,
+   "16.0px 2048-4096": 5195,
+   "18.4px <2048": 56150,
+   "18.4px 2048-4096": 5570,
+   "14.0px 4096-8192": 1255,
+   "16.0px 4096-8192": 1605,
+   "18.4px 4096-8192": 1130,
+   "14.0px 8192+": 195,
+   "16.0px 8192+": 435,
+   "18.4px 8192+": 60
+  },
+  "firstDifferentLineByDistance": {
+   "18.4px <2048": 432,
+   "18.4px 2048-4096": 64,
+   "18.4px 4096-8192": 32,
+   "14.0px 8192+": 3,
+   "14.0px 4096-8192": 5
+  },
+  "perConfig": {
+   "left@1.0x": {
+    "cases": 7906,
+    "identical": 7822
+   },
+   "center@1.0x": {
+    "cases": 7906,
+    "identical": 7827
+   },
+   "right@1.0x": {
+    "cases": 7906,
+    "identical": 7818
+   },
+   "left@2.0x": {
+    "cases": 7906,
+    "identical": 7756
+   },
+   "left@3.0x": {
+    "cases": 7906,
+    "identical": 7771
+   }
+  },
+  "examples": [
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 52,
+    "line": 3,
+    "lines": 9,
+    "maxBoxDiffPx": 0.0001220703125,
+    "lastLineStartsAtPx": 947.2046875,
+    "text": "This module is used as a foundation for the html.parser module. It has no documented public API and should not be used d"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 169,
+    "line": 3,
+    "lines": 9,
+    "maxBoxDiffPx": 0.0001220703125,
+    "lastLineStartsAtPx": 947.2046875,
+    "text": "This module is used as a foundation for the html.parser module. It has no documented public API and should not be used d"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "center",
+    "dpr": 1.0,
+    "bytesDifferent": 13,
+    "line": 11,
+    "lines": 27,
+    "maxBoxDiffPx": 0.0004119873046875,
+    "lastLineStartsAtPx": 3308.307421875,
+    "text": "* On input, if newline is None, universal newlines mode is enabled. Lines in the input can end in '\\n', '\\r', or '\\r\\n',"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 34,
+    "line": 8,
+    "lines": 27,
+    "maxBoxDiffPx": 0.0004119873046875,
+    "lastLineStartsAtPx": 3308.307421875,
+    "text": "* On input, if newline is None, universal newlines mode is enabled. Lines in the input can end in '\\n', '\\r', or '\\r\\n',"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 70,
+    "line": 5,
+    "lines": 8,
+    "maxBoxDiffPx": 0.000152587890625,
+    "lastLineStartsAtPx": 925.98359375,
+    "text": "Read a line. The implementation of this method also shows how to drive Reader if you want more control over the event lo"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 58,
+    "line": 9,
+    "lines": 12,
+    "maxBoxDiffPx": 0.000274658203125,
+    "lastLineStartsAtPx": 1365.13984375,
+    "text": "This method exists so that custom event loop subclasses (e.g., event loops that integrate a GUI event loop with Python's"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 114,
+    "line": 14,
+    "lines": 17,
+    "maxBoxDiffPx": 0.000457763671875,
+    "lastLineStartsAtPx": 2100.7804687499997,
+    "text": "The method should use a greedy read strategy, meaning that it should read as much data as is allowed within the definiti"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "center",
+    "dpr": 1.0,
+    "bytesDifferent": 57,
+    "line": 4,
+    "lines": 27,
+    "maxBoxDiffPx": 0.00029754638671875,
+    "lastLineStartsAtPx": 3177.7824218749997,
+    "text": "From AIX 5.3 Difference Addendum (December 2004) 2.9 SVR4 linking affinity Nowadays, there are two major object file for"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "right",
+    "dpr": 1.0,
+    "bytesDifferent": 52,
+    "line": 4,
+    "lines": 10,
+    "maxBoxDiffPx": 0.0001678466796875,
+    "lastLineStartsAtPx": 1105.931640625,
+    "text": "- support efficient access to large databases (currently, the whole index is read when the database is opened, and some "
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 202,
+    "line": 3,
+    "lines": 17,
+    "maxBoxDiffPx": 0.0003814697265625,
+    "lastLineStartsAtPx": 2027.10859375,
+    "text": "This class can be used to create an HTML table (or a complete HTML file containing the table) showing a side by side, li"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 56,
+    "line": 2,
+    "lines": 7,
+    "maxBoxDiffPx": 0.0001220703125,
+    "lastLineStartsAtPx": 732.181640625,
+    "text": "A case insensitive string class; behaves just like str except compares equal when the only variation is case."
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 162,
+    "line": 2,
+    "lines": 7,
+    "maxBoxDiffPx": 0.0001220703125,
+    "lastLineStartsAtPx": 732.181640625,
+    "text": "A case insensitive string class; behaves just like str except compares equal when the only variation is case."
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "right",
+    "dpr": 1.0,
+    "bytesDifferent": 39,
+    "line": 5,
+    "lines": 7,
+    "maxBoxDiffPx": 0.0001373291015625,
+    "lastLineStartsAtPx": 804.3710937499999,
+    "text": "Formats a string in the same way that the % formatting would use, but takes the current locale into account."
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 30,
+    "line": 8,
+    "lines": 11,
+    "maxBoxDiffPx": 0.000274658203125,
+    "lastLineStartsAtPx": 1241.236328125,
+    "text": "For text mode, an LZMAFile object is created, and wrapped in an io.TextIOWrapper instance with the specified encoding, e"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 86,
+    "line": 8,
+    "lines": 11,
+    "maxBoxDiffPx": 0.000274658203125,
+    "lastLineStartsAtPx": 1241.236328125,
+    "text": "For text mode, an LZMAFile object is created, and wrapped in an io.TextIOWrapper instance with the specified encoding, e"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "right",
+    "dpr": 1.0,
+    "bytesDifferent": 57,
+    "line": 6,
+    "lines": 13,
+    "maxBoxDiffPx": 0.000396728515625,
+    "lastLineStartsAtPx": 1620.5117187499998,
+    "text": "Caution: if you pass a relative pathname for top, don't change the current working directory between resumptions of walk"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 55,
+    "line": 4,
+    "lines": 6,
+    "maxBoxDiffPx": 0.0001068115234375,
+    "lastLineStartsAtPx": 633.20078125,
+    "text": "Evaluate the *expression* (given as a string or a code object) under debugger control."
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 115,
+    "line": 9,
+    "lines": 26,
+    "maxBoxDiffPx": 0.000640869140625,
+    "lastLineStartsAtPx": 3129.680078125,
+    "text": "If optional args 'block' is true and 'timeout' is None (the default), block if necessary until an item is available. If "
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "center",
+    "dpr": 1.0,
+    "bytesDifferent": 76,
+    "line": 3,
+    "lines": 18,
+    "maxBoxDiffPx": 0.0001983642578125,
+    "lastLineStartsAtPx": 2172.664453125,
+    "text": "This class is instantiated for each request to be handled. The constructor sets the instance variables request, client_a"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 115,
+    "line": 3,
+    "lines": 7,
+    "maxBoxDiffPx": 0.0000762939453125,
+    "lastLineStartsAtPx": 741.62421875,
+    "text": "Small proxy class that enables transparent compression detection for the Stream interface (mode 'r|*')."
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 64,
+    "line": 8,
+    "lines": 23,
+    "maxBoxDiffPx": 0.0002899169921875,
+    "lastLineStartsAtPx": 2467.6124999999997,
+    "text": "This module provides generic, low- and high-level interfaces for creating temporary files and directories. All of the in"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 187,
+    "line": 8,
+    "lines": 23,
+    "maxBoxDiffPx": 0.0002899169921875,
+    "lastLineStartsAtPx": 2467.6124999999997,
+    "text": "This module provides generic, low- and high-level interfaces for creating temporary files and directories. All of the in"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "center",
+    "dpr": 1.0,
+    "bytesDifferent": 75,
+    "line": 5,
+    "lines": 17,
+    "maxBoxDiffPx": 0.00025177001953125,
+    "lastLineStartsAtPx": 2005.105859375,
+    "text": "Semaphores manage a counter representing the number of release() calls minus the number of acquire() calls, plus an init"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 168,
+    "line": 11,
+    "lines": 19,
+    "maxBoxDiffPx": 0.0003662109375,
+    "lastLineStartsAtPx": 2289.6050781249996,
+    "text": "Imagine a robotic turtle starting at (0, 0) in the x-y plane. After an ``import turtle``, give it the command turtle.for"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 128,
+    "line": 4,
+    "lines": 12,
+    "maxBoxDiffPx": 0.0002593994140625,
+    "lastLineStartsAtPx": 1391.8234375,
+    "text": "``Concatenate`` can be used in conjunction with ``ParamSpec`` and ``Callable`` to represent a higher-order function whic"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 105,
+    "line": 8,
+    "lines": 11,
+    "maxBoxDiffPx": 0.000213623046875,
+    "lastLineStartsAtPx": 1251.1999999999998,
+    "text": "Add a function, with arguments, to be called when the test is completed. Functions added are called on a LIFO basis and "
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 69,
+    "line": 3,
+    "lines": 8,
+    "maxBoxDiffPx": 0.0002288818359375,
+    "lastLineStartsAtPx": 810.8847656249999,
+    "text": "If `spec_set` is True then attempting to set attributes that don't exist on the spec object will raise an `AttributeErro"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 122,
+    "line": 11,
+    "lines": 13,
+    "maxBoxDiffPx": 0.000152587890625,
+    "lastLineStartsAtPx": 1412.7749999999999,
+    "text": "This class may include information about the public identifier, system identifier, byte stream (possibly with character "
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 240.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 52,
+    "line": 2,
+    "lines": 5,
+    "maxBoxDiffPx": 0.0001373291015625,
+    "lastLineStartsAtPx": 831.710546875,
+    "text": "This module is used as a foundation for the html.parser module. It has no documented public API and should not be used d"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 240.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 169,
+    "line": 2,
+    "lines": 5,
+    "maxBoxDiffPx": 0.0001373291015625,
+    "lastLineStartsAtPx": 831.710546875,
+    "text": "This module is used as a foundation for the html.parser module. It has no documented public API and should not be used d"
+   }
+  ]
+ },
+ "seconds": 267.535
+}

@@ -1,0 +1,43 @@
+{
+ "platform": "apple",
+ "strings": 13313,
+ "languages": [
+  "en",
+  "de",
+  "fr",
+  "ru",
+  "uk",
+  "el"
+ ],
+ "slots": [
+  "button",
+  "tab",
+  "listTitle",
+  "listSubtitle",
+  "dialogTitle",
+  "cardBody"
+ ],
+ "scales": [
+  1.0,
+  1.15,
+  1.3,
+  1.5,
+  1.8,
+  2.0
+ ],
+ "cases": 2875608,
+ "fits": 1453221,
+ "cut": 927571,
+ "wordWiderThanBox": 489018,
+ "flutterDecides": 5798,
+ "ms": 326.719,
+ "usPerCase": 0.11361736370186758,
+ "msPerRun": [
+  323.455,
+  326.719,
+  327.702,
+  328.349,
+  326.325
+ ],
+ "note": "median of 5 runs of the AOT-compiled check (dart compile exe); identical answers in every run"
+}

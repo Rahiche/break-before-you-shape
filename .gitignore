@@ -29,3 +29,4 @@ __pycache__/
 
 # Native experiment builds
 flutter_bench/android/app/src/main/jniLibs/
+/flutter_bench/android/.kotlin/

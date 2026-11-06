@@ -3,8 +3,11 @@
 Exact line breaking from a precompiled, certified width model: line breaks and paragraph heights computed **before**
 any text shaping, and identical to what the text engine produces.
 
-Paper: [paper/paper.pdf](paper/paper.pdf) ([HTML](paper/paper.html)). Longer research notes: [RESEARCH.md](RESEARCH.md);
-what an engine could gain by breaking first inside its own pipeline: [research/ENGINE.md](research/ENGINE.md).
+Paper: [paper/paper.pdf](paper/paper.pdf) ([HTML](paper/paper.html)). Its companion, on drawing text line by line
+from the same model (the same pixels, exact positions, streaming and long text):
+[paper/lines/paper.pdf](paper/lines/paper.pdf) ([HTML](paper/lines/paper.html)). Longer research notes:
+[RESEARCH.md](RESEARCH.md); what an engine could gain by breaking first inside its own pipeline:
+[research/ENGINE.md](research/ENGINE.md); four further ideas, tested: [research/IDEAS.md](research/IDEAS.md).
 Flutter package: [packages/break_first](packages/break_first) ([pub.dev](https://pub.dev/packages/break_first)). The same
 method against Jetpack Compose: [compose_bench](compose_bench).
 
@@ -99,9 +102,11 @@ drawn at once.
 | `native/` | C port of the breaker, called through `dart:ffi` in the benchmark (`flutter_bench/lib/native.dart`) |
 | `compose_bench/` | Break-first against Jetpack Compose: an Android harness app on Compose's `TextMeasurer`, Minikin's line fit, the exactness and timing tools |
 | `research/ENGINE.md` | What breaking first inside an engine's pipeline could change (Flutter, Android, Chrome, Apple), from their source code, with experiments to measure it |
+| `research/IDEAS.md` | Four ideas tested: drawing line by line, layout before the font arrives, why Flutter and Compose wrap differently (`compose_bench/tool/diff_check.dart`), overflow caught at build time (`flutter_bench/tool/overflow_check.dart`) |
 | `.github/workflows/` | `ci.yml` (tests on every push), `bench.yml` (the benchmarks on Linux, macOS, iOS simulator and Android emulator) |
 | `media/` | The list-extents demo video, and the numbers it measured |
-| `paper/` | `make_figures.py` (figures and every number), `build_paper.py` (fills the template, prints the PDF) |
+| `paper/` | `make_figures.py` (figures and every number), `build_paper.py` (fills the template, prints the PDF); `paper/lines/`: the companion paper, the same way (`make_numbers.py`, `build.py`) |
+| `flutter_bench/lib/ideas.dart` | The experiments of the companion paper and `research/IDEAS.md` (`lib/ideas_main.dart`, `IDEA=pixels`, `drift`, `long`, `streaming`, `fontlate`) |
 | `results*.txt`, `census/`, `flutter_bench/results/` | Raw results |
 
 ## Reproduce
@@ -128,6 +133,11 @@ CACHE_DIR=/tmp/compose_widths tool/speed.sh 42.0 735 && cd ../flutter_bench
 
 # Paper and the README's tables
 cd ../paper && python3 make_figures.py && python3 build_paper.py && python3 build_readme.py
+
+# The companion paper (paper/lines): IDEA=pixels, drift, long or streaming, each written to results/ideas_<idea>_macos.json
+cd ../flutter_bench && flutter build macos --release -t lib/ideas_main.dart --dart-define=IDEA=streaming
+BF_OUT=$PWD/results/ideas_streaming_macos.json build/macos/Build/Products/Release/bf_bench.app/Contents/MacOS/bf_bench
+cd ../paper/lines && python3 make_numbers.py && python3 build.py
 ```
 
 The benchmarks also run on GitHub Actions, free on a public repository:

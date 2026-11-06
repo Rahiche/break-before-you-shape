@@ -1,0 +1,472 @@
+{
+ "platform": "android",
+ "idea": "pixels",
+ "flags": {
+  "fontSizeQuantized": true,
+  "hardBreakKerns": false
+ },
+ "pixels": {
+  "cases": 39500,
+  "identical": 39130,
+  "different": 370,
+  "deferredParagraphs": 200,
+  "linesPerConfig": 35362,
+  "sidecarStartsDifferFromFlutter": 0,
+  "heightsDiffer": 0,
+  "lineWrappedWhenAlone": 0,
+  "maxChannelDiff": 93,
+  "controlEighthPxShift": {
+   "cases": 7900,
+   "seenAsDifferent": 7900
+  },
+  "characterBoxes": {
+   "identicalImages": {
+    "zero": 1172,
+    "below1e-3": 381,
+    "atLeast1e-3": 4
+   },
+   "differentImages": {
+    "below1e-3": 284,
+    "atLeast1e-3": 78,
+    "zero": 8
+   }
+  },
+  "linesByDistanceAlongShapedLine": {
+   "14.0px <2048": 48300,
+   "14.0px 2048-4096": 3855,
+   "16.0px <2048": 53205,
+   "16.0px 2048-4096": 5195,
+   "18.4px <2048": 56085,
+   "18.4px 2048-4096": 5435,
+   "14.0px 4096-8192": 1255,
+   "16.0px 4096-8192": 1605,
+   "18.4px 4096-8192": 1185,
+   "14.0px 8192+": 195,
+   "16.0px 8192+": 435,
+   "18.4px 8192+": 60
+  },
+  "firstDifferentLineByDistance": {
+   "18.4px <2048": 242,
+   "18.4px 2048-4096": 82,
+   "18.4px 4096-8192": 37,
+   "14.0px 8192+": 3,
+   "14.0px 4096-8192": 5,
+   "18.4px 8192+": 1
+  },
+  "perConfig": {
+   "left@1.0x": {
+    "cases": 7900,
+    "identical": 7853
+   },
+   "center@1.0x": {
+    "cases": 7900,
+    "identical": 7847
+   },
+   "right@1.0x": {
+    "cases": 7900,
+    "identical": 7852
+   },
+   "left@2.0x": {
+    "cases": 7900,
+    "identical": 7821
+   },
+   "left@3.0x": {
+    "cases": 7900,
+    "identical": 7757
+   }
+  },
+  "examples": [
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 173,
+    "line": 6,
+    "lines": 9,
+    "maxBoxDiffPx": 0.000152587890625,
+    "lastLineStartsAtPx": 966.0286407470703,
+    "text": "The min_width keyword argument gives the minimum length of the result, which will be padded on the left with zeros if ne"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "right",
+    "dpr": 1.0,
+    "bytesDifferent": 60,
+    "line": 15,
+    "lines": 17,
+    "maxBoxDiffPx": 0.00048828125,
+    "lastLineStartsAtPx": 2099.7100982666016,
+    "text": "The method should use a greedy read strategy, meaning that it should read as much data as is allowed within the definiti"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 178,
+    "line": 7,
+    "lines": 8,
+    "maxBoxDiffPx": 0.000152587890625,
+    "lastLineStartsAtPx": 833.549690246582,
+    "text": "\"id\" - the unique process-global ID number for the interpreter \"whence\" - indicates where the interpreter was created"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "right",
+    "dpr": 1.0,
+    "bytesDifferent": 27,
+    "line": 21,
+    "lines": 27,
+    "maxBoxDiffPx": 0.0006256103515625,
+    "lastLineStartsAtPx": 3176.1633071899414,
+    "text": "From AIX 5.3 Difference Addendum (December 2004) 2.9 SVR4 linking affinity Nowadays, there are two major object file for"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 144,
+    "line": 9,
+    "lines": 10,
+    "maxBoxDiffPx": 0.0001068115234375,
+    "lastLineStartsAtPx": 960.0660552978516,
+    "text": "This module provides an implementation of the HeaderRegistry API. The implementation is designed to flexibly follow RFC5"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "center",
+    "dpr": 1.0,
+    "bytesDifferent": 48,
+    "line": 2,
+    "lines": 13,
+    "maxBoxDiffPx": 0.0001373291015625,
+    "lastLineStartsAtPx": 1478.6852722167969,
+    "text": "Returns a tuple of two things: * that signature re-rendered in standard Python syntax, and * the index of the \"self\" par"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 76,
+    "line": 7,
+    "lines": 12,
+    "maxBoxDiffPx": 0.0002593994140625,
+    "lastLineStartsAtPx": 1346.1704025268555,
+    "text": "For each of the two dimensions, the environment variable, COLUMNS and LINES respectively, is checked. If the variable is"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 189,
+    "line": 7,
+    "lines": 12,
+    "maxBoxDiffPx": 0.0002593994140625,
+    "lastLineStartsAtPx": 1346.1704025268555,
+    "text": "For each of the two dimensions, the environment variable, COLUMNS and LINES respectively, is checked. If the variable is"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 240,
+    "line": 5,
+    "lines": 8,
+    "maxBoxDiffPx": 0.000152587890625,
+    "lastLineStartsAtPx": 866.6133041381836,
+    "text": "Providing a *seed* allows reproducible selections within a single thread. The seed may be an integer, float, str, or byt"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 48,
+    "line": 11,
+    "lines": 21,
+    "maxBoxDiffPx": 0.0006866455078125,
+    "lastLineStartsAtPx": 2481.0192337036133,
+    "text": "When the timeout argument is present and not None, it should be a floating-point number specifying a timeout for the ope"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 175,
+    "line": 11,
+    "lines": 21,
+    "maxBoxDiffPx": 0.0006866455078125,
+    "lastLineStartsAtPx": 2481.0192337036133,
+    "text": "When the timeout argument is present and not None, it should be a floating-point number specifying a timeout for the ope"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 26,
+    "line": 3,
+    "lines": 12,
+    "maxBoxDiffPx": 0.000244140625,
+    "lastLineStartsAtPx": 1391.1142883300781,
+    "text": "``Concatenate`` can be used in conjunction with ``ParamSpec`` and ``Callable`` to represent a higher-order function whic"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 161,
+    "line": 8,
+    "lines": 12,
+    "maxBoxDiffPx": 0.000244140625,
+    "lastLineStartsAtPx": 1391.1142883300781,
+    "text": "``Concatenate`` can be used in conjunction with ``ParamSpec`` and ``Callable`` to represent a higher-order function whic"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 82,
+    "line": 3,
+    "lines": 12,
+    "maxBoxDiffPx": 0.000244140625,
+    "lastLineStartsAtPx": 1391.1142883300781,
+    "text": "``Concatenate`` can be used in conjunction with ``ParamSpec`` and ``Callable`` to represent a higher-order function whic"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 141,
+    "line": 17,
+    "lines": 22,
+    "maxBoxDiffPx": 0.0008087158203125,
+    "lastLineStartsAtPx": 2622.93595123291,
+    "text": "* `spec`: This can be either a list of strings or an existing object (a class or instance) that acts as the specificatio"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 70,
+    "line": 11,
+    "lines": 13,
+    "maxBoxDiffPx": 0.000213623046875,
+    "lastLineStartsAtPx": 1331.0035247802734,
+    "text": "Much of this module is red-handedly pilfered from email.message in the stdlib, so portions are Copyright (C) 2001 Python"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 150.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 226,
+    "line": 11,
+    "lines": 13,
+    "maxBoxDiffPx": 0.000213623046875,
+    "lastLineStartsAtPx": 1331.0035247802734,
+    "text": "Much of this module is red-handedly pilfered from email.message in the stdlib, so portions are Copyright (C) 2001 Python"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 240.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 139,
+    "line": 3,
+    "lines": 5,
+    "maxBoxDiffPx": 0.0001220703125,
+    "lastLineStartsAtPx": 831.2867813110352,
+    "text": "This module is used as a foundation for the html.parser module. It has no documented public API and should not be used d"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 240.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 84,
+    "line": 9,
+    "lines": 16,
+    "maxBoxDiffPx": 0.0005645751953125,
+    "lastLineStartsAtPx": 3306.6218032836914,
+    "text": "* On input, if newline is None, universal newlines mode is enabled. Lines in the input can end in '\\n', '\\r', or '\\r\\n',"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 240.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 167,
+    "line": 14,
+    "lines": 15,
+    "maxBoxDiffPx": 0.0008087158203125,
+    "lastLineStartsAtPx": 3055.6005477905273,
+    "text": "From AIX 5.3 Difference Addendum (December 2004) 2.9 SVR4 linking affinity Nowadays, there are two major object file for"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 240.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 98,
+    "line": 9,
+    "lines": 15,
+    "maxBoxDiffPx": 0.0008087158203125,
+    "lastLineStartsAtPx": 3055.6005477905273,
+    "text": "From AIX 5.3 Difference Addendum (December 2004) 2.9 SVR4 linking affinity Nowadays, there are two major object file for"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 240.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 115,
+    "line": 7,
+    "lines": 8,
+    "maxBoxDiffPx": 0.00042724609375,
+    "lastLineStartsAtPx": 1597.4430923461914,
+    "text": "setUp A set-up function. This is called before running the tests in each file. The setUp function will be passed a DocTe"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 240.0,
+    "align": "center",
+    "dpr": 1.0,
+    "bytesDifferent": 71,
+    "line": 6,
+    "lines": 8,
+    "maxBoxDiffPx": 0.000152587890625,
+    "lastLineStartsAtPx": 1535.0065612792969,
+    "text": "charset is the canonical name of a character set. codecname is the name of a Python codec, as appropriate for the second"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 240.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 116,
+    "line": 4,
+    "lines": 6,
+    "maxBoxDiffPx": 7.62939453125e-05,
+    "lastLineStartsAtPx": 1039.3846054077148,
+    "text": "This module provides an implementation of the HeaderRegistry API. The implementation is designed to flexibly follow RFC5"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 240.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 84,
+    "line": 2,
+    "lines": 6,
+    "maxBoxDiffPx": 0.0001983642578125,
+    "lastLineStartsAtPx": 1139.4644470214844,
+    "text": "If header is Content-Type and has not yet been defined for this message, it will be set to \"text/plain\" and the new para"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 240.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 100,
+    "line": 4,
+    "lines": 5,
+    "maxBoxDiffPx": 0.0001373291015625,
+    "lastLineStartsAtPx": 900.0091705322266,
+    "text": "Loop through this logger and its parents in the logger hierarchy, looking for a non-zero logging level. Return the first"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 240.0,
+    "align": "left",
+    "dpr": 2.0,
+    "bytesDifferent": 130,
+    "line": 2,
+    "lines": 15,
+    "maxBoxDiffPx": 0.000885009765625,
+    "lastLineStartsAtPx": 3128.0854721069336,
+    "text": "If optional args 'block' is true and 'timeout' is None (the default), block if necessary until an item is available. If "
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 240.0,
+    "align": "left",
+    "dpr": 1.0,
+    "bytesDifferent": 76,
+    "line": 4,
+    "lines": 7,
+    "maxBoxDiffPx": 0.000335693359375,
+    "lastLineStartsAtPx": 1199.1352005004883,
+    "text": "For each of the two dimensions, the environment variable, COLUMNS and LINES respectively, is checked. If the variable is"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 240.0,
+    "align": "left",
+    "dpr": 3.0,
+    "bytesDifferent": 189,
+    "line": 4,
+    "lines": 7,
+    "maxBoxDiffPx": 0.000335693359375,
+    "lastLineStartsAtPx": 1199.1352005004883,
+    "text": "For each of the two dimensions, the environment variable, COLUMNS and LINES respectively, is checked. If the variable is"
+   },
+   {
+    "corpus": "en_docs",
+    "size": 18.4,
+    "width": 240.0,
+    "align": "right",
+    "dpr": 1.0,
+    "bytesDifferent": 56,
+    "line": 9,
+    "lines": 11,
+    "maxBoxDiffPx": 0.0003509521484375,
+    "lastLineStartsAtPx": 2171.557456970215,
+    "text": "This class is instantiated for each request to be handled. The constructor sets the instance variables request, client_a"
+   }
+  ]
+ },
+ "seconds": 353.753
+}

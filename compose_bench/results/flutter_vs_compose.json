@@ -1,0 +1,123 @@
+{
+ "fontSizePx": 42.0,
+ "widthsPx": [
+  336,
+  630,
+  735,
+  1050
+ ],
+ "texts": 27000,
+ "bothDecided": 100133,
+ "flutterPredictionsRight": 100133,
+ "composePredictionsRight": 100133,
+ "predictedToWrapDifferently": 3732,
+ "wrapDifferently": 3732,
+ "predictionAgreesWithTruth": 100133,
+ "truePositives": 3732,
+ "falsePositives": 0,
+ "falseNegatives": 0,
+ "causes": {
+  "Compose measures the line wider": 434,
+  "Flutter measures the line wider": 2122,
+  "Flutter breaks after a hyphen or dash": 1176
+ },
+ "lineWidthDeltaComposeMinusFlutterPx": {
+  "min": -9.6201171875,
+  "median": -2.0673828125,
+  "max": 32.865234375
+ },
+ "characters": {
+  "compared": 275,
+  "sameAdvance": 1,
+  "composeWider": 153,
+  "flutterWider": 121,
+  "meanAbsDiffPx": 0.24556107954545456,
+  "maxAbsDiffPx": 0.50390625
+ },
+ "examples": [
+  {
+   "width": 336,
+   "line": "2004–2007 Apple",
+   "flutterPx": 333.6005859375,
+   "composePx": 337.0,
+   "flutterFits": true
+  },
+  {
+   "width": 336,
+   "line": "in Finder windows",
+   "flutterPx": 336.6767578125,
+   "composePx": 336.0,
+   "flutterFits": false
+  },
+  {
+   "width": 336,
+   "line": "you, click the links",
+   "flutterPx": 337.353515625,
+   "composePx": 334.69140625,
+   "flutterFits": false
+  },
+  {
+   "width": 336,
+   "line": "Some items in the",
+   "flutterPx": 336.2255859375,
+   "composePx": 335.0,
+   "flutterFits": false
+  },
+  {
+   "width": 336,
+   "line": "Redo Remove Tag",
+   "flutterPx": 335.7744140625,
+   "composePx": 336.109375,
+   "flutterFits": true
+  },
+  {
+   "width": 336,
+   "line": "accessible in their",
+   "flutterPx": 336.24609375,
+   "composePx": 335.0,
+   "flutterFits": false
+  },
+  {
+   "width": 336,
+   "line": "items is still being",
+   "flutterPx": 336.369140625,
+   "composePx": 336.0,
+   "flutterFits": false
+  },
+  {
+   "width": 336,
+   "line": "Go to your Movies",
+   "flutterPx": 336.65625,
+   "composePx": 335.97265625,
+   "flutterFits": false
+  },
+  {
+   "width": 336,
+   "line": "“^1” only, or all the",
+   "flutterPx": 336.3076171875,
+   "composePx": 334.8046875,
+   "flutterFits": false
+  },
+  {
+   "width": 336,
+   "line": "accessible in their",
+   "flutterPx": 336.24609375,
+   "composePx": 335.0,
+   "flutterFits": false
+  },
+  {
+   "width": 336,
+   "line": "you sure you want",
+   "flutterPx": 336.7177734375,
+   "composePx": 335.9921875,
+   "flutterFits": false
+  },
+  {
+   "width": 336,
+   "line": "available in iCloud",
+   "flutterPx": 337.3330078125,
+   "composePx": 335.3828125,
+   "flutterFits": false
+  }
+ ]
+}

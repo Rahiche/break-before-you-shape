@@ -1,0 +1,344 @@
+{
+ "mode": "canfit",
+ "runs": 3,
+ "canfit": {
+  "platform": "macos",
+  "call": "Text(caption, maxLines: 3).canFit(240.0)",
+  "style": "Roboto 14 px (kDefaultFontSize), no context",
+  "reps": 15,
+  "sidecar": {
+   "bytes": 593684,
+   "firstLoadMs": 7.33,
+   "loadMsMedian": 1.58,
+   "rssGrowthBytesOnFirstLoad": 9043968
+  },
+  "all": {
+   "captions": 24000,
+   "meanChars": 57.039625,
+   "textPainterMs": 565.573,
+   "canFitMs": 28.357,
+   "textPainterUsPerCall": 23.565541666666668,
+   "canFitUsPerCall": 1.1815416666666667,
+   "speedup": 19.953549023754142,
+   "different": 0
+  },
+  "decidedBySidecar": {
+   "captions": 23862,
+   "meanChars": 56.79549073841254,
+   "textPainterMs": 560.61,
+   "canFitMs": 24.139,
+   "textPainterUsPerCall": 23.493839577571034,
+   "canFitUsPerCall": 1.0116084150532227,
+   "speedup": 23.13224675056736,
+   "different": 0
+  },
+  "handedBackToFlutter": {
+   "captions": 138,
+   "meanChars": 99.2536231884058,
+   "textPainterMs": 1.304,
+   "canFitMs": 1.47,
+   "textPainterUsPerCall": 9.44927536231884,
+   "canFitUsPerCall": 10.652173913043478,
+   "speedup": 0.8856947296372347,
+   "different": 0
+  },
+  "byLength": {
+   "1-40": {
+    "captions": 11194,
+    "meanChars": 29.823744863319636,
+    "textPainterMs": 204.483,
+    "canFitMs": 9.031,
+    "textPainterUsPerCall": 18.267196712524566,
+    "canFitUsPerCall": 0.8067714847239592,
+    "speedup": 22.621642533436496,
+    "different": 0
+   },
+   "41-120": {
+    "captions": 10822,
+    "meanChars": 62.49029754204398,
+    "textPainterMs": 268.273,
+    "canFitMs": 15.209,
+    "textPainterUsPerCall": 24.789595268896694,
+    "canFitUsPerCall": 1.405377933838477,
+    "speedup": 17.639095272536,
+    "different": 0
+   },
+   "121+": {
+    "captions": 1984,
+    "meanChars": 180.8639112903226,
+    "textPainterMs": 93.391,
+    "canFitMs": 7.334,
+    "textPainterUsPerCall": 47.072076612903224,
+    "canFitUsPerCall": 3.6965725806451615,
+    "speedup": 12.710389964548678,
+    "different": 0
+   }
+  },
+  "askAgain": {
+   "captions": 23862,
+   "widths": [
+    200.0,
+    240.0
+   ],
+   "textPainterRelayoutUsPerCall": 1.5579163523594,
+   "canFitUsPerCall": 0.16960020115665073,
+   "speedup": 9.136087484811664
+  }
+ },
+ "perRun": [
+  {
+   "platform": "macos",
+   "call": "Text(caption, maxLines: 3).canFit(240.0)",
+   "style": "Roboto 14 px (kDefaultFontSize), no context",
+   "reps": 15,
+   "sidecar": {
+    "bytes": 593684,
+    "firstLoadMs": 17.723,
+    "loadMsMedian": 1.58,
+    "rssGrowthBytesOnFirstLoad": 8863744
+   },
+   "all": {
+    "captions": 24000,
+    "meanChars": 57.039625,
+    "textPainterMs": 562.028,
+    "canFitMs": 27.761,
+    "textPainterUsPerCall": 23.417833333333334,
+    "canFitUsPerCall": 1.1567083333333332,
+    "speedup": 20.245236122618063,
+    "different": 0
+   },
+   "decidedBySidecar": {
+    "captions": 23862,
+    "meanChars": 56.79549073841254,
+    "textPainterMs": 556.795,
+    "canFitMs": 24.094,
+    "textPainterUsPerCall": 23.3339619478669,
+    "canFitUsPerCall": 1.0097225714525186,
+    "speedup": 23.109280318751555,
+    "different": 0
+   },
+   "handedBackToFlutter": {
+    "captions": 138,
+    "meanChars": 99.2536231884058,
+    "textPainterMs": 1.294,
+    "canFitMs": 1.461,
+    "textPainterUsPerCall": 9.376811594202898,
+    "canFitUsPerCall": 10.58695652173913,
+    "speedup": 0.8856947296372347,
+    "different": 0
+   },
+   "byLength": {
+    "1-40": {
+     "captions": 11194,
+     "meanChars": 29.823744863319636,
+     "textPainterMs": 201.946,
+     "canFitMs": 8.999,
+     "textPainterUsPerCall": 18.04055744148651,
+     "canFitUsPerCall": 0.8039128104341612,
+     "speedup": 22.440937881986887,
+     "different": 0
+    },
+    "41-120": {
+     "captions": 10822,
+     "meanChars": 62.49029754204398,
+     "textPainterMs": 264.989,
+     "canFitMs": 15.177,
+     "textPainterUsPerCall": 24.486139345777122,
+     "canFitUsPerCall": 1.4024209942709296,
+     "speedup": 17.45990643737234,
+     "different": 0
+    },
+    "121+": {
+     "captions": 1984,
+     "meanChars": 180.8639112903226,
+     "textPainterMs": 93.218,
+     "canFitMs": 7.334,
+     "textPainterUsPerCall": 46.984879032258064,
+     "canFitUsPerCall": 3.6965725806451615,
+     "speedup": 12.710389964548678,
+     "different": 0
+    }
+   },
+   "askAgain": {
+    "captions": 23862,
+    "widths": [
+     200.0,
+     240.0
+    ],
+    "textPainterRelayoutUsPerCall": 1.4904031514541949,
+    "canFitUsPerCall": 0.1677981728270891,
+    "speedup": 8.882117882117884
+   }
+  },
+  {
+   "platform": "macos",
+   "call": "Text(caption, maxLines: 3).canFit(240.0)",
+   "style": "Roboto 14 px (kDefaultFontSize), no context",
+   "reps": 15,
+   "sidecar": {
+    "bytes": 593684,
+    "firstLoadMs": 7.33,
+    "loadMsMedian": 1.541,
+    "rssGrowthBytesOnFirstLoad": 9060352
+   },
+   "all": {
+    "captions": 24000,
+    "meanChars": 57.039625,
+    "textPainterMs": 566.162,
+    "canFitMs": 28.374,
+    "textPainterUsPerCall": 23.590083333333332,
+    "canFitUsPerCall": 1.18225,
+    "speedup": 19.953549023754142,
+    "different": 0
+   },
+   "decidedBySidecar": {
+    "captions": 23862,
+    "meanChars": 56.79549073841254,
+    "textPainterMs": 562.847,
+    "canFitMs": 24.139,
+    "textPainterUsPerCall": 23.58758695834381,
+    "canFitUsPerCall": 1.0116084150532227,
+    "speedup": 23.31691453664195,
+    "different": 0
+   },
+   "handedBackToFlutter": {
+    "captions": 138,
+    "meanChars": 99.2536231884058,
+    "textPainterMs": 1.304,
+    "canFitMs": 1.49,
+    "textPainterUsPerCall": 9.44927536231884,
+    "canFitUsPerCall": 10.797101449275363,
+    "speedup": 0.8751677852348994,
+    "different": 0
+   },
+   "byLength": {
+    "1-40": {
+     "captions": 11194,
+     "meanChars": 29.823744863319636,
+     "textPainterMs": 204.658,
+     "canFitMs": 9.047,
+     "textPainterUsPerCall": 18.282830087546902,
+     "canFitUsPerCall": 0.8082008218688583,
+     "speedup": 22.621642533436496,
+     "different": 0
+    },
+    "41-120": {
+     "captions": 10822,
+     "meanChars": 62.49029754204398,
+     "textPainterMs": 268.773,
+     "canFitMs": 15.235,
+     "textPainterUsPerCall": 24.835797449639625,
+     "canFitUsPerCall": 1.4077804472371096,
+     "speedup": 17.641811617984906,
+     "different": 0
+    },
+    "121+": {
+     "captions": 1984,
+     "meanChars": 180.8639112903226,
+     "textPainterMs": 94.317,
+     "canFitMs": 7.309,
+     "textPainterUsPerCall": 47.53881048387097,
+     "canFitUsPerCall": 3.6839717741935485,
+     "speedup": 12.904227664523189,
+     "different": 0
+    }
+   },
+   "askAgain": {
+    "captions": 23862,
+    "widths": [
+     200.0,
+     240.0
+    ],
+    "textPainterRelayoutUsPerCall": 1.5579163523594,
+    "canFitUsPerCall": 0.16960020115665073,
+    "speedup": 9.185816654311836
+   }
+  },
+  {
+   "platform": "macos",
+   "call": "Text(caption, maxLines: 3).canFit(240.0)",
+   "style": "Roboto 14 px (kDefaultFontSize), no context",
+   "reps": 15,
+   "sidecar": {
+    "bytes": 593684,
+    "firstLoadMs": 7.151,
+    "loadMsMedian": 1.663,
+    "rssGrowthBytesOnFirstLoad": 9043968
+   },
+   "all": {
+    "captions": 24000,
+    "meanChars": 57.039625,
+    "textPainterMs": 565.573,
+    "canFitMs": 28.357,
+    "textPainterUsPerCall": 23.565541666666668,
+    "canFitUsPerCall": 1.1815416666666667,
+    "speedup": 19.94474027576965,
+    "different": 0
+   },
+   "decidedBySidecar": {
+    "captions": 23862,
+    "meanChars": 56.79549073841254,
+    "textPainterMs": 560.61,
+    "canFitMs": 24.235,
+    "textPainterUsPerCall": 23.493839577571034,
+    "canFitUsPerCall": 1.015631548068058,
+    "speedup": 23.13224675056736,
+    "different": 0
+   },
+   "handedBackToFlutter": {
+    "captions": 138,
+    "meanChars": 99.2536231884058,
+    "textPainterMs": 1.306,
+    "canFitMs": 1.47,
+    "textPainterUsPerCall": 9.46376811594203,
+    "canFitUsPerCall": 10.652173913043478,
+    "speedup": 0.8884353741496599,
+    "different": 0
+   },
+   "byLength": {
+    "1-40": {
+     "captions": 11194,
+     "meanChars": 29.823744863319636,
+     "textPainterMs": 204.483,
+     "canFitMs": 9.031,
+     "textPainterUsPerCall": 18.267196712524566,
+     "canFitUsPerCall": 0.8067714847239592,
+     "speedup": 22.6423430406378,
+     "different": 0
+    },
+    "41-120": {
+     "captions": 10822,
+     "meanChars": 62.49029754204398,
+     "textPainterMs": 268.273,
+     "canFitMs": 15.209,
+     "textPainterUsPerCall": 24.789595268896694,
+     "canFitUsPerCall": 1.405377933838477,
+     "speedup": 17.639095272536,
+     "different": 0
+    },
+    "121+": {
+     "captions": 1984,
+     "meanChars": 180.8639112903226,
+     "textPainterMs": 93.391,
+     "canFitMs": 7.35,
+     "textPainterUsPerCall": 47.072076612903224,
+     "canFitUsPerCall": 3.7046370967741935,
+     "speedup": 12.706258503401362,
+     "different": 0
+    }
+   },
+   "askAgain": {
+    "captions": 23862,
+    "widths": [
+     200.0,
+     240.0
+    ],
+    "textPainterRelayoutUsPerCall": 1.5755175592993043,
+    "canFitUsPerCall": 0.17244992037549242,
+    "speedup": 9.136087484811664
+   }
+  }
+ ],
+ "speedupSpreadAcrossRuns": {},
+ "note": "median of 3 app runs; each run reports the median of its passes per method"
+}

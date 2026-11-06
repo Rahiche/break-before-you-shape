@@ -1,0 +1,9 @@
+cpu: Apple M3
+cores: 8
+memory_bytes: 8589934592
+os: macOS 26.3 (25D5087f)
+flutter: Flutter 3.47.5 • channel stable • https://github.com/flutter/flutter.git
+flutter: Framework • revision 6a19cca564 (7 weeks ago) • 2026-09-17 14:13:22 -0400
+flutter: Engine • hash ab598368592da0064197e2bc15c7f5b0a2c6bb1f (revision af7e796e16) (1 months ago) • 2026-09-16 18:35:09.000Z
+flutter: Tools • Dart 3.13.4 • DevTools 2.60.0
+android_emulator: sdk_gphone64_arm64, API 35, arm64-v8a

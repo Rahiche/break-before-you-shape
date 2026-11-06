@@ -1,0 +1,207 @@
+{
+ "platform": "macos",
+ "idea": "long",
+ "flags": {
+  "fontSizeQuantized": false,
+  "hardBreakKerns": true
+ },
+ "long": {
+  "fontSize": 16.0,
+  "width": 330.0,
+  "viewportPx": 800.0,
+  "linesInViewport": 44,
+  "10000": {
+   "chars": 10437,
+   "lines": 257,
+   "paragraphs": 27,
+   "paragraphsHandedBack": 0,
+   "paragraphsSameAsFlutterAlone": 27,
+   "paragraphsWhereTheWholeTextBreaksDifferently": 0,
+   "ofWhichFlutterAloneAgreesWithTheSidecar": 0,
+   "nearestSuchParagraphStartsPxAlong": null,
+   "wholeTextPxAlong": 73934.6640625,
+   "whereTheWholeTextDiffers": [],
+   "lineStartsSameAsWholeText": true,
+   "heightSameAsWholeText": true,
+   "firstFrameWholeMs": 2.123,
+   "firstFrameLineByLineMs": 1.237,
+   "ofWhichBreakingMs": 0.334,
+   "firstFrameSpeedup": 1.7162489894907034,
+   "jumpToMiddleWholeMs": 0.187,
+   "jumpToMiddleLineByLineMs": 0.926
+  },
+  "50000": {
+   "chars": 51110,
+   "lines": 1284,
+   "paragraphs": 143,
+   "paragraphsHandedBack": 5,
+   "paragraphsSameAsFlutterAlone": 143,
+   "paragraphsWhereTheWholeTextBreaksDifferently": 1,
+   "ofWhichFlutterAloneAgreesWithTheSidecar": 1,
+   "nearestSuchParagraphStartsPxAlong": 163042.6953125,
+   "wholeTextPxAlong": 371477.71875,
+   "whereTheWholeTextDiffers": [
+    {
+     "lineStartsPxAlong": 166345.5,
+     "exactWidthPx": 330.015625,
+     "boxPx": 330.0,
+     "float32StepThere": 0.015625
+    }
+   ],
+   "lineStartsSameAsWholeText": false,
+   "heightSameAsWholeText": true,
+   "firstFrameWholeMs": 9.991,
+   "firstFrameLineByLineMs": 4.562,
+   "ofWhichBreakingMs": 3.661,
+   "firstFrameSpeedup": 2.1900482244629544,
+   "jumpToMiddleWholeMs": 0.857,
+   "jumpToMiddleLineByLineMs": 0.934
+  },
+  "200000": {
+   "chars": 200133,
+   "lines": 4956,
+   "paragraphs": 578,
+   "paragraphsHandedBack": 15,
+   "paragraphsSameAsFlutterAlone": 578,
+   "paragraphsWhereTheWholeTextBreaksDifferently": 21,
+   "ofWhichFlutterAloneAgreesWithTheSidecar": 21,
+   "nearestSuchParagraphStartsPxAlong": 163042.6953125,
+   "wholeTextPxAlong": 1433664.6875,
+   "whereTheWholeTextDiffers": [
+    {
+     "lineStartsPxAlong": 166345.5,
+     "exactWidthPx": 330.015625,
+     "boxPx": 330.0,
+     "float32StepThere": 0.015625
+    },
+    {
+     "lineStartsPxAlong": 523258.84375,
+     "exactWidthPx": 330.1953125,
+     "boxPx": 330.0,
+     "float32StepThere": 0.03125
+    },
+    {
+     "lineStartsPxAlong": 624319.515625,
+     "exactWidthPx": 330.2109375,
+     "boxPx": 330.0,
+     "float32StepThere": 0.0625
+    },
+    {
+     "lineStartsPxAlong": 686805.5546875,
+     "exactWidthPx": 324.9921875,
+     "boxPx": 330.0,
+     "float32StepThere": 0.0625
+    },
+    {
+     "lineStartsPxAlong": 701098.203125,
+     "exactWidthPx": 330.0859375,
+     "boxPx": 330.0,
+     "float32StepThere": 0.0625
+    },
+    {
+     "lineStartsPxAlong": 709236.109375,
+     "exactWidthPx": 330.15625,
+     "boxPx": 330.0,
+     "float32StepThere": 0.0625
+    },
+    {
+     "lineStartsPxAlong": 711503.4375,
+     "exactWidthPx": 330.0859375,
+     "boxPx": 330.0,
+     "float32StepThere": 0.0625
+    },
+    {
+     "lineStartsPxAlong": 796215.109375,
+     "exactWidthPx": 330.0703125,
+     "boxPx": 330.0,
+     "float32StepThere": 0.0625
+    },
+    {
+     "lineStartsPxAlong": 828499.46875,
+     "exactWidthPx": 330.0390625,
+     "boxPx": 330.0,
+     "float32StepThere": 0.0625
+    },
+    {
+     "lineStartsPxAlong": 1093683.1328125,
+     "exactWidthPx": 311.7421875,
+     "boxPx": 330.0,
+     "float32StepThere": 0.125
+    },
+    {
+     "paragraphStartsPxAlong": 1230894.2265625,
+     "handedBack": 1.0
+    },
+    {
+     "lineStartsPxAlong": 1234375.8125,
+     "exactWidthPx": 311.5703125,
+     "boxPx": 330.0,
+     "float32StepThere": 0.125
+    },
+    {
+     "lineStartsPxAlong": 1248694.0546875,
+     "exactWidthPx": 311.1953125,
+     "boxPx": 330.0,
+     "float32StepThere": 0.125
+    },
+    {
+     "lineStartsPxAlong": 1252185.2734375,
+     "exactWidthPx": 285.375,
+     "boxPx": 330.0,
+     "float32StepThere": 0.125
+    },
+    {
+     "lineStartsPxAlong": 1269667.7109375,
+     "exactWidthPx": 308.78125,
+     "boxPx": 330.0,
+     "float32StepThere": 0.125
+    },
+    {
+     "lineStartsPxAlong": 1291012.6875,
+     "exactWidthPx": 290.6640625,
+     "boxPx": 330.0,
+     "float32StepThere": 0.125
+    },
+    {
+     "lineStartsPxAlong": 1315650.1484375,
+     "exactWidthPx": 303.4296875,
+     "boxPx": 330.0,
+     "float32StepThere": 0.125
+    },
+    {
+     "lineStartsPxAlong": 1383125.40625,
+     "exactWidthPx": 297.8046875,
+     "boxPx": 330.0,
+     "float32StepThere": 0.125
+    },
+    {
+     "lineStartsPxAlong": 1424114.3125,
+     "exactWidthPx": 311.1875,
+     "boxPx": 330.0,
+     "float32StepThere": 0.125
+    },
+    {
+     "lineStartsPxAlong": 1425589.765625,
+     "exactWidthPx": 264.3125,
+     "boxPx": 330.0,
+     "float32StepThere": 0.125
+    },
+    {
+     "lineStartsPxAlong": 1430043.6484375,
+     "exactWidthPx": 296.5078125,
+     "boxPx": 330.0,
+     "float32StepThere": 0.125
+    }
+   ],
+   "lineStartsSameAsWholeText": false,
+   "heightSameAsWholeText": false,
+   "firstFrameWholeMs": 47.699,
+   "firstFrameLineByLineMs": 13.312,
+   "ofWhichBreakingMs": 12.334,
+   "firstFrameSpeedup": 3.5831580528846154,
+   "jumpToMiddleWholeMs": 3.558,
+   "jumpToMiddleLineByLineMs": 1.179
+  }
+ },
+ "seconds": 1.2
+}

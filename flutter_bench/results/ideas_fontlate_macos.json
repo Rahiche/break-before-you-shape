@@ -1,0 +1,35 @@
+{
+ "platform": "macos",
+ "idea": "fontlate",
+ "fontlate": {
+  "paragraphs": 2700,
+  "cases": 16200,
+  "predictMs": 274.289,
+  "flagsAssumedRight": true,
+  "canaryErrorPx": 0.0,
+  "today": {
+   "heightChanged": 4112,
+   "lineBreaksChanged": 8174,
+   "meanAbsHeightShiftPx": 5.838456790123457,
+   "maxHeightShiftPx": 551.0,
+   "columnBottomShiftPx": {
+    "14.0px@150.0": -20482.0,
+    "14.0px@240.0": -11490.0,
+    "14.0px@330.0": -7954.0,
+    "16.0px@150.0": -28367.0,
+    "16.0px@240.0": -15447.0,
+    "16.0px@330.0": -10583.0
+   }
+  },
+  "sidecar": {
+   "decided": 15982,
+   "lineStartsSame": 15982,
+   "heightsSame": 15982,
+   "lines": 72087,
+   "lineWidthsWithin1e-3": 72087,
+   "lineWidthsBitEqual": 72087,
+   "maxLineWidthErrPx": 0.0
+  }
+ },
+ "seconds": 2.494
+}
